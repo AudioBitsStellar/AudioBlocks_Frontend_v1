@@ -7,6 +7,16 @@ const nextConfig: NextConfig = {
     // lint errors in unrelated components shouldn't block production builds.
     ignoreDuringBuilds: true,
   },
+  webpack: (config) => {
+    // @metamask/sdk (pulled in via @dynamic-labs/ethereum) optionally
+    // supports React Native and imports this for native storage — it's
+    // never used on web, so stub it out instead of bundling/resolving it.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@react-native-async-storage/async-storage": false,
+    };
+    return config;
+  },
 };
 
 export default nextConfig;
