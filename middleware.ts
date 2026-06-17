@@ -15,5 +15,7 @@ export default function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: protectedRoutes,
+  // Next.js statically extracts this matcher at build time, so it must be a
+  // literal array — referencing `protectedRoutes` here fails the build.
+  matcher: ['/dashboard'],
 };
