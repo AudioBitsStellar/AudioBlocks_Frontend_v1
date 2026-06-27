@@ -1,7 +1,7 @@
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
-import axios from 'axios';
+import apiClient from '@/lib/apiClient';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 
@@ -44,10 +44,8 @@ export const Auth = () => {
     signature: string,
     message: string
   ) => {
-    const url = process.env.NEXT_PUBLIC_API_URL;
-
     try {
-      const response = await axios.post(`${url}/api/auth/login`, {
+      const response = await apiClient.post('/api/auth/login', {
         role,
         email,
         walletAddress,
@@ -64,8 +62,8 @@ export const Auth = () => {
       const errorMsg = error?.response?.data?.message;
 
       if (errorMsg?.toLowerCase().includes('user not found')) {
-        try {
-          const registerResponse = await axios.post(`${url}/api/auth/register`, {
+          try {
+            const registerResponse = await apiClient.post('/api/auth/register', {
             role,
             email,
             walletAddress,
