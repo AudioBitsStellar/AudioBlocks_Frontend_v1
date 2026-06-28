@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
+import BuyButton from './BuyButton';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -119,12 +120,11 @@ const MusicCard = ({ item }: { item: any }) => (
         <h3 className="font-semibold text-base text-white">{item.artistName}</h3>
         <p className="text-[#A3A3A3] text-sm mb-2">{item.songName}</p>
       </div>
-      <div className="flex items-center justify-between mt-auto">
-        <button className="border-gray-600 border text-white px-4 py-2 rounded-2xl transition-colors text-sm mb-2">
-          Buy Now
-        </button>
-        <span className="font-bold text-sm text-[#A3A3A3]">{item.price}</span>
-      </div>
+       <div className="flex items-center justify-between mt-auto">
+         <BuyButton tokenId={item.id} price={item.price} label="Buy Now" />
+         <span className="font-bold text-sm text-[#A3A3A3]">{item.price}</span>
+       </div>
+
     </div>
   </div>
 );
@@ -157,12 +157,11 @@ const EventCard = ({ item }: { item: any }) => (
         <h3 className="font-semibold text-base text-white">{item.artistName}</h3>
         <p className="text-[#A3A3A3] text-sm mb-2">{item.eventName}</p>
       </div>
-      <div className="flex items-center justify-between mt-auto">
-        <button className="border-gray-600 border text-white px-4 py-2 rounded-2xl transition-colors text-sm mb-2">
-          Buy Ticket
-        </button>
-        <span className="font-bold text-sm text-[#A3A3A3]">{item.price}</span>
-      </div>
+       <div className="flex items-center justify-between mt-auto">
+         <BuyButton tokenId={item.id} price={item.price} label="Buy Ticket" />
+         <span className="font-bold text-sm text-[#A3A3A3]">{item.price}</span>
+       </div>
+
     </div>
   </div>
 );
@@ -193,12 +192,11 @@ const MerchCard = ({ item }: { item: any }) => (
         <h3 className="font-semibold text-base text-white">{item.artistName}</h3>
         <p className="text-[#A3A3A3] text-sm mb-2">{item.itemName}</p>
       </div>
-      <div className="flex items-center justify-between mt-auto">
-        <button className="border-gray-600 border text-white px-4 py-2 rounded-2xl transition-colors text-sm mb-2">
-          Buy Merch
-        </button>
-        <span className="font-bold text-sm text-[#A3A3A3]">{item.price}</span>
-      </div>
+       <div className="flex items-center justify-between mt-auto">
+         <BuyButton tokenId={item.id} price={item.price} label="Buy Merch" />
+         <span className="font-bold text-sm text-[#A3A3A3]">{item.price}</span>
+       </div>
+
     </div>
   </div>
 );
