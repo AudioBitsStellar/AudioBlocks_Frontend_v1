@@ -3,7 +3,8 @@
 import { motion } from 'framer-motion';
 import { SendHorizonal, X } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface CommentPanelProps {
   onClose: () => void;
@@ -36,16 +37,27 @@ const dummyComments = [
 
 const Comment = ({ onClose }: CommentPanelProps) => {
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [commentText, setCommentText] = useState('');
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose;
+        onClose();
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
+
+  const handleSendComment = () => {
+    const trimmed = commentText.trim();
+    if (!trimmed) {
+      toast.error('Please enter a comment before sending.');
+      return;
+    }
+    toast.success('Comment posted successfully');
+    setCommentText('');
+  };
 
   return (
     <motion.div
@@ -54,7 +66,7 @@ const Comment = ({ onClose }: CommentPanelProps) => {
       exit={{ y: 300, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
       ref={menuRef}
-      className="fixed bottom-0 pb-20 right-0 bg-[#1e1e1e] w-80 max-w-sm h-[90vh] p-4 -z-50 flex flex-col"
+      className="fixed bottom-0 pb-20 right-0 bg-[#1e1e1e] w-80 max-w-sm h-[90vh] p-4 z-50 flex flex-col"
     >
       <div className="flex items-center border-b pb-3 justify-between mb-4">
         <h2 className="text-[#A3A3A3] text-lg font-bold">Comments</h2>
@@ -65,7 +77,7 @@ const Comment = ({ onClose }: CommentPanelProps) => {
 
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
         {dummyComments.map((comment) => (
-          <div key={comment.id} className="flex flex-col border-b  pb-2 items-start gap-3">
+          <div key={comment.id} className="flex flex-col border-b pb-2 items-start gap-3">
             <div className="flex items-center gap-2">
               <Image
                 src={comment.avatar}
@@ -85,19 +97,19 @@ const Comment = ({ onClose }: CommentPanelProps) => {
         ))}
       </div>
 
-      <div className="mt-4">
-        
-      </div>
-
       <div className="flex items-center bg-[#2a2a2a] border rounded-md px-4 py-2 mt-4">
         <textarea
           name="comment"
           placeholder="Type here"
           cols={2}
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
           className="w-full resize-none custom-scrollbar bg-transparent text-white outline-none"
           id="comment"
         ></textarea>
-        <SendHorizonal className='cursor-pointer' />
+        <button onClick={handleSendComment} className="cursor-pointer hover:text-[#D2045B] transition">
+          <SendHorizonal />
+        </button>
       </div>
     </motion.div>
   );

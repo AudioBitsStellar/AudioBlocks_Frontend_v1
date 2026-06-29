@@ -7,6 +7,7 @@ import { FiSearch } from 'react-icons/fi';
 import Image from 'next/image';
 import ShareModal from '@/components/common/dashboard/Share';
 import { SquareCheck, UserRound } from 'lucide-react';
+import { toast } from 'sonner';
 
 const artists = [
   { name: 'Daniel Allan', image: '/tech.jpg', genre: 'Electronic', description: 'Genre-bending electronic artist...', votes: 1203 },
@@ -122,7 +123,10 @@ const CommunityTabs = () => {
                       link={`https://audioblocks.com/vote/${artist.name.replace(/\s+/g, '-').toLowerCase()}`}
                     />
                   </div>
-                  <button className="mt-auto bg-brand w-full hover:bg-pink-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow">
+                  <button
+                    className="mt-auto bg-brand w-full hover:bg-pink-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow cursor-pointer"
+                    onClick={() => toast.success(`Vote cast for ${artist.name}`)}
+                  >
                     Vote
                   </button>
                 </div>
