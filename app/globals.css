@@ -43,9 +43,33 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* AudioBlocks brand tokens — use these instead of hard-coded hex values */
+  --color-brand: var(--ab-brand);
+  --color-brand-hover: var(--ab-brand-hover);
+  --color-surface: var(--ab-surface);
+  --color-surface-elevated: var(--ab-surface-elevated);
+  --color-surface-input: var(--ab-surface-input);
+  --color-surface-hover: var(--ab-surface-hover);
+  --color-on-muted: var(--ab-on-muted);
+  --color-on-subtle: var(--ab-on-subtle);
+  --color-border-dark: var(--ab-border-dark);
+  --color-border-muted: var(--ab-border-muted);
 }
 
 :root {
+  /* AudioBlocks brand design tokens */
+  --ab-brand: #D2045B;
+  --ab-brand-hover: #a8034a;
+  --ab-surface: #1E1E1E;
+  --ab-surface-elevated: #272727;
+  --ab-surface-input: #1C1C1C;
+  --ab-surface-hover: #161616;
+  --ab-on-muted: #A3A3A3;
+  --ab-on-subtle: #DACFD3;
+  --ab-border-dark: #2B2B2B;
+  --ab-border-muted: #3C3C3C;
+
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

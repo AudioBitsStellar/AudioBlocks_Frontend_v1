@@ -70,7 +70,7 @@ const Collections = () => {
     <>
       <section className="">
         <div className="flex justify-between items-center pb-6 border-b">
-          <h1 className="text-2xl font-semibold text-[#A3A3A3] font-poppins leading-tight tracking-tight">
+          <h1 className="text-2xl font-semibold text-on-muted font-poppins leading-tight tracking-tight">
             Collections
           </h1>
           <Link
@@ -96,7 +96,7 @@ const Collections = () => {
                 </div>
                 <div className="py-2 text-center md:text-left text-white">
                   <p className="text-sm font-bold">{artist.song}</p>
-                  <p className="text-xs text-[#A3A3A3]  font-normal">{artist.artist}</p>
+                  <p className="text-xs text-on-muted font-normal">{artist.artist}</p>
                   <p className="text-sm  font-medium">{artist.description}</p>
                 </div>
               </div>

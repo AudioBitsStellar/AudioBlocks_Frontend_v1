@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import Image from 'next/image';
 import {
+  AlertCircle,
   Dot,
   Ellipsis,
   Heart,
@@ -13,44 +14,70 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
+  X,
 } from 'lucide-react';
 import CommentPanel from './dashboard/Comment';
+import { usePlayback } from '@/context/PlaybackContext';
 
-const playlist = [
-  {
-    title: 'Relax and Unwind',
-    artist: 'Rozé',
-    cover: '/AFRO.jpg',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  },
-  {
-    title: 'Vibe Mix',
-    artist: 'Yemi Sax',
-    cover: '/AFRO.jpg',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-  },
-  {
-    title: 'Cool Session',
-    artist: 'Dunsin',
-    cover: '/AFRO.jpg',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-  },
-];
+const COVER_FALLBACK = '/placeholder-cover.svg';
 
 export default function Player() {
+  const {
+    playlist,
+    currentIndex,
+    isPlaying,
+    volume,
+    isMuted,
+    shuffle,
+    repeat,
+    trackError,
+    play,
+    pause,
+    next,
+    prev,
+    setVolume,
+    toggleMute,
+    toggleShuffle,
+    toggleRepeat,
+    setError,
+    dismissError,
+  } = usePlayback();
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [progress, setProgress] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [shuffle, setShuffle] = useState(false);
-  const [repeat, setRepeat] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [coverFailed, setCoverFailed] = useState(false);
 
   const currentTrack = playlist[currentIndex];
   const trackId = `track-${currentIndex}`;
+
+  useEffect(() => {
+    setCoverFailed(false);
+    setProgress(0);
+  }, [currentIndex]);
+
+  // Sync play/pause with the audio element; currentIndex triggers re-sync on track change
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) {
+      audio.play().catch(() => {
+        setError(`Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`);
+      });
+    } else {
+      audio.pause();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, currentIndex]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume;
+    audio.muted = isMuted;
+  }, [volume, isMuted]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -62,76 +89,64 @@ export default function Player() {
   }, [isPlaying]);
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
+    return () => {
+      if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
+    };
+  }, []);
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
+  const handleTogglePlay = () => {
+    if (isPlaying) pause();
+    else play();
   };
 
-  const handleVolumeToggle = () => {
-    const newMuteState = !isMuted;
-    setIsMuted(newMuteState);
-    if (audioRef.current) {
-      audioRef.current.muted = newMuteState;
-    }
+  const handleAudioError = () => {
+    setError(`Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`);
+    if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
+    skipTimerRef.current = setTimeout(() => next(), 3000);
   };
-
-  const handleNext = () => {
-    let nextIndex = currentIndex + 1;
-    if (shuffle) {
-      nextIndex = Math.floor(Math.random() * playlist.length);
-    } else if (nextIndex >= playlist.length) {
-      nextIndex = 0;
-    }
-    setCurrentIndex(nextIndex);
-    setProgress(0);
-    setIsPlaying(true);
-  };
-
-  const handlePrev = () => {
-    if (audioRef.current?.currentTime && audioRef.current.currentTime > 3) {
-      audioRef.current.currentTime = 0;
-    } else {
-      const prevIndex = currentIndex === 0 ? playlist.length - 1 : currentIndex - 1;
-      setCurrentIndex(prevIndex);
-      setProgress(0);
-      setIsPlaying(true);
-    }
-  };
-
-  const toggleRepeat = () => setRepeat((prev) => !prev);
-  const toggleShuffle = () => setShuffle((prev) => !prev);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60)
-      .toString()
-      .padStart(2, '0');
+    const seconds = Math.floor(time % 60).toString().padStart(2, '0');
     return `${minutes}:${seconds}`;
   };
 
+  const coverSrc = coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover;
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#272727] px-8 py-3 shadow-lg z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-surface-elevated px-8 py-3 shadow-lg z-50">
+      {trackError && (
+        <div className="flex items-center justify-between bg-red-900/80 text-white text-xs px-4 py-2 rounded-md mb-2 max-w-7xl mx-auto">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={14} className="shrink-0" />
+            <span>{trackError}</span>
+          </div>
+          <button
+            onClick={dismissError}
+            aria-label="Dismiss error"
+            className="ml-4 hover:opacity-70 shrink-0"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
         {/* Left Controls */}
         <div className="flex items-center gap-3">
-          <button onClick={toggleShuffle} className={`hover:text-gray-300 cursor-pointer text-white ${shuffle ? 'text-pink-500' : ''}`}>
+          <button
+            onClick={toggleShuffle}
+            aria-label="Toggle shuffle"
+            className={`hover:text-gray-300 cursor-pointer text-white ${shuffle ? 'text-pink-500' : ''}`}
+          >
             <Shuffle size={16} />
           </button>
-          <button onClick={handlePrev} className="hover:text-gray-300 cursor-pointer text-white">
+          <button onClick={prev} aria-label="Previous track" className="hover:text-gray-300 cursor-pointer text-white">
             <SkipBack size={16} />
           </button>
           <button
-            onClick={togglePlay}
+            onClick={handleTogglePlay}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
             className="p-2 rounded-full bg-white flex items-center cursor-pointer justify-center"
           >
             {isPlaying ? (
@@ -140,24 +155,39 @@ export default function Player() {
               <FaPlay size={14} className="text-gray-800" />
             )}
           </button>
-          <button onClick={handleNext} className="hover:text-gray-300 text-white">
+          <button onClick={next} aria-label="Next track" className="hover:text-gray-300 text-white">
             <SkipForward size={15} />
           </button>
-          <button onClick={toggleRepeat} className={`hover:text-gray-300 text-white ${repeat ? 'text-pink-500' : ''}`}>
+          <button
+            onClick={toggleRepeat}
+            aria-label="Toggle repeat"
+            className={`hover:text-gray-300 text-white ${repeat ? 'text-pink-500' : ''}`}
+          >
             <Repeat size={16} />
           </button>
         </div>
 
-        {/* Track Info */}
-        <div className="h-12 w-12 relative">
-          <Image src={currentTrack.cover} alt={currentTrack.title} fill className="rounded-md object-cover" />
+        {/* Cover art with fallback */}
+        <div className="h-12 w-12 relative shrink-0">
+          <Image
+            src={coverSrc}
+            alt={currentTrack?.title ?? 'Now playing'}
+            fill
+            className="rounded-md object-cover"
+            onError={() => setCoverFailed(true)}
+          />
         </div>
+
+        {/* Scrubber + track info */}
         <div className="flex items-center gap-4 w-2/5">
           <div className="flex-1">
             <div className="flex items-center justify-center mb-3">
-              <div className="text-white font-medium mr-4 text-sm truncate">{currentTrack.title}</div>
+              <div className="text-white font-medium mr-4 text-sm truncate">
+                {currentTrack?.title}
+              </div>
               <div className="text-gray-400 flex items-center text-xs truncate">
-                <Dot size={20} className="mr-4 text-white" /> {currentTrack.artist}
+                <Dot size={20} className="mr-4 text-white" />
+                {currentTrack?.artist}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -178,13 +208,13 @@ export default function Player() {
                 className="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
                 style={{
                   background: `linear-gradient(to right, #B6195B 0%, #B6195B ${
-                    (progress / duration) * 100
-                  }%, rgb(82, 82, 82) ${(progress / duration) * 100}%, rgb(82, 82, 82) 100%)`,
+                    duration ? (progress / duration) * 100 : 0
+                  }%, rgb(82,82,82) ${
+                    duration ? (progress / duration) * 100 : 0
+                  }%, rgb(82,82,82) 100%)`,
                 }}
               />
-              <span className="text-xs text-white w-8 text-right">
-                {formatTime(duration)}
-              </span>
+              <span className="text-xs text-white w-8 text-right">{formatTime(duration)}</span>
             </div>
           </div>
         </div>
@@ -192,7 +222,7 @@ export default function Player() {
         {/* Right Controls */}
         <div className="flex items-center border-l-2 pl-4 gap-4 relative">
           <button
-            className="hover:text-gray-300 cursor-pointer text-white "
+            className="hover:text-gray-300 cursor-pointer text-white"
             onClick={() => setShowComments(true)}
           >
             <MessageSquare size={16} />
@@ -207,7 +237,11 @@ export default function Player() {
             <Ellipsis size={16} />
           </button>
           <div className="relative group flex items-center justify-center">
-            <button className="hover:text-gray-300 text-white" onClick={handleVolumeToggle}>
+            <button
+              className="hover:text-gray-300 text-white"
+              onClick={toggleMute}
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
+            >
               {isMuted || volume === 0 ? <FaVolumeMute size={16} /> : <FaVolumeUp size={16} />}
             </button>
             <div className="absolute bottom-16 p-4 rounded-md bg-[#161616] rotate-[-90deg] items-center justify-center hidden group-hover:flex">
@@ -217,37 +251,33 @@ export default function Player() {
                 max={1}
                 step={0.01}
                 value={isMuted ? 0 : volume}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setVolume(val);
-                  if (audioRef.current) {
-                    audioRef.current.muted = false;
-                  }
-                  setIsMuted(false);
-                }}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
                 className="w-24 h-1 bg-gray-300 rounded appearance-none cursor-pointer accent-[#D2045B]"
               />
             </div>
           </div>
         </div>
 
-        {/* Audio Element */}
+        {/* Audio element — key forces remount on track change so new src loads cleanly */}
         <audio
+          key={currentTrack?.url}
           ref={audioRef}
-          src={currentTrack.url}
-          autoPlay
+          src={currentTrack?.url}
           onEnded={() => {
-            if (repeat) {
-              audioRef.current?.play();
-            } else {
-              handleNext();
-            }
+            if (repeat) audioRef.current?.play();
+            else next();
           }}
-          onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+          onLoadedMetadata={(e) => {
+            setDuration(e.currentTarget.duration);
+            setProgress(0);
+          }}
+          onError={handleAudioError}
         />
       </div>
 
-      {showComments && <CommentPanel onClose={() => setShowComments(false)} trackId={trackId} />}
+      {showComments && (
+        <CommentPanel onClose={() => setShowComments(false)} trackId={trackId} />
+      )}
     </div>
   );
 }
