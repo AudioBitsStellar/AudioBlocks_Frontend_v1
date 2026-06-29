@@ -4,35 +4,9 @@ import Slider from 'react-slick';
 import { ArrowUpRight } from 'lucide-react';
 import { NextArrow, PrevArrow } from './landing/NavigationArrow';
 import Link from 'next/link';
+import { artistsData } from './data';
 
 const Artists = () => {
-  const collectionArtists = [
-    {
-      song: 'Echoes of the Soul',
-      artist: 'Misty Brown',
-      description: 'New Album',
-      image: '/tech.jpg',
-    },
-    {
-      song: 'Echoes of the Soul',
-      artist: 'Misty Brown',
-      description: 'New Album',
-      image: '/image2.jpg',
-    },
-    {
-      song: 'Echoes of the Soul',
-      artist: 'Misty Brown',
-      description: 'New Album',
-      image: '/tech.jpg',
-    },
-    {
-      song: 'Echoes of the Soul',
-      artist: 'Misty Brown',
-      description: 'New Album',
-      image: '/image1.jpg',
-    },
-  ];
-
   const collectiveSettings = {
     dots: false,
     infinite: true,
@@ -74,7 +48,7 @@ const Artists = () => {
             Artists
           </h1>
           <Link
-            href="#"
+            href="/dashboard/all-artists"
             className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
           >
             <ArrowUpRight className="w-5 h-5" />
@@ -83,7 +57,7 @@ const Artists = () => {
 
         <div className="relative py-4">
           <Slider {...collectiveSettings}>
-            {collectionArtists.map((artist, index) => (
+            {artistsData.map((artist, index) => (
               <div key={index} className="px-4">
                 <div className="w-full h-40 rounded-lg overflow-hidden mx-auto">
                   <Image
