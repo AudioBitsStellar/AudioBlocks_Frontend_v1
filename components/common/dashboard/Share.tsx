@@ -7,13 +7,20 @@ import { useState } from 'react';
 import { FaShare, FaSnapchatGhost, FaTelegramPlane } from "react-icons/fa";
 import { FaFacebook } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
+import { toast } from 'sonner';
 
 const ShareModal=({ link }: { link: string })=> {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      toast.success('Link copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Failed to copy link');
+    }
   };
 
   return (

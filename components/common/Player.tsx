@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import {
   AlertCircle,
   Dot,
@@ -16,8 +17,13 @@ import {
   SkipForward,
   X,
 } from 'lucide-react';
-import CommentPanel from './dashboard/Comment';
 import { usePlayback } from '@/context/PlaybackContext';
+
+// Lazy-load CommentPanel to reduce initial bundle size
+const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
+  loading: () => <div className="fixed bottom-0 right-0 bg-[#1e1e1e] w-80 h-20 flex items-center justify-center text-gray-400">Loading comments...</div>,
+  ssr: false,
+});
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
 
@@ -41,6 +47,7 @@ export default function Player() {
     toggleRepeat,
     setError,
     dismissError,
+    addToRecentlyPlayed,
   } = usePlayback();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -51,12 +58,21 @@ export default function Player() {
   const [coverFailed, setCoverFailed] = useState(false);
 
   const currentTrack = playlist[currentIndex];
-  const trackId = `track-${currentIndex}`;
+  const trackId = currentTrack?.id || `track-${currentIndex}`;
+  
+  // Build stream URL from backend endpoint
+  const streamUrl = currentTrack?.url 
+    ? currentTrack.url 
+    : `${process.env.NEXT_PUBLIC_API_URL}/stream/${trackId}`;
 
   useEffect(() => {
     setCoverFailed(false);
     setProgress(0);
-  }, [currentIndex]);
+    // Add to recently played when track changes
+    if (currentTrack) {
+      addToRecentlyPlayed(currentTrack);
+    }
+  }, [currentIndex, currentTrack, addToRecentlyPlayed]);
 
   // Sync play/pause with the audio element; currentIndex triggers re-sync on track change
   useEffect(() => {
@@ -100,7 +116,10 @@ export default function Player() {
   };
 
   const handleAudioError = () => {
-    setError(`Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`);
+    const errorMessage = currentTrack?.id 
+      ? `Unable to stream track "${currentTrack?.title}". The track may be unavailable or the ID is invalid.`
+      : `Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`;
+    setError(errorMessage);
     if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
     skipTimerRef.current = setTimeout(() => next(), 3000);
   };
@@ -260,9 +279,9 @@ export default function Player() {
 
         {/* Audio element — key forces remount on track change so new src loads cleanly */}
         <audio
-          key={currentTrack?.url}
+          key={streamUrl}
           ref={audioRef}
-          src={currentTrack?.url}
+          src={streamUrl}
           onEnded={() => {
             if (repeat) audioRef.current?.play();
             else next();
