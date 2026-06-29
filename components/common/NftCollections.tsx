@@ -2,9 +2,11 @@
 
 import { Inter } from 'next/font/google';
 import { Search } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import BuyButton from './BuyButton';
+
+const PAGE_SIZE = 5;
 
 const inter = Inter({
   subsets: ['latin'],
@@ -203,6 +205,8 @@ const MerchCard = ({ item }: { item: any }) => (
 
 export default function NftCollection() {
   const [activeTab, setActiveTab] = useState('All');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isLoading, setIsLoading] = useState(false);
 
   const tabs = ['All', 'Latest', 'Tickets', 'Merches'];
 
@@ -222,6 +226,24 @@ export default function NftCollection() {
         return getAllData();
     }
   };
+
+  const tabData = getTabData();
+  const visibleItems = tabData.slice(0, visibleCount);
+  const hasMore = visibleCount < tabData.length;
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setVisibleCount(PAGE_SIZE);
+  };
+
+  const loadMore = useCallback(() => {
+    setIsLoading(true);
+    // Simulate network delay for loading state demonstration
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + PAGE_SIZE);
+      setIsLoading(false);
+    }, 500);
+  }, []);
 
   const renderCard = (item: any) => {
     if (eventData.some((event) => event.id === item.id)) {
@@ -259,7 +281,7 @@ export default function NftCollection() {
           {tabs.map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => handleTabChange(tab)}
               className={`relative text-lg font-medium px-3 py-2 w-24 rounded-3xl transition-all duration-300 ease-in-out
           ${
             activeTab === tab
@@ -276,8 +298,46 @@ export default function NftCollection() {
       {/* Cards Grid */}
       <div className="max-w-full mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-          {getTabData().map((item) => renderCard(item))}
+          {visibleItems.map((item) => renderCard(item))}
         </div>
+
+        {/* Load More */}
+        {(hasMore || isLoading) && (
+          <div className="flex justify-center mt-10">
+            <button
+              onClick={loadMore}
+              disabled={isLoading}
+              className="px-8 py-3 rounded-full bg-[#885FA8] text-white font-semibold text-sm hover:bg-[#724e91] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                  Loading…
+                </span>
+              ) : (
+                'Load More'
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
