@@ -55,14 +55,14 @@ const Artists = () => {
           </Link>
         </div>
 
-        <div className="relative py-4">
-          <Slider {...collectiveSettings}>
+        <div className="relative py-4 overflow-hidden">
+          <Slider {...collectiveSettings} aria-roledescription="carousel" aria-label="Artists carousel">
             {artistsData.map((artist, index) => (
               <div key={index} className="px-4">
                 <div className="w-full h-40 rounded-lg overflow-hidden mx-auto">
                   <Image
-                    src={item.image}
-                    alt={item.artist}
+                    src={artist.image}
+                    alt={artist.song}
                     width={150}
                     height={150}
                     className="w-full h-full object-cover"
@@ -70,16 +70,16 @@ const Artists = () => {
                   />
                 </div>
                 <div className="py-2 text-center md:text-left text-white">
-                  <p className="text-sm font-bold">{item.song}</p>
-                  <p className="text-xs text-on-muted font-normal">{item.artist}</p>
-                  <p className="text-sm font-medium">{item.description}</p>
+                  <p className="text-sm font-bold">{artist.song}</p>
+                  <p className="text-xs text-on-muted font-normal">{artist.artist}</p>
+                  <p className="text-sm font-medium">{artist.description}</p>
                 </div>
               </div>
             ))}
           </Slider>
-        )}
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   );
 };
 
