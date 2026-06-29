@@ -3,10 +3,11 @@
 import { createContext, useContext, useReducer, ReactNode } from 'react';
 
 export type Track = {
+  id: string;
   title: string;
   artist: string;
   cover: string;
-  url: string;
+  url?: string;
 };
 
 type PlaybackState = {
@@ -18,6 +19,7 @@ type PlaybackState = {
   shuffle: boolean;
   repeat: boolean;
   trackError: string | null;
+  recentlyPlayed: Track[];
 };
 
 type PlaybackAction =
@@ -33,7 +35,9 @@ type PlaybackAction =
   | { type: 'PLAY_TRACK'; track: Track }
   | { type: 'ENQUEUE_TRACK'; track: Track }
   | { type: 'SET_ERROR'; error: string }
-  | { type: 'DISMISS_ERROR' };
+  | { type: 'DISMISS_ERROR' }
+  | { type: 'ADD_TO_RECENTLY_PLAYED'; track: Track }
+  | { type: 'CLEAR_RECENTLY_PLAYED' };
 
 export type PlaybackContextValue = PlaybackState & {
   playTrack: (track: Track) => void;
@@ -49,26 +53,28 @@ export type PlaybackContextValue = PlaybackState & {
   toggleRepeat: () => void;
   setError: (error: string) => void;
   dismissError: () => void;
+  addToRecentlyPlayed: (track: Track) => void;
+  clearRecentlyPlayed: () => void;
 };
 
 const defaultPlaylist: Track[] = [
   {
+    id: 'track-1',
     title: 'Relax and Unwind',
     artist: 'Rozé',
     cover: '/AFRO.jpg',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
   },
   {
+    id: 'track-2',
     title: 'Vibe Mix',
     artist: 'Yemi Sax',
     cover: '/AFRO.jpg',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
   },
   {
+    id: 'track-3',
     title: 'Cool Session',
     artist: 'Dunsin',
     cover: '/AFRO.jpg',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
   },
 ];
 
@@ -81,6 +87,7 @@ const initialState: PlaybackState = {
   shuffle: false,
   repeat: false,
   trackError: null,
+  recentlyPlayed: [],
 };
 
 function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
@@ -111,7 +118,7 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
     case 'TOGGLE_REPEAT':
       return { ...state, repeat: !state.repeat };
     case 'PLAY_TRACK': {
-      const existing = state.playlist.findIndex((t) => t.url === action.track.url);
+      const existing = state.playlist.findIndex((t) => t.id === action.track.id);
       if (existing >= 0) {
         return { ...state, currentIndex: existing, isPlaying: true, trackError: null };
       }
@@ -129,6 +136,20 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
       return { ...state, trackError: action.error, isPlaying: false };
     case 'DISMISS_ERROR':
       return { ...state, trackError: null };
+    case 'ADD_TO_RECENTLY_PLAYED': {
+      const existingIndex = state.recentlyPlayed.findIndex((t) => t.id === action.track.id);
+      let updated;
+      if (existingIndex >= 0) {
+        // Move to front if already exists
+        updated = [action.track, ...state.recentlyPlayed.filter((_, i) => i !== existingIndex)];
+      } else {
+        // Add to front, keep only last 10
+        updated = [action.track, ...state.recentlyPlayed].slice(0, 10);
+      }
+      return { ...state, recentlyPlayed: updated };
+    }
+    case 'CLEAR_RECENTLY_PLAYED':
+      return { ...state, recentlyPlayed: [] };
     default:
       return state;
   }
@@ -154,6 +175,8 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     enqueueTrack: (track) => dispatch({ type: 'ENQUEUE_TRACK', track }),
     setError: (error) => dispatch({ type: 'SET_ERROR', error }),
     dismissError: () => dispatch({ type: 'DISMISS_ERROR' }),
+    addToRecentlyPlayed: (track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
+    clearRecentlyPlayed: () => dispatch({ type: 'CLEAR_RECENTLY_PLAYED' }),
   };
 
   return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;

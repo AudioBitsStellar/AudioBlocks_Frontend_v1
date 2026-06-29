@@ -5,8 +5,14 @@ import { Card } from '@/components/ui/card';
 import { useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 import Image from 'next/image';
-import ShareModal from '@/components/common/dashboard/Share';
+import dynamic from 'next/dynamic';
 import { SquareCheck, UserRound } from 'lucide-react';
+
+// Lazy-load ShareModal to reduce initial bundle size
+const ShareModal = dynamic(() => import('@/components/common/dashboard/Share'), {
+  loading: () => <div className="w-5 h-5" />,
+  ssr: false,
+});
 
 const artists = [
   { name: 'Daniel Allan', image: '/tech.jpg', genre: 'Electronic', description: 'Genre-bending electronic artist...', votes: 1203 },
