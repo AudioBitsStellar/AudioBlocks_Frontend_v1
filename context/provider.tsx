@@ -5,6 +5,7 @@ import {
 import { DynamicWagmiConnector } from "@dynamic-labs/wagmi-connector";
 import { createConfig, WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { http } from "viem";
 import { liskSepolia, mainnet, sepolia } from "viem/chains";
 import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
@@ -56,6 +57,7 @@ const  Provider=({ children }: { children: ReactNode })=> {
           <DynamicWagmiConnector>
             {children}
           </DynamicWagmiConnector>
+          <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </WagmiProvider>
     </DynamicContextProvider>

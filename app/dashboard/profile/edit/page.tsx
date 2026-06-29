@@ -4,6 +4,11 @@ import Image from 'next/image';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
+import AvatarCrop from '@/components/common/dashboard/AvatarCrop';
+import { toast } from 'sonner';
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_SIZE_MB = 5;
 
 const MAX_DISPLAY_NAME = 50;
 const MAX_BIO = 160;
@@ -57,11 +62,9 @@ const EditProfile = () => {
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
   const [twitter, setTwitter] = useState('');
-  const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [isDirty, setIsDirty] = useState(false);
-
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -73,67 +76,34 @@ const EditProfile = () => {
     }
   }, [profile]);
 
-  // Revalidate whenever field values change
-  useEffect(() => {
-    setErrors(validate(displayName, bio, website, twitter));
-  }, [displayName, bio, website, twitter]);
-
-  // Track dirty state
-  useEffect(() => {
-    if (!profile) return;
-    const originalName = profile.name || profile.username || '';
-    const changed =
-      displayName !== originalName ||
-      bio !== (profile.bio || '') ||
-      website !== (profile.website || '') ||
-      twitter !== (profile.twitter || '') ||
-      coverImage !== null;
-    setIsDirty(changed);
-  }, [displayName, bio, website, twitter, coverImage, profile]);
-
-  // Warn on browser tab close / refresh
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
-        e.preventDefault();
-      }
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [isDirty]);
-
-  const handleBack = useCallback(() => {
-    if (isDirty) {
-      const confirmed = window.confirm(
-        'You have unsaved changes. Are you sure you want to leave?'
-      );
-      if (!confirmed) return;
-    }
-    router.push('/dashboard/profile');
-  }, [isDirty, router]);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > MAX_IMAGE_BYTES) {
-      setErrors((prev) => ({ ...prev, coverImage: 'Image must be 5 MB or smaller.' }));
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error('Please select a valid image file (JPEG, PNG, WebP, or GIF).');
       return;
     }
 
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next.coverImage;
-      return next;
-    });
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast.error(`Image must be under ${MAX_SIZE_MB}MB.`);
+      return;
+    }
 
     const reader = new FileReader();
-    reader.onloadend = () => setCoverImage(reader.result as string);
+    reader.onloadend = () => {
+      setRawImageSrc(reader.result as string);
+      setCropOpen(true);
+    };
     reader.readAsDataURL(file);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
-  const handleBlur = (field: string) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
+  const handleCropComplete = (croppedDataUrl: string) => {
+    setAvatarPreview(croppedDataUrl);
   };
 
   const isFormValid =
@@ -293,10 +263,9 @@ const EditProfile = () => {
             </button>
           </form>
 
-          {/* Profile Card with Upload */}
           <div className="bg-[#1A1A1A] h-85 rounded-xl shadow-md p-3 flex flex-col max-w-xs">
             <Image
-              src={coverImage || profile?.profileImage || '/dashboard/profiledefault.png'}
+              src={avatarPreview || profile?.profileImage || '/dashboard/profiledefault.png'}
               alt="User Profile"
               width={300}
               height={200}
@@ -304,7 +273,7 @@ const EditProfile = () => {
             />
             <h3 className="font-semibold text-lg mb-1">Profile</h3>
             <p className="text-sm font-medium text-gray-400 text-left mb-4">
-              Make your profile stand out with a striking cover image
+              Make your profile stand out with a striking avatar
             </p>
             {errors.coverImage && (
               <p className="text-red-400 text-xs mb-2">{errors.coverImage}</p>
@@ -314,18 +283,28 @@ const EditProfile = () => {
               onClick={() => fileInputRef.current?.click()}
               className="border cursor-pointer font-semibold border-white w-full rounded-md px-4 py-2 text-sm hover:bg-white hover:text-black transition"
             >
-              Add Cover
+              Change Avatar
             </button>
+            <p className="text-[10px] text-gray-500 text-center mt-2">
+              JPEG, PNG, WebP or GIF. Max {MAX_SIZE_MB}MB.
+            </p>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/gif"
               className="hidden"
-              onChange={handleImageChange}
+              onChange={handleImageSelect}
             />
           </div>
         </div>
       )}
+
+      <AvatarCrop
+        open={cropOpen}
+        onOpenChange={setCropOpen}
+        imageSrc={rawImageSrc}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 };
