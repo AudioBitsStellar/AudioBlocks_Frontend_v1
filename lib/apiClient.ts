@@ -1,8 +1,11 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { getValidatedEnv } from './env';
+
+const { NEXT_PUBLIC_API_URL } = getValidatedEnv();
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: NEXT_PUBLIC_API_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });

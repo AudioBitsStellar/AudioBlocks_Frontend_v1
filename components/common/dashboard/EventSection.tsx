@@ -16,7 +16,7 @@ const eventsSettings = {
   prevArrow: <PrevArrow />,
   responsive: [
     { breakpoint: 1024, settings: { slidesToShow: 2, slidesToScroll: 1, infinite: true } },
-    { breakpoint: 768, settings: { slidesToShow: 1, slidesToScroll: 1 } },
+    { breakpoint: 768, settings: { slidesToShow: 1.2, slidesToScroll: 1, infinite: true } },
     { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1 } },
   ],
 };
@@ -60,8 +60,8 @@ const EventSection = () => {
             No upcoming events yet.
           </p>
         ) : (
-          <div className="relative py-12">
-            <Slider {...eventsSettings}>
+          <div className="relative py-12 overflow-hidden">
+            <Slider {...eventsSettings} aria-roledescription="carousel" aria-label="Events carousel">
               {events.map((event) => (
                 <div key={event.id} className="px-4 shadow-2xl">
                   <div className="rounded-2xl relative overflow-hidden">

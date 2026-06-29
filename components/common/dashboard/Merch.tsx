@@ -22,7 +22,7 @@ const collectiveSettings = {
 };
 
 const MerchSkeleton = () => (
-  <div className="grid grid-cols-4 gap-4 py-4">
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
     {[...Array(4)].map((_, i) => (
       <div key={i} className="animate-pulse">
         <div className="w-full h-40 rounded-lg bg-gray-800" />
@@ -64,8 +64,8 @@ const Merch = () => {
           No merch available yet.
         </p>
       ) : (
-        <div className="relative py-4">
-          <Slider {...collectiveSettings}>
+        <div className="relative py-4 overflow-hidden">
+          <Slider {...collectiveSettings} aria-roledescription="carousel" aria-label="Merch carousel">
             {items.map((item) => (
               <div key={item.id} className="px-4">
                 <div className="w-full h-40 rounded-lg overflow-hidden mx-auto">

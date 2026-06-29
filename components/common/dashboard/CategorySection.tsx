@@ -39,7 +39,7 @@ const CategorySection = () => {
               fill
               className="object-cover transition group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
               <p className="text-white font-medium text-sm">{category.name}</p>
             </div>
           </div>
