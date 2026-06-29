@@ -8,9 +8,11 @@ export default function WebLayout({ children }: Readonly<{ children: ReactNode }
     <>
       <div>
         <Navbar />
-        {children}
+        <main id="main-content">
+          {children}
+        </main>
         <GoToTopButton/>
-         <Footer/>
+        <Footer/>
       </div>
     </>
   );

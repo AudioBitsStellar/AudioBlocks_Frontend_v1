@@ -61,24 +61,25 @@ const Collections = () => {
               <div key={index} className="px-4">
                 <div className="w-full h-40 rounded-lg overflow-hidden mx-auto">
                   <Image
-                    src={artist.image}
-                    alt={artist.artist}
+                    src={item.image}
+                    alt={item.song}
                     width={150}
                     height={150}
                     className="w-full h-full object-cover"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/tech.jpg'; }}
                   />
                 </div>
                 <div className="py-2 text-center md:text-left text-white">
-                  <p className="text-sm font-bold">{artist.song}</p>
-                  <p className="text-xs text-on-muted font-normal">{artist.artist}</p>
-                  <p className="text-sm  font-medium">{artist.description}</p>
+                  <p className="text-sm font-bold">{item.song}</p>
+                  <p className="text-xs text-on-muted font-normal">{item.artist}</p>
+                  <p className="text-sm font-medium">{item.description}</p>
                 </div>
               </div>
             ))}
           </Slider>
-        </div>
-      </section>
-    </>
+        )}
+      </div>
+    </section>
   );
 };
 
