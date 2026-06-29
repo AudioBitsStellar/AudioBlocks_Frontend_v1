@@ -65,20 +65,22 @@ const CommunityTabs = () => {
             help them gain recognition
           </p>
 
-          <div className="flex flex-col md:flex-row mb-6">
-            <div className="flex items-center bg-transparent border rounded-full px-4 py-2 mr-6">
-              <FiSearch className="text-gray-400 text-lg" />
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="flex items-center bg-transparent border rounded-full px-4 py-2 w-full sm:w-auto sm:flex-1">
+              <FiSearch className="text-gray-400 text-lg shrink-0" aria-hidden="true" />
               <input
-                type="text"
+                type="search"
                 placeholder="Search by artists"
+                aria-label="Search artists"
                 className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-on-muted"
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {genres.map((g) => (
                 <button
                   key={g}
+                  aria-pressed={filter === g}
                   className={`px-4 py-1 font-medium cursor-pointer text-sm rounded-2xl border ${
                     filter === g ? 'bg-brand text-white' : 'bg-surface-input text-on-muted'
                   }`}
@@ -135,29 +137,31 @@ const CommunityTabs = () => {
             time listening and engaging with the platform.
           </p>
 
-          <table className="w-full text-sm text-left text-gray-300 border border-gray-800 rounded-lg overflow-hidden">
-            <thead className="text-on-muted font-semibold text-sm">
-              <tr>
-                <th className="px-6 py-3">#</th>
-                <th className="px-6 py-3">Top Listeners</th>
-                <th className="px-6 py-3">Listening Hours</th>
-                <th className="px-6 py-3">Onchain Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {artists.slice(0, 5).map((a, i) => (
-                <tr
-                  key={i}
-                  className="text-[#666C6C] hover:border cursor-pointer hover:bg-[#121212B8]"
-                >
-                  <td className="px-6 py-6 font-normal">{i + 1}</td>
-                  <td className="px-6 py-6 font-medium text-on-subtle">{a.name}</td>
-                  <td className="px-6 py-6">{Math.floor(Math.random() * 1000)} hrs</td>
-                  <td className="px-6 py-6">{Math.floor(Math.random() * 100)} txns</td>
+          <div className="overflow-x-auto rounded-lg border border-gray-800">
+            <table className="w-full text-sm text-left text-gray-300 min-w-[480px]" aria-label="Top listeners leaderboard">
+              <thead className="text-on-muted font-semibold text-sm">
+                <tr>
+                  <th scope="col" className="px-6 py-3">#</th>
+                  <th scope="col" className="px-6 py-3">Top Listeners</th>
+                  <th scope="col" className="px-6 py-3">Listening Hours</th>
+                  <th scope="col" className="px-6 py-3">Onchain Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {artists.slice(0, 5).map((a, i) => (
+                  <tr
+                    key={i}
+                    className="text-[#666C6C] hover:border cursor-pointer hover:bg-[#121212B8]"
+                  >
+                    <td className="px-6 py-6 font-normal">{i + 1}</td>
+                    <td className="px-6 py-6 font-medium text-on-subtle">{a.name}</td>
+                    <td className="px-6 py-6">{(a.votes % 1000) + 100} hrs</td>
+                    <td className="px-6 py-6">{(a.votes % 100) + 5} txns</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </TabsContent>
       </Tabs>
     </>
