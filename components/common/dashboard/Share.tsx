@@ -11,20 +11,24 @@ import { toast } from 'sonner';
 
 const ShareModal=({ link }: { link: string })=> {
   const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
       toast.success('Link copied to clipboard');
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => {
+        setCopied(false);
+        setOpen(false);
+      }, 1000);
     } catch {
       toast.error('Failed to copy link');
     }
   };
 
   return (
-    <Dialog.Root>
+    <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
         <FaShare size={15} className='cursor-pointer'/>
       </Dialog.Trigger>
