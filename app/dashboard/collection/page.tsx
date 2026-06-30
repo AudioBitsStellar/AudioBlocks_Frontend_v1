@@ -3,11 +3,13 @@
 import { ListFilter, Music, UsersRound } from 'lucide-react';
 import Image from 'next/image';
 import { FiSearch } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Pagination } from '@/components/ui/pagination';
 
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
+const ITEMS_PER_PAGE = 10;
 
 function ipfsImage(cid: string): string {
   if (cid.startsWith('Qm') || cid.startsWith('baf')) return `${IPFS_GATEWAY}${cid}`;
@@ -17,11 +19,25 @@ function ipfsImage(cid: string): string {
 const CollectionsPage = () => {
   const { isConnected, nftBalance, songs, isLoading } = useNFTCollection();
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const filtered = songs.filter((s) =>
-    s.songCID.toLowerCase().includes(search.toLowerCase()) ||
-    s.artistAddress.toLowerCase().includes(search.toLowerCase()),
+  const filtered = useMemo(() => {
+    return songs.filter((s) =>
+      s.songCID.toLowerCase().includes(search.toLowerCase()) ||
+      s.artistAddress.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [songs, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginatedSongs = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
   );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const statCards = [
     {
@@ -32,13 +48,13 @@ const CollectionsPage = () => {
     },
     {
       label: 'Total Streams',
-      value: isLoading ? '…' : songs.reduce((acc, s) => acc + s.totalStreams, 0n).toString(),
+      value: isLoading ? '…' : songs.reduce((acc, s) => acc + s.totalStreams, BigInt(0)).toString(),
       accent: 'text-[#35FF97]',
       bg: 'bg-[#35ff9725]',
     },
     {
       label: 'Total Likes',
-      value: isLoading ? '…' : songs.reduce((acc, s) => acc + s.totalLikes, 0n).toString(),
+      value: isLoading ? '…' : songs.reduce((acc, s) => acc + s.totalLikes, BigInt(0)).toString(),
       accent: 'text-[#C6FF35]',
       bg: 'bg-[#c6ff3531]',
     },
@@ -75,7 +91,10 @@ const CollectionsPage = () => {
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Search by CID or address"
               aria-label="Search NFT songs"
               className="w-full pl-10 pr-4 py-2 rounded-full bg-surface-input outline-none border border-border-dark text-sm text-gray-200 placeholder:text-gray-500"
@@ -117,33 +136,43 @@ const CollectionsPage = () => {
         </div>
       )}
 
-      {isConnected && !isLoading && filtered.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {filtered.map((song) => (
-            <div key={song.songId.toString()} className="hover:bg-surface-hover p-3 rounded-lg">
-              <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
-                <Image
-                  src={ipfsImage(song.songCID)}
-                  alt={`Song #${song.songId}`}
-                  width={300}
-                  height={300}
-                  className="w-full h-full object-cover"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/audio.jpg'; }}
-                />
+      {isConnected && !isLoading && paginatedSongs.length > 0 && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {paginatedSongs.map((song) => (
+              <div key={song.songId.toString()} className="hover:bg-surface-hover p-3 rounded-lg">
+                <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
+                  <Image
+                    src={ipfsImage(song.songCID)}
+                    alt={`Song #${song.songId}`}
+                    width={300}
+                    height={300}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/audio.jpg'; }}
+                  />
+                </div>
+                <p className="text-sm font-semibold">Song #{song.songId.toString()}</p>
+                <p className="text-xs text-gray-400">
+                  {song.artistAddress.slice(0, 6)}…{song.artistAddress.slice(-4)}
+                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">{song.totalStreams.toString()} streams</span>
+                  <button className="px-3 py-1 text-xs bg-surface border border-border-dark rounded-full hover:bg-[#333]">
+                    Sell Now
+                  </button>
+                </div>
               </div>
-              <p className="text-sm font-semibold">Song #{song.songId.toString()}</p>
-              <p className="text-xs text-gray-400">
-                {song.artistAddress.slice(0, 6)}…{song.artistAddress.slice(-4)}
-              </p>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-xs text-gray-400">{song.totalStreams.toString()} streams</span>
-                <button className="px-3 py-1 text-xs bg-surface border border-border-dark rounded-full hover:bg-[#333]">
-                  Sell Now
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <div className="mt-8 pb-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </>
       )}
     </div>
   );

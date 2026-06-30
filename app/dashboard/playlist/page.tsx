@@ -4,9 +4,9 @@ import { usePlayback } from '@/context/PlaybackContext';
 import { Play } from 'lucide-react';
 
 const sampleTracks = [
-  { title: 'Relax and Unwind', artist: 'Rozé', cover: '/AFRO.jpg', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
-  { title: 'Vibe Mix', artist: 'Yemi Sax', cover: '/AFRO.jpg', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-  { title: 'Cool Session', artist: 'Dunsin', cover: '/AFRO.jpg', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+  { id: 'pl-1', title: 'Relax and Unwind', artist: 'Rozé', cover: '/AFRO.jpg', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+  { id: 'pl-2', title: 'Vibe Mix', artist: 'Yemi Sax', cover: '/AFRO.jpg', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+  { id: 'pl-3', title: 'Cool Session', artist: 'Dunsin', cover: '/AFRO.jpg', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
 ];
 
 const Playlist = () => {
