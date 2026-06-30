@@ -8,7 +8,7 @@ export interface ValidatedEnv {
   NEXT_PUBLIC_API_URL: string;
 }
 
-function validateEnv(): ValidatedEnv {
+export function validateEnv(): ValidatedEnv {
   const missing = requiredEnvVars.filter((key) => !process.env[key] || process.env[key]!.trim() === '');
 
   if (missing.length > 0) {

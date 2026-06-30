@@ -13,15 +13,6 @@ type State = {
   error: Error | null;
 };
 
-/**
- * Wrap any dashboard section with this boundary. On render errors it shows
- * ErrorState with a retry button that remounts the child subtree.
- *
- * Usage:
- *   <SectionErrorBoundary fallbackMessage="Failed to load Collections.">
- *     <Collections />
- *   </SectionErrorBoundary>
- */
 export default class SectionErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);

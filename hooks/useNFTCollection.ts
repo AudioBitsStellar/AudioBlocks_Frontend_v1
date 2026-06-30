@@ -50,7 +50,7 @@ export function useNFTCollection() {
   return {
     isConnected,
     address,
-    nftBalance: (nftBalance as bigint | undefined) ?? 0n,
+    nftBalance: (nftBalance as bigint | undefined) ?? BigInt(0),
     songs,
     isLoading: balanceLoading || songIdsLoading || songsLoading,
   };

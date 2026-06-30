@@ -83,7 +83,7 @@ const UserMenu = () => {
                   />
                   <div>
                     <p className="font-semibold text-white text-sm">
-                      {user?.name || user?.email?.split('@')[0] || 'User'}
+                      {(user as Record<string, any>)?.name || user?.email?.split('@')[0] || 'User'}
                     </p>
                     <p className="text-xs overflow-hidden text-ellipsis text-[#A3A3A3]">
                       {user?.email}

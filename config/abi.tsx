@@ -1194,5 +1194,18 @@ export const abi = [
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "tokenId",
+                "type": "uint256"
+            }
+        ],
+        "name": "purchase",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
     }
-]
+] as const;

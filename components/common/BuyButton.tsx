@@ -28,7 +28,7 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
         address: contractAddress,
         abi: abi,
         functionName: 'purchase', 
-        args: [numericId], 
+        args: [BigInt(numericId)], 
         value: parseEther(price.split(' ')[0]),
       });
 
