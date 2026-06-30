@@ -2,7 +2,7 @@
 
 import { Inter } from 'next/font/google';
 import { Search } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import BuyButton from './BuyButton';
 
@@ -12,7 +12,6 @@ const inter = Inter({
   display: 'swap',
 });
 
-// Sample data
 const musicData = [
   {
     id: 'music-1',
@@ -91,6 +90,17 @@ const merchData = [
     price: '0.1 ETH',
   },
 ];
+
+function parsePrice(price: string): number {
+  return parseFloat(price.replace(' ETH', ''));
+}
+
+function matchesPrice(price: string, min: string, max: string): boolean {
+  const value = parsePrice(price);
+  if (min && value < parseFloat(min)) return false;
+  if (max && value > parseFloat(max)) return false;
+  return true;
+}
 
 const MusicCard = ({ item }: { item: any }) => (
   <div
@@ -203,25 +213,36 @@ const MerchCard = ({ item }: { item: any }) => (
 
 export default function NftCollection() {
   const [activeTab, setActiveTab] = useState('All');
+  const [search, setSearch] = useState('');
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
 
   const tabs = ['All', 'Latest', 'Tickets', 'Merches'];
 
-  const getAllData = () => {
-    return [...musicData, ...eventData, ...merchData];
-  };
+  const allItems = useMemo(() => [...musicData, ...eventData, ...merchData], []);
 
   const getTabData = () => {
     switch (activeTab) {
       case 'Latest':
         return musicData;
-      case 'Event Tickets':
+      case 'Tickets':
         return eventData;
       case 'Merches':
         return merchData;
       default:
-        return getAllData();
+        return allItems;
     }
   };
+
+  const filtered = useMemo(() => {
+    const tabData = getTabData();
+    return tabData.filter((item: any) => {
+      const searchable = `${item.artistName || ''} ${item.songName || item.eventName || item.itemName || ''}`.toLowerCase();
+      const matchesSearch = !search || searchable.includes(search.toLowerCase());
+      const inPriceRange = matchesPrice(item.price, priceMin, priceMax);
+      return matchesSearch && inPriceRange;
+    });
+  }, [activeTab, search, priceMin, priceMax, allItems]);
 
   const renderCard = (item: any) => {
     if (eventData.some((event) => event.id === item.id)) {
@@ -235,7 +256,6 @@ export default function NftCollection() {
 
   return (
     <div className="min-h-screen max-w-11/12 m-auto bg-black px-8 py-12">
-      {/* Header */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-12">
         <h1
           className={`${inter.className} capitalize text-3xl sm:text-4xl md:text-[48px] font-semibold leading-tight tracking-normal`}
@@ -247,14 +267,16 @@ export default function NftCollection() {
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search collections..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by artist or title..."
+            aria-label="Search NFT collections"
             className="w-full sm:w-80 h-11 pl-10 pr-5 py-2 rounded-full border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="max-w-full mx-auto mb-7">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-7">
         <div className="flex space-x-4">
           {tabs.map((tab) => (
             <button
@@ -271,14 +293,51 @@ export default function NftCollection() {
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Cards Grid */}
-      <div className="max-w-full mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-          {getTabData().map((item) => renderCard(item))}
+        <div className="flex items-center gap-2 ml-auto">
+          <label className="text-sm text-gray-400">Price:</label>
+          <input
+            type="number"
+            value={priceMin}
+            onChange={(e) => setPriceMin(e.target.value)}
+            placeholder="Min"
+            aria-label="Minimum price in ETH"
+            className="w-20 h-9 px-3 py-1 rounded-full border border-gray-300 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            min="0"
+            step="0.1"
+          />
+          <span className="text-gray-500">-</span>
+          <input
+            type="number"
+            value={priceMax}
+            onChange={(e) => setPriceMax(e.target.value)}
+            placeholder="Max"
+            aria-label="Maximum price in ETH"
+            className="w-20 h-9 px-3 py-1 rounded-full border border-gray-300 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            min="0"
+            step="0.1"
+          />
+          <span className="text-sm text-gray-400">ETH</span>
         </div>
       </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-20 text-gray-500">
+          <p className="text-lg">No items match your filters.</p>
+          <button
+            onClick={() => { setSearch(''); setPriceMin(''); setPriceMax(''); }}
+            className="mt-4 px-4 py-2 text-sm text-white bg-[#885FA8] rounded-full hover:bg-[#7a53a0]"
+          >
+            Clear filters
+          </button>
+        </div>
+      ) : (
+        <div className="max-w-full mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+            {filtered.map((item) => renderCard(item))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

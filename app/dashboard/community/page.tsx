@@ -8,14 +8,19 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { SquareCheck, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
+import { useArtistLeaderboard, useCastVote, useMyVotes } from '@/hooks/useCommunity';
+import { useQueryClient } from '@tanstack/react-query';
 
-// Lazy-load ShareModal to reduce initial bundle size
 const ShareModal = dynamic(() => import('@/components/common/dashboard/Share'), {
   loading: () => <div className="w-5 h-5" />,
   ssr: false,
 });
 
 const genres = ['All', 'Electronic', 'Pop', 'Contemporary'];
+
+function slugify(name: string): string {
+  return name.replace(/\s+/g, '-').toLowerCase();
+}
 
 const CommunityTabs = () => {
   const [filter, setFilter] = useState('All');
@@ -154,7 +159,7 @@ const CommunityTabs = () => {
                         <span className="text-[10px] ml-1 font-bold">1.2k</span>
                       </div>
                       <ShareModal
-                        link={`https://audioblocks.com/vote/${artist.name.replace(/\s+/g, '-').toLowerCase()}`}
+                        link={`https://audioblocks.com/vote/${slugify(artist.name)}`}
                       />
                     </div>
                     <button
@@ -171,10 +176,10 @@ const CommunityTabs = () => {
                   >
                     Vote
                   </button>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="leaderboard">

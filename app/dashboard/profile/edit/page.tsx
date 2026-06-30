@@ -65,7 +65,11 @@ const EditProfile = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
   const [rawImageSrc, setRawImageSrc] = useState<string>('');
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [isDirty, setIsDirty] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const errors = validate(displayName, bio, website, twitter);
 
   useEffect(() => {
     if (profile) {
@@ -123,6 +127,14 @@ const EditProfile = () => {
         },
       }
     );
+  };
+
+  const handleBack = () => {
+    router.push('/dashboard/profile');
+  };
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   const fieldError = (field: keyof FormErrors) =>
