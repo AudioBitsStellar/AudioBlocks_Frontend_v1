@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { SquareCheck, UserRound } from 'lucide-react';
+import { SquareCheck, UserRound, Music } from 'lucide-react';
 import { toast } from 'sonner';
 import { useArtistLeaderboard, useCastVote, useMyVotes } from '@/hooks/useCommunity';
 import { useQueryClient } from '@tanstack/react-query';
@@ -131,6 +131,16 @@ const CommunityTabs = () => {
                 </Card>
               ))}
             </div>
+          ) : filteredArtists.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Music size={48} className="text-on-muted mb-4" />
+              <h3 className="text-white text-lg font-semibold mb-2">No artists found</h3>
+              <p className="text-on-muted text-sm max-w-sm">
+                {filter === 'All'
+                  ? 'There are no artists on the leaderboard yet. Check back soon!'
+                  : `No artists found in the "${filter}" genre. Try a different filter.`}
+              </p>
+            </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
               {filteredArtists.map((artist) => (
@@ -188,6 +198,15 @@ const CommunityTabs = () => {
             time listening and engaging with the platform.
           </p>
 
+          {artists.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center border border-gray-800 rounded-lg">
+              <UserRound size={48} className="text-on-muted mb-4" />
+              <h3 className="text-white text-lg font-semibold mb-2">No leaderboard data yet</h3>
+              <p className="text-on-muted text-sm max-w-sm">
+                Votes will appear here once artists start receiving votes.
+              </p>
+            </div>
+          ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-800">
             <table className="w-full text-sm text-left text-gray-300 min-w-[480px]" aria-label="Top listeners leaderboard">
               <thead className="text-on-muted font-semibold text-sm">
@@ -213,6 +232,7 @@ const CommunityTabs = () => {
               </tbody>
             </table>
           </div>
+          )}
         </TabsContent>
       </Tabs>
     </>

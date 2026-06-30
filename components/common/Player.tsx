@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -26,8 +26,8 @@ const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
 });
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
+const Player = () => {
 
-export default function Player() {
   const {
     playlist,
     currentIndex,
@@ -243,16 +243,17 @@ export default function Player() {
           <button
             className="hover:text-gray-300 cursor-pointer text-white"
             onClick={() => setShowComments(true)}
+            aria-label="Comments"
           >
             <MessageSquare size={16} />
           </button>
-          <button className="hover:text-gray-300 cursor-pointer text-white">
+          <button className="hover:text-gray-300 cursor-pointer text-white" aria-label="Add to playlist">
             <ListPlus size={16} />
           </button>
-          <button className="hover:text-gray-300 font-bold cursor-pointer text-white">
+          <button className="hover:text-gray-300 font-bold cursor-pointer text-white" aria-label="Like">
             <Heart size={16} />
           </button>
-          <button className="hover:text-gray-300 cursor-pointer text-white">
+          <button className="hover:text-gray-300 cursor-pointer text-white" aria-label="More options">
             <Ellipsis size={16} />
           </button>
           <div className="relative group flex items-center justify-center">
@@ -299,4 +300,6 @@ export default function Player() {
       )}
     </div>
   );
-}
+};
+
+export default memo(Player);
