@@ -177,15 +177,13 @@ const CommunityTabs = () => {
                       disabled={voteMutation.isPending || myVotes.includes(artist.id)}
                       className="mt-auto bg-brand w-full hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold shadow"
                     >
-                      {myVotes.includes(artist.id) ? 'Voted' : 'Vote'}
+                      {voteMutation.isPending
+                        ? 'Voting…'
+                        : myVotes.includes(artist.id)
+                          ? 'Voted'
+                          : 'Vote'}
                     </button>
                   </div>
-                  <button
-                    className="mt-auto bg-brand w-full hover:bg-pink-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow cursor-pointer"
-                    onClick={() => toast.success(`Vote cast for ${artist.name}`)}
-                  >
-                    Vote
-                  </button>
                 </Card>
               ))}
             </div>
