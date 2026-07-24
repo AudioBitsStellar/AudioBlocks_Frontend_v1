@@ -2,6 +2,7 @@
 
 import { ListFilter, Music, UsersRound } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { FiSearch } from 'react-icons/fi';
 import { useState, useMemo } from 'react';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
@@ -129,10 +130,26 @@ const CollectionsPage = () => {
         </div>
       )}
 
-      {isConnected && !isLoading && filtered.length === 0 && (
+      {isConnected && !isLoading && songs.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20 text-center text-on-muted">
+          <Music size={64} className="mb-4 opacity-40" aria-hidden="true" />
+          <h3 className="text-white text-lg font-semibold mb-2">No NFTs yet</h3>
+          <p className="text-sm max-w-sm mb-6">
+            You don&apos;t own any music NFTs yet. Explore the marketplace to discover and collect tracks from your favorite artists.
+          </p>
+          <Link
+            href="/marketPlace"
+            className="px-6 py-2 rounded-full bg-brand hover:bg-pink-700 text-white text-sm font-semibold transition-colors"
+          >
+            Browse Marketplace
+          </Link>
+        </div>
+      )}
+
+      {isConnected && !isLoading && songs.length > 0 && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-on-muted">
           <Music size={48} className="mb-4 opacity-40" aria-hidden="true" />
-          <p className="text-lg font-medium">No NFT songs found for this wallet</p>
+          <p className="text-lg font-medium">No NFT songs match your search</p>
         </div>
       )}
 
