@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -34,6 +34,43 @@ const Navbar = () => {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const {setShouldTriggerSignature, loading} = Auth();
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileCloseRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      mobileCloseRef.current?.focus();
+    }
+  }, [isMenuOpen]);
+
+  const handleMobileMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMenuOpen(false);
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusable = mobileMenuRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable || focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    },
+    []
+  );
 
   const { setShowAuthFlow } = useDynamicContext();
   const { setShowDynamicUserProfile, user } = useDynamicContext();
@@ -165,15 +202,24 @@ const Navbar = () => {
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
+            ref={mobileMenuRef}
             variants={menuVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
+            onKeyDown={handleMobileMenuKeyDown}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
             className="fixed top-0 right-0 bottom-0 w-4/5 max-w-xs bg-[#000] z-50 shadow-lg border-l border-gray-900"
           >
             <div className="flex justify-between items-center p-4 border-b border-gray-700">
               <Image src="/logo2.png" height={40} width={40} alt="AudioBlocks Logo" />
-              <button onClick={() => setIsMenuOpen(false)}>
+              <button
+                ref={mobileCloseRef}
+                onClick={() => setIsMenuOpen(false)}
+                aria-label="Close navigation menu"
+              >
                 <X className="h-6 w-6 text-white" />
               </button>
             </div>

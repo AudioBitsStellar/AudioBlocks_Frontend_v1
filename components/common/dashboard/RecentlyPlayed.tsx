@@ -22,8 +22,17 @@ export default function RecentlyPlayed() {
         {recentlyPlayed.map((track) => (
           <div
             key={track.id}
+            role="button"
+            tabIndex={0}
+            aria-label={`Play ${track.title} by ${track.artist}`}
             className="group relative bg-surface-elevated rounded-lg overflow-hidden cursor-pointer hover:bg-surface-hover transition"
             onClick={() => playTrack(track)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                playTrack(track);
+              }
+            }}
           >
             <div className="relative aspect-square">
               <Image
