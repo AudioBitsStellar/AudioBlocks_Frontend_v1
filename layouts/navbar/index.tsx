@@ -9,6 +9,18 @@ import { Variants, motion, AnimatePresence } from 'framer-motion';
 import { DynamicUserProfile, useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Auth } from '@/hooks/useAuth';
 import FullScreenLoader from '@/components/common/home/FullScreenLoader';
+import { toast } from 'sonner';
+
+/**
+ * True if the visitor has no injected EVM wallet extension at all
+ * (e.g. MetaMask, Coinbase Wallet). Dynamic's modal still offers
+ * email/social login and WalletConnect in this case, but we surface a
+ * friendly hint up front instead of letting them hit a dead end.
+ */
+function hasInjectedWallet(): boolean {
+  if (typeof window === 'undefined') return true;
+  return typeof (window as unknown as { ethereum?: unknown }).ethereum !== 'undefined';
+}
 
 const navLinks = [
   { name: 'Home', href: '/' },
@@ -27,6 +39,18 @@ const Navbar = () => {
   const { setShowDynamicUserProfile, user } = useDynamicContext();
 
   const handleAuthentication = async () => {
+    if (!hasInjectedWallet()) {
+      toast.error(
+        'No wallet extension detected. You can still sign in with email below, or install a wallet like MetaMask.',
+        {
+          action: {
+            label: 'Get MetaMask',
+            onClick: () => window.open('https://metamask.io/download/', '_blank'),
+          },
+          duration: 8000,
+        }
+      );
+    }
     setShouldTriggerSignature(true);
     setShowAuthFlow(true);
   };

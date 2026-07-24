@@ -5,6 +5,24 @@ import apiClient from '@/lib/apiClient';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 
+/**
+ * Distinguishes a user declining/cancelling a wallet signature prompt from a
+ * generic signing failure (e.g. provider disconnect, RPC error). Covers the
+ * common shapes across injected-wallet providers: EIP-1193 code 4001, and
+ * message text used by most wallets/providers for user-initiated rejection.
+ */
+function isUserRejectionError(err: unknown): boolean {
+  const e = err as { code?: number; message?: string; reason?: string } | null | undefined;
+  if (e?.code === 4001) return true;
+  const message = String(e?.message ?? e?.reason ?? err ?? '').toLowerCase();
+  return (
+    message.includes('user rejected') ||
+    message.includes('user denied') ||
+    message.includes('rejected the request') ||
+    message.includes('user cancelled') ||
+    message.includes('user canceled')
+  );
+}
 
 export const Auth = () => {
   const { user } = useDynamicContext();
@@ -20,12 +38,17 @@ export const Auth = () => {
       const message = `Welcome to AudioBlocks! Sign this message to authenticate: ${new Date().toISOString()}`;
 
       try {
-        setLoading(true); 
+        setLoading(true);
         const signature: any = await primaryWallet.signMessage(message);
 
         await authenticateUser('listener', user.email!, address, signature, message);
       } catch (err: any) {
         console.log(err);
+        if (isUserRejectionError(err)) {
+          toast.error('Signature request was cancelled. Please sign the message to continue.');
+        } else {
+          toast.error('Failed to sign the authentication message. Please try again.');
+        }
       } finally {
         setLoading(false); 
         setShouldTriggerSignature(false); // Prevent future auto-triggers
