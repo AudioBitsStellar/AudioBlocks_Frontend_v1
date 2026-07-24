@@ -1,10 +1,22 @@
-"use client"
-
+import type { Metadata } from "next"
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import NatureDepthSlider from "../../../components/common/NatureDepth"
 import NftCollections from "../../../components/common/NftCollections"
 
-export default function NatureSliderDemo() {
+export const metadata: Metadata = {
+  title: "Marketplace | AudioBlocks",
+  description:
+    "Explore and purchase unique audio-inspired NFTs, sound packs, and digital art on the AudioBlocks marketplace.",
+  openGraph: {
+    title: "Marketplace | AudioBlocks",
+    description:
+      "Explore and purchase unique audio-inspired NFTs, sound packs, and digital art on the AudioBlocks marketplace.",
+    type: "website",
+    siteName: "AudioBlocks",
+  },
+}
+
+export default function MarketplacePage() {
   return (
     <div className="min-h-screen bg-black">
       <div className="w-full space-y-12 py-6">
