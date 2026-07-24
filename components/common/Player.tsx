@@ -10,6 +10,7 @@ import {
   Ellipsis,
   Heart,
   ListPlus,
+  Loader2,
   MessageSquare,
   Repeat,
   Shuffle,
@@ -56,6 +57,7 @@ const Player = () => {
   const [duration, setDuration] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
 
   const currentTrack = playlist[currentIndex];
   const trackId = currentTrack?.id || `track-${currentIndex}`;
@@ -68,6 +70,7 @@ const Player = () => {
   useEffect(() => {
     setCoverFailed(false);
     setProgress(0);
+    setIsBuffering(false);
     // Add to recently played when track changes
     if (currentTrack) {
       addToRecentlyPlayed(currentTrack);
@@ -111,6 +114,7 @@ const Player = () => {
   }, []);
 
   const handleTogglePlay = () => {
+    if (isBuffering) return;
     if (isPlaying) pause();
     else play();
   };
@@ -165,10 +169,13 @@ const Player = () => {
           </button>
           <button
             onClick={handleTogglePlay}
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-            className="p-2 rounded-full bg-white flex items-center cursor-pointer justify-center"
+            aria-label={isBuffering ? 'Loading' : isPlaying ? 'Pause' : 'Play'}
+            disabled={isBuffering}
+            className="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
           >
-            {isPlaying ? (
+            {isBuffering ? (
+              <Loader2 size={14} className="text-gray-800 animate-spin" />
+            ) : isPlaying ? (
               <FaPause size={14} className="text-gray-800" />
             ) : (
               <FaPlay size={14} className="text-gray-800" />
@@ -291,6 +298,9 @@ const Player = () => {
             setDuration(e.currentTarget.duration);
             setProgress(0);
           }}
+          onWaiting={() => setIsBuffering(true)}
+          onCanPlay={() => setIsBuffering(false)}
+          onPlaying={() => setIsBuffering(false)}
           onError={handleAudioError}
         />
       </div>
