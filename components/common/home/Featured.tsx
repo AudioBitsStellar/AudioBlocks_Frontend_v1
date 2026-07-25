@@ -1,21 +1,25 @@
 import Image from 'next/image';
+// #155: static imports so next/image can auto-generate a real blurDataURL.
+import container2 from '@/public/home/Container2.png';
+import container from '@/public/home/Container.png';
+import container1 from '@/public/home/Container1.png';
 
 const features = [
   {
-    image: '/home/Container2.png',
+    image: container2,
     title: 'Stream and Earn',
     description: 'Turn your playlists to earn rewards as you engage',
     border: 'border-[#D2045B33]',
   },
   {
-    image: '/home/Container.png',
+    image: container,
     title: 'Seamless Listening Platform',
     description:
       'Enjoy uninterrupted, high-quality streaming with zero ads and lightning-fast playback',
     border: 'border-[#1D1D20]',
   },
   {
-    image: '/home/Container1.png',
+    image: container1,
     title: 'NFT Music Marketplace',
     description: 'Collect, support, and trade exclusive tracks directly from your favorite artists',
     border: 'border-[#1D1D20]',
@@ -40,10 +44,10 @@ const Featured = () => {
           <article key={id} className={`rounded-2xl border ${feature.border}`}>
             <div className=" h-3/5 rounded-t-2xl w-full">
               <Image
-                width={900}
-                height={900}
                 className="object-cover w-full h-full rounded-t-2xl"
                 loading="lazy"
+                placeholder="blur"
+                sizes="(min-width: 768px) 33vw, 100vw"
                 src={feature.image}
                 alt={feature.title}
               />

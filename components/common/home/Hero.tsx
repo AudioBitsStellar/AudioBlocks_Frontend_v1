@@ -9,6 +9,12 @@ import { useAccount } from 'wagmi';
 import Cookies from 'js-cookie';
 import { Auth } from '@/hooks/useAuth';
 import FullScreenLoader from './FullScreenLoader';
+// #155: static imports (rather than string `src="/home/..."` paths) let
+// next/image auto-generate a real blurDataURL at build time for these
+// above-the-fold hero images — no hand-authored placeholder needed.
+import frame1 from '@/public/home/frame1.jpg';
+import frame2 from '@/public/home/frame2.jpg';
+import hero2 from '@/public/home/hero2.svg';
 
 const Hero = () => {
   const { setShowAuthFlow } = useDynamicContext();
@@ -66,18 +72,24 @@ const Hero = () => {
         <div className="relative flex items-center justify-center" aria-hidden="true">
           <div className="relative w-[250px] h-[250px] z-20 rounded-2xl overflow-hidden border border-[#D9D9D9]">
             <Image
-              src="/home/frame1.jpg"
+              src={frame1}
               alt=""
               fill
+              priority
+              placeholder="blur"
+              sizes="250px"
               className="rounded-2xl object-cover"
             />
           </div>
 
           <div className="absolute -top-15 -left-14 scale-x-[-1]  w-[250px] h-[250px] z-10 border border-[#885FA833] rounded-2xl overflow-hidden">
             <Image
-              src="/home/frame2.jpg"
+              src={frame2}
               alt=""
               fill
+              priority
+              placeholder="blur"
+              sizes="250px"
               className="rounded-2xl object-cover opacity-90"
             />
           </div>
@@ -86,11 +98,10 @@ const Hero = () => {
 
       <div className="bottom-0 left-0 w-full" aria-hidden="true">
         <Image
-          src="/home/hero2.svg"
+          src={hero2}
           alt=""
-          width={1600}
-          height={100}
           className="w-full h-auto"
+          sizes="100vw"
         />
       </div>
 
