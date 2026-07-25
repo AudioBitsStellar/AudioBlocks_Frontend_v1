@@ -1,11 +1,13 @@
-# Audio Streaming, Data Fetching Architecture, Bundle Optimization & Recently Played Feature
+# Documentation & Developer Experience Improvements
 
-This PR implements four major improvements to the AudioBlocks Frontend:
+This PR implements comprehensive documentation and developer experience improvements:
 
-- **Audio streaming integration** with backend endpoint
-- **Unified data-fetching layer** using React Query
-- **Route-level code-splitting** and bundle optimization
-- **Recently played** section with local playback history
+- **Storybook Setup** - Interactive component playground with stories for all shared UI components
+- **Environment Variable Documentation** - Complete setup guide with validation schema
+- **Data Fetching Patterns** - React Query architecture guide with caching strategies
+- **PR Template** - Code review checklist for maintaining consistent review quality
+
+Closes #168, #170, #171, #178
 
 ## Changes
 
