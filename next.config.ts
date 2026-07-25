@@ -3,6 +3,15 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  images: {
+    // #155: track/artwork images are sourced from arbitrary NFT
+    // metadata/IPFS gateways controlled by artists, not a fixed set of
+    // domains we can enumerate — routing them through next/image (rather
+    // than allowlisting specific hostnames) still gets format
+    // auto-negotiation and resizing; a specific allowlist should replace
+    // this once the actual metadata/gateway hosts in use are known.
+    remotePatterns: [{ protocol: 'https', hostname: '**' }],
+  },
   eslint: {
     // Lint should be a separate CI check, not a deploy gate — pre-existing
     // lint errors in unrelated components shouldn't block production builds.

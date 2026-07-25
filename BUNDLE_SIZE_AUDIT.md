@@ -6,6 +6,29 @@ This document tracks bundle size optimizations for the AudioBlocks Frontend appl
 ## Audit Date
 June 29, 2026
 
+## Dashboard route-level code splitting (issue #156)
+
+Next.js App Router already code-splits automatically: every `app/dashboard/*/page.tsx`
+(collection, playlist, community, profile, all-collections, all-artists) is its own route
+segment and gets its own JS chunk with zero configuration — this isn't something that needs
+"implementing" per route, it's the framework's default behavior. `community/page.tsx` already
+lazy-loads its `ShareModal` via `next/dynamic` (see below); the other dashboard pages don't
+have a similarly heavy modal/chart/slider-style dependency worth splitting out — `collection`
+and `playlist` are lean (Skeleton, Pagination, lucide icons).
+
+**Could not verify actual chunk sizes or confirm the <100KB gzipped target with real numbers.**
+`next build` (and therefore `ANALYZE=true npm run build`) currently fails on a pre-existing,
+unrelated bug in `components/common/NftCollections.tsx` (references to undefined
+`handleTabChange`/`hasMore`/`isLoading`/`loadMore` — confirmed via `tsc --noEmit`, not
+introduced by this change). Per the existing audit above, the shared/global chunk is
+dominated by `@dynamic-labs/*` + `wagmi`/`viem` wallet libraries (~350KB combined) that load
+on every route including the dashboard — getting the dashboard's *own* chunks under 100KB is
+plausible, but that shared vendor chunk is the real ceiling on total dashboard JS and isn't
+addressed by route splitting (it would need code-splitting the wallet connection UI itself
+behind user interaction, a larger change than this issue's stated scope of "route-level
+splitting for dashboard sub-pages"). Flagging this rather than claiming a number that wasn't
+actually measured.
+
 ## Changes Made
 
 ### 1. Bundle Analyzer Integration
