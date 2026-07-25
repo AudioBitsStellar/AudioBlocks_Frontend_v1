@@ -155,6 +155,7 @@ export default function AvatarCrop({
             <button
               onClick={handleZoomOut}
               disabled={zoom <= MIN_ZOOM}
+              aria-label="Zoom out"
               className="p-2 rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] transition disabled:opacity-40 cursor-pointer"
             >
               <ZoomOut size={18} />
@@ -165,6 +166,7 @@ export default function AvatarCrop({
             <button
               onClick={handleZoomIn}
               disabled={zoom >= MAX_ZOOM}
+              aria-label="Zoom in"
               className="p-2 rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] transition disabled:opacity-40 cursor-pointer"
             >
               <ZoomIn size={18} />

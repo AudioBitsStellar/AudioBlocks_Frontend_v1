@@ -30,7 +30,9 @@ const ShareModal=({ link }: { link: string })=> {
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
-        <FaShare size={15} className='cursor-pointer'/>
+        <button aria-label="Share">
+          <FaShare size={15} className='cursor-pointer'/>
+        </button>
       </Dialog.Trigger>
 
       <Dialog.Portal>
@@ -48,16 +50,16 @@ const ShareModal=({ link }: { link: string })=> {
           <p className="text-sm text-gray-300 mb-3">Share this link via</p>
 
           <div className="flex gap-4 mb-4">
-            <Link href={`https://www.facebook.com/sharer/sharer.php?u=${link}`} target="_blank" className='border p-1 rounded-md' rel="noopener noreferrer">
+            <Link href={`https://www.facebook.com/sharer/sharer.php?u=${link}`} target="_blank" className='border p-1 rounded-md' rel="noopener noreferrer" aria-label="Share on Facebook">
               <FaFacebook className="w-6 h-6 hover:scale-110 text-[#1877F2] transition"/>
             </Link>
-            <Link href="#" className='border p-1 rounded-md' target="_blank" title="Snapchat">
+            <Link href="#" className='border p-1 rounded-md' target="_blank" aria-label="Share on Snapchat">
               <FaSnapchatGhost className="w-6 h-6 hover:scale-110 transition text-white" />  
             </Link>
-            <Link href="#" className='border p-1 rounded-md'  target="_blank" title="X / Twitter">
+            <Link href="#" className='border p-1 rounded-md'  target="_blank" aria-label="Share on X / Twitter">
               <FaXTwitter className="w-6 h-6 hover:scale-110 text-white transition" />
             </Link>
-            <Link href={`https://t.me/share/url?url=${link}`} className='border p-1 rounded-md' target="_blank" rel="noopener noreferrer">
+            <Link href={`https://t.me/share/url?url=${link}`} className='border p-1 rounded-md' target="_blank" rel="noopener noreferrer" aria-label="Share on Telegram">
               <FaTelegramPlane className="w-6 h-6 hover:scale-110 transition bg-[#1877F2] p-1 rounded-full text-white" />
             </Link>
           </div>

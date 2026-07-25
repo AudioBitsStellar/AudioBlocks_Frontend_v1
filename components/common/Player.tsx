@@ -58,6 +58,7 @@ const Player = () => {
   const [showComments, setShowComments] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [trackAnnouncement, setTrackAnnouncement] = useState('');
 
   const currentTrack = playlist[currentIndex];
   const trackId = currentTrack?.id || `track-${currentIndex}`;
@@ -108,6 +109,12 @@ const Player = () => {
   }, [isPlaying]);
 
   useEffect(() => {
+    if (currentTrack) {
+      setTrackAnnouncement(`Now playing: ${currentTrack.title} by ${currentTrack.artist}`);
+    }
+  }, [currentIndex, currentTrack]);
+
+  useEffect(() => {
     return () => {
       if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
     };
@@ -153,6 +160,11 @@ const Player = () => {
           </button>
         </div>
       )}
+
+      {/* aria-live region for track change announcements */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {trackAnnouncement}
+      </div>
 
       <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
         {/* Left Controls */}
@@ -224,6 +236,12 @@ const Player = () => {
                 max={duration}
                 step={1}
                 value={progress}
+                role="slider"
+                aria-label="Track position"
+                aria-valuemin={0}
+                aria-valuemax={duration}
+                aria-valuenow={progress}
+                aria-valuetext={`${formatTime(progress)} of ${formatTime(duration)}`}
                 onChange={(e) => {
                   const newTime = Number(e.target.value);
                   if (audioRef.current) {
@@ -271,13 +289,19 @@ const Player = () => {
             >
               {isMuted || volume === 0 ? <FaVolumeMute size={16} /> : <FaVolumeUp size={16} />}
             </button>
-            <div className="absolute bottom-16 p-4 rounded-md bg-[#161616] rotate-[-90deg] items-center justify-center hidden group-hover:flex">
+            <div className="absolute bottom-16 p-4 rounded-md bg-[#161616] rotate-[-90deg] items-center justify-center hidden group-hover:flex group-focus-within:flex">
               <input
                 type="range"
                 min={0}
                 max={1}
                 step={0.01}
                 value={isMuted ? 0 : volume}
+                role="slider"
+                aria-label="Volume"
+                aria-valuemin={0}
+                aria-valuemax={1}
+                aria-valuenow={isMuted ? 0 : volume}
+                aria-valuetext={`${Math.round((isMuted ? 0 : volume) * 100)}%`}
                 onChange={(e) => setVolume(parseFloat(e.target.value))}
                 className="w-24 h-1 bg-gray-300 rounded appearance-none cursor-pointer accent-[#D2045B]"
               />

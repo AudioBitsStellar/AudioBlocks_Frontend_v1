@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { FiUser, FiRepeat, FiFolder, FiX, FiLogIn } from 'react-icons/fi';
 import { FaWallet } from 'react-icons/fa';
@@ -14,6 +14,8 @@ import Cookies from 'js-cookie';
 const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const { user } = useDynamicContext();
   const { handleLogOut } = Auth();
   const route = useRouter();
@@ -34,6 +36,42 @@ const UserMenu = () => {
     setIsOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (isOpen) {
+      closeButtonRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  const handlePanelKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable || focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    },
+    []
+  );
+
   const logOut = () => {
     Cookies.remove('audioblocks_jwt');
     handleLogOut();
@@ -42,8 +80,10 @@ const UserMenu = () => {
 
   return (
     <div className="relative z-50" ref={menuRef}>
-      <div
+      <button
         onClick={() => setIsOpen(true)}
+        ref={toggleRef}
+        aria-label="Open user menu"
         className="w-8 h-8 rounded-full overflow-hidden border border-gray-700 cursor-pointer"
       >
         <Image
@@ -53,7 +93,7 @@ const UserMenu = () => {
           height={40}
           className="object-cover w-full h-full"
         />
-      </div>
+      </button>
 
       <AnimatePresence>
         {isOpen && (
@@ -62,10 +102,16 @@ const UserMenu = () => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
+            onKeyDown={handlePanelKeyDown}
+            role="dialog"
+            aria-modal="true"
+            aria-label="User menu"
             className="fixed top-0 right-0 w-60 h-screen bg-[#111111] shadow-lg border-l border-[#2B2B2B] px-5 py-6 flex flex-col"
           >
             <button
               onClick={() => setIsOpen(false)}
+              ref={closeButtonRef}
+              aria-label="Close user menu"
               className="text-[#A3A3A3] cursor-pointer hover:text-white absolute top-4 right-4"
             >
               <FiX size={22} />

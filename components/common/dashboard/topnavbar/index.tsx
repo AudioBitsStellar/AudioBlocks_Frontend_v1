@@ -36,13 +36,14 @@ const TopNavbar = ({ onMenuClick }: TopNavbarProps) => {
           <input
             type="text"
             placeholder="Search by artists, songs or albums"
+            aria-label="Search by artists, songs or albums"
             className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-gray-400"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="relative">
+        <button className="relative" aria-label="Notifications">
           <Bell className="text-white" size={20} />
           <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
         </button>
