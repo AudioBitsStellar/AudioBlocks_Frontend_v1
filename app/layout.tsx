@@ -6,15 +6,19 @@ import 'slick-carousel/slick/slick-theme.css';
 import Provider from '@/context/provider';
 import { Toaster } from 'sonner';
 import EnvCheck from '@/components/EnvCheck';
+import SWRegister from '@/components/SWRegister';
+import Script from 'next/script';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -37,6 +41,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased dark bg-black text-white`}
       >
         <Provider>
+          <SWRegister />
           <EnvCheck />
           <a
             href="#main-content"
@@ -46,6 +51,12 @@ export default function RootLayout({
           </a>
           <Toaster position="bottom-right" closeButton />
           {children}
+          {/* Analytics script loaded after user interaction to reduce main thread blocking */}
+          <Script
+            id="analytics-script"
+            strategy="lazyOnload"
+            src="https://www.google-analytics.com/analytics.js"
+          />
         </Provider>
       </body>
     </html>

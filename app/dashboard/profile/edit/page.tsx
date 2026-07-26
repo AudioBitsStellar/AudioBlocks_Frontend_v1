@@ -10,73 +10,49 @@ import { toast } from 'sonner';
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_SIZE_MB = 5;
 
+const MAX_SIZE_MB = 5;
 const MAX_DISPLAY_NAME = 50;
-const MAX_BIO = 160;
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
-const URL_REGEX = /^https?:\/\/.+\..+/;
-const TWITTER_REGEX = /^@?[A-Za-z0-9_]{1,15}$/;
+const MAX_BIO = 500;
 
-interface FormErrors {
-  displayName?: string;
-  bio?: string;
-  website?: string;
-  twitter?: string;
-  coverImage?: string;
-}
+import { useFormState } from '@/hooks/useFormState';
 
-function validate(
-  displayName: string,
-  bio: string,
-  website: string,
-  twitter: string
-): FormErrors {
-  const errors: FormErrors = {};
 
-  if (!displayName.trim()) {
-    errors.displayName = 'Display name is required.';
-  } else if (displayName.trim().length > MAX_DISPLAY_NAME) {
-    errors.displayName = `Display name must be ${MAX_DISPLAY_NAME} characters or fewer.`;
-  }
-
-  if (bio.length > MAX_BIO) {
-    errors.bio = `Bio must be ${MAX_BIO} characters or fewer.`;
-  }
-
-  if (website && !URL_REGEX.test(website)) {
-    errors.website = 'Enter a valid URL starting with http:// or https://';
-  }
-
-  if (twitter && !TWITTER_REGEX.test(twitter)) {
-    errors.twitter = 'Enter a valid X username (1–15 characters, letters, numbers, or _).';
-  }
-
-  return errors;
-}
 
 const EditProfile = () => {
   const router = useRouter();
   const { data: profile, isLoading } = useGetProfile();
   const { mutate: update, isPending } = useUpdateProfile();
 
-  const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
-  const [website, setWebsite] = useState('');
-  const [twitter, setTwitter] = useState('');
+  const {
+    values,
+    setValues,
+    handleChange,
+    handleBlur,
+    errors,
+    isFormValid,
+    fieldError,
+    setAllTouched
+  } = useFormState({
+    displayName: '',
+    bio: '',
+    website: '',
+    twitter: ''
+  });
+
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
   const [rawImageSrc, setRawImageSrc] = useState<string>('');
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isDirty, setIsDirty] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const errors = validate(displayName, bio, website, twitter);
-
   useEffect(() => {
     if (profile) {
-      setDisplayName(profile.name || profile.username || '');
-      setBio(profile.bio || '');
-      setWebsite(profile.website || '');
-      setTwitter(profile.twitter || '');
+      setValues({
+        displayName: profile.name || profile.username || '',
+        bio: profile.bio || '',
+        website: profile.website || '',
+        twitter: profile.twitter || '',
+      });
     }
   }, [profile]);
 
@@ -110,16 +86,15 @@ const EditProfile = () => {
     setAvatarPreview(croppedDataUrl);
   };
 
-  const isFormValid =
-    Object.keys(errors).length === 0 && displayName.trim().length > 0;
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Mark all fields as touched so errors show on submit attempt
-    setTouched({ displayName: true, bio: true, website: true, twitter: true });
+    setAllTouched();
     if (!isFormValid) return;
     update(
-      { name: displayName, bio, website, twitter },
+      { name: values.displayName, bio: values.bio, website: values.website, twitter: values.twitter },
       {
         onSuccess: () => {
           setIsDirty(false);
@@ -133,12 +108,7 @@ const EditProfile = () => {
     router.push('/dashboard/profile');
   };
 
-  const handleBlur = (field: string) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-  };
 
-  const fieldError = (field: keyof FormErrors) =>
-    touched[field] ? errors[field] : undefined;
 
   return (
     <div className="min-h-screen">
@@ -172,8 +142,8 @@ const EditProfile = () => {
                 className={`w-full bg-[#1A1A1A] text-white rounded-lg px-4 py-2 placeholder:text-sm placeholder:text-[#4B4B4B] focus:outline-none ${
                   fieldError('displayName') ? 'ring-1 ring-red-500' : ''
                 }`}
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                value={values.displayName}
+                onChange={(e) => handleChange('displayName', e.target.value)}
                 onBlur={() => handleBlur('displayName')}
                 aria-invalid={!!fieldError('displayName')}
                 aria-describedby={fieldError('displayName') ? 'displayName-error' : undefined}
@@ -187,7 +157,7 @@ const EditProfile = () => {
                   <span />
                 )}
                 <span className="text-xs text-gray-500 ml-auto">
-                  {displayName.length}/{MAX_DISPLAY_NAME}
+                  {values.displayName.length}/{MAX_DISPLAY_NAME}
                 </span>
               </div>
             </div>
@@ -202,8 +172,8 @@ const EditProfile = () => {
                 className={`w-full bg-[#1A1A1A] text-white rounded-lg px-4 py-2 placeholder:text-sm placeholder:text-[#4B4B4B] focus:outline-none ${
                   fieldError('bio') ? 'ring-1 ring-red-500' : ''
                 }`}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                value={values.bio}
+                onChange={(e) => handleChange('bio', e.target.value)}
                 onBlur={() => handleBlur('bio')}
                 aria-invalid={!!fieldError('bio')}
                 aria-describedby={fieldError('bio') ? 'bio-error' : undefined}
@@ -217,7 +187,7 @@ const EditProfile = () => {
                   <span />
                 )}
                 <span className="text-xs text-gray-500 ml-auto">
-                  {bio.length}/{MAX_BIO}
+                  {values.bio.length}/{MAX_BIO}
                 </span>
               </div>
             </div>
@@ -231,8 +201,8 @@ const EditProfile = () => {
                 className={`w-full bg-[#1A1A1A] text-white rounded-lg px-4 py-2 placeholder:text-sm placeholder:text-[#4B4B4B] focus:outline-none ${
                   fieldError('website') ? 'ring-1 ring-red-500' : ''
                 }`}
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
+                value={values.website}
+                onChange={(e) => handleChange('website', e.target.value)}
                 onBlur={() => handleBlur('website')}
                 aria-invalid={!!fieldError('website')}
                 aria-describedby={fieldError('website') ? 'website-error' : undefined}
@@ -253,8 +223,8 @@ const EditProfile = () => {
                 className={`w-full bg-[#1A1A1A] text-white rounded-lg px-4 py-2 placeholder:text-sm placeholder:text-[#4B4B4B] focus:outline-none ${
                   fieldError('twitter') ? 'ring-1 ring-red-500' : ''
                 }`}
-                value={twitter}
-                onChange={(e) => setTwitter(e.target.value)}
+                value={values.twitter}
+                onChange={(e) => handleChange('twitter', e.target.value)}
                 onBlur={() => handleBlur('twitter')}
                 aria-invalid={!!fieldError('twitter')}
                 aria-describedby={fieldError('twitter') ? 'twitter-error' : undefined}
