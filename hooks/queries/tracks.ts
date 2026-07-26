@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { CACHE_DURATIONS, RETRY_CONFIG, VALIDATION } from '@/lib/constants';
 
 // Query Keys
 export const trackKeys = {
@@ -84,8 +85,8 @@ export function useTrackDetail(id: string) {
   return useQuery({
     queryKey: trackKeys.detail(id),
     queryFn: () => fetchTrackDetail(id),
-    staleTime: 1000 * 60 * 10,
-    retry: 2,
+    staleTime: CACHE_DURATIONS.LONG,
+    retry: RETRY_CONFIG.IMPORTANT,
     enabled: !!id,
   });
 }
@@ -94,8 +95,8 @@ export function useTrendingTracks() {
   return useQuery({
     queryKey: trackKeys.trending(),
     queryFn: fetchTrendingTracks,
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
   });
 }
 
@@ -103,8 +104,8 @@ export function useSearchTracks(query: string) {
   return useQuery({
     queryKey: trackKeys.search(query),
     queryFn: () => searchTracks(query),
-    staleTime: 1000 * 60 * 2,
-    retry: 1,
-    enabled: query.length > 2,
+    staleTime: CACHE_DURATIONS.SHORT,
+    retry: RETRY_CONFIG.DEFAULT,
+    enabled: query.length > VALIDATION.SEARCH_MIN_CHARS,
   });
 }

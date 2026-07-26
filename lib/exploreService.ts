@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import { API_ENDPOINTS } from './constants';
 
 export interface MerchItem {
   id: string;
@@ -18,11 +19,11 @@ export interface EventItem {
 }
 
 export async function getMerchListings(): Promise<MerchItem[]> {
-  const res = await apiClient.get('/api/merch');
+  const res = await apiClient.get(API_ENDPOINTS.MERCH);
   return res.data?.data ?? res.data ?? [];
 }
 
 export async function getEventListings(): Promise<EventItem[]> {
-  const res = await apiClient.get('/api/events');
+  const res = await apiClient.get(API_ENDPOINTS.EVENTS);
   return res.data?.data ?? res.data ?? [];
 }
