@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -63,10 +63,10 @@ const Player = () => {
   const currentTrack = playlist[currentIndex];
   const trackId = currentTrack?.id || `track-${currentIndex}`;
   
-  // Build stream URL from backend endpoint
-  const streamUrl = currentTrack?.url 
+  const streamUrl = useMemo(() => currentTrack?.url 
     ? currentTrack.url 
-    : `${process.env.NEXT_PUBLIC_API_URL}/stream/${trackId}`;
+    : `${process.env.NEXT_PUBLIC_API_URL}/stream/${trackId}`,
+  [currentTrack, trackId]);
 
   useEffect(() => {
     setCoverFailed(false);
@@ -120,20 +120,20 @@ const Player = () => {
     };
   }, []);
 
-  const handleTogglePlay = () => {
+  const handleTogglePlay = useCallback(() => {
     if (isBuffering) return;
     if (isPlaying) pause();
     else play();
-  };
+  }, [isBuffering, isPlaying, pause, play]);
 
-  const handleAudioError = () => {
+  const handleAudioError = useCallback(() => {
     const errorMessage = currentTrack?.id 
       ? `Unable to stream track "${currentTrack?.title}". The track may be unavailable or the ID is invalid.`
       : `Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`;
     setError(errorMessage);
     if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
     skipTimerRef.current = setTimeout(() => next(), 3000);
-  };
+  }, [currentTrack, setError, next]);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -141,7 +141,7 @@ const Player = () => {
     return `${minutes}:${seconds}`;
   };
 
-  const coverSrc = coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover;
+  const coverSrc = useMemo(() => coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover, [coverFailed, currentTrack]);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-surface-elevated px-8 py-3 shadow-lg z-50">

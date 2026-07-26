@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
@@ -26,7 +27,7 @@ const albums = {
   }),
 };
 
-export default function SoundsSection() {
+const SoundsSection = memo(function SoundsSection() {
   return (
     <section className="text-white w-4/5 mx-auto py-5">
       <div className="flex justify-between items-center mb-5">
@@ -80,4 +81,6 @@ export default function SoundsSection() {
       </Tabs.Root>
     </section>
   );
-}
+});
+
+export default SoundsSection;

@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PlaybackProvider, usePlayback } from '/Users/user/AudioBlocks_Frontend_v1/context/PlaybackContext';
+import { PlaybackProvider, usePlayback } from '@/context/PlaybackContext';
 
 // Mock AudioContext and HTMLAudioElement
 const AudioContextMock = vi.fn().mockImplementation(() => ({

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useMemo, ReactNode } from 'react';
 
 export type Track = {
   id: string;
@@ -160,7 +160,7 @@ const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 export function PlaybackProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const value: PlaybackContextValue = {
+  const value = useMemo<PlaybackContextValue>(() => ({
     ...state,
     play: () => dispatch({ type: 'PLAY' }),
     pause: () => dispatch({ type: 'PAUSE' }),
@@ -177,7 +177,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     dismissError: () => dispatch({ type: 'DISMISS_ERROR' }),
     addToRecentlyPlayed: (track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
     clearRecentlyPlayed: () => dispatch({ type: 'CLEAR_RECENTLY_PLAYED' }),
-  };
+  }), [state]);
 
   return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
 }
