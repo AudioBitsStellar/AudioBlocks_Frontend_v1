@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -38,6 +38,7 @@ const Player = () => {
     shuffle,
     repeat,
     trackError,
+    autoplayBlocked,
     play,
     pause,
     next,
@@ -49,6 +50,8 @@ const Player = () => {
     setError,
     dismissError,
     addToRecentlyPlayed,
+    setAutoplayBlocked,
+    resumeAudio,
   } = usePlayback();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -63,10 +66,10 @@ const Player = () => {
   const currentTrack = playlist[currentIndex];
   const trackId = currentTrack?.id || `track-${currentIndex}`;
   
-  // Build stream URL from backend endpoint
-  const streamUrl = currentTrack?.url 
+  const streamUrl = useMemo(() => currentTrack?.url 
     ? currentTrack.url 
-    : `${process.env.NEXT_PUBLIC_API_URL}/stream/${trackId}`;
+    : `${process.env.NEXT_PUBLIC_API_URL}/stream/${trackId}`,
+  [currentTrack, trackId]);
 
   useEffect(() => {
     setCoverFailed(false);
@@ -83,8 +86,12 @@ const Player = () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (isPlaying) {
-      audio.play().catch(() => {
-        setError(`Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`);
+      audio.play().catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'NotAllowedError') {
+          setAutoplayBlocked(true);
+        } else {
+          setError(`Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`);
+        }
       });
     } else {
       audio.pause();
@@ -115,25 +122,39 @@ const Player = () => {
   }, [currentIndex, currentTrack]);
 
   useEffect(() => {
+    if (!autoplayBlocked) return;
+    const handler = () => {
+      resumeAudio();
+      setAutoplayBlocked(false);
+    };
+    document.addEventListener('click', handler, { once: true });
+    document.addEventListener('keydown', handler, { once: true });
+    return () => {
+      document.removeEventListener('click', handler);
+      document.removeEventListener('keydown', handler);
+    };
+  }, [autoplayBlocked, resumeAudio, setAutoplayBlocked]);
+
+  useEffect(() => {
     return () => {
       if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
     };
   }, []);
 
-  const handleTogglePlay = () => {
+  const handleTogglePlay = useCallback(() => {
     if (isBuffering) return;
     if (isPlaying) pause();
     else play();
-  };
+  }, [isBuffering, isPlaying, pause, play]);
 
-  const handleAudioError = () => {
+  const handleAudioError = useCallback(() => {
     const errorMessage = currentTrack?.id 
       ? `Unable to stream track "${currentTrack?.title}". The track may be unavailable or the ID is invalid.`
       : `Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`;
     setError(errorMessage);
     if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
     skipTimerRef.current = setTimeout(() => next(), 3000);
-  };
+  }, [currentTrack, setError, next]);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -141,7 +162,7 @@ const Player = () => {
     return `${minutes}:${seconds}`;
   };
 
-  const coverSrc = coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover;
+  const coverSrc = useMemo(() => coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover, [coverFailed, currentTrack]);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-surface-elevated px-8 py-3 shadow-lg z-50">
@@ -158,6 +179,16 @@ const Player = () => {
           >
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {autoplayBlocked && (
+        <div className="flex items-center justify-between bg-yellow-900/80 text-white text-xs px-4 py-2 rounded-md mb-2 max-w-7xl mx-auto cursor-pointer" role="button" tabIndex={0} onClick={() => { resumeAudio(); setAutoplayBlocked(false); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resumeAudio(); setAutoplayBlocked(false); } }}>
+          <div className="flex items-center gap-2">
+            <span className="text-yellow-300 font-bold mr-1" aria-hidden="true">🎵</span>
+            <span>Click anywhere to start playback</span>
+          </div>
+          <span className="text-yellow-300 text-xs underline">Tap to play</span>
         </div>
       )}
 

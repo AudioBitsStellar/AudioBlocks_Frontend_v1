@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import Artists from '@/components/common/dashboard/Artists';
 import CategorySection from '@/components/common/dashboard/CategorySection';
 import Collections from '@/components/common/dashboard/Collections';
@@ -12,6 +13,7 @@ import RecentlyPlayed from '@/components/common/dashboard/RecentlyPlayed';
 const genreFilters = ['All', 'Pop', 'Contemporary', 'Rock', 'Afro', 'Jazz'];
 
 const ExplorePage = () => {
+  useScrollRestoration('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('All');
 

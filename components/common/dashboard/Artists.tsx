@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Slider from 'react-slick';
 import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { useSectionData } from '@/hooks/useSectionData';
 import { getCarouselSettings } from './carouselSettings';
 import { artistsData } from './data';
@@ -38,7 +39,7 @@ const Artists = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
     fetchFn: fetchArtists,
   });
 
-  const filtered = data.filter((item) => {
+  const filtered = useMemo(() => data.filter((item) => {
     const matchesSearch = !searchQuery ||
       item.song.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -46,7 +47,7 @@ const Artists = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
     const matchesGenre = activeGenre === 'All' ||
       item.description.toLowerCase().includes(activeGenre.toLowerCase());
     return matchesSearch && matchesGenre;
-  });
+  }), [data, searchQuery, activeGenre]);
 
   return (
     <section>

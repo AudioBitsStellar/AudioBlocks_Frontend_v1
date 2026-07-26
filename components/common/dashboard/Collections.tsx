@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Slider from 'react-slick';
 import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { useSectionData } from '@/hooks/useSectionData';
 import { getCarouselSettings } from './carouselSettings';
 import { collectionsData } from './data';
@@ -38,12 +39,12 @@ const Collections = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
     fetchFn: fetchCollections,
   });
 
-  const filtered = data.filter((item) => {
+  const filtered = useMemo(() => data.filter((item) => {
     const matchesSearch = !searchQuery ||
       item.song.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.artist.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
-  });
+  }), [data, searchQuery]);
 
   return (
     <section>
