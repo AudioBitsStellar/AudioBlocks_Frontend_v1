@@ -1,6 +1,7 @@
 'use client';
 
 import { notFound } from 'next/navigation';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
@@ -16,6 +17,7 @@ function ipfsImage(cid: string): string {
 }
 
 export default function CollectionDetailPage({ params }: { params: { id: string } }) {
+  useScrollRestoration(`collection-${params.id}`);
   const { songs, isLoading } = useNFTCollection();
 
   const song = useMemo(() => {
