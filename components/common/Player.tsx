@@ -38,6 +38,7 @@ const Player = () => {
     shuffle,
     repeat,
     trackError,
+    autoplayBlocked,
     play,
     pause,
     next,
@@ -49,6 +50,8 @@ const Player = () => {
     setError,
     dismissError,
     addToRecentlyPlayed,
+    setAutoplayBlocked,
+    resumeAudio,
   } = usePlayback();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -83,8 +86,12 @@ const Player = () => {
     const audio = audioRef.current;
     if (!audio) return;
     if (isPlaying) {
-      audio.play().catch(() => {
-        setError(`Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`);
+      audio.play().catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'NotAllowedError') {
+          setAutoplayBlocked(true);
+        } else {
+          setError(`Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`);
+        }
       });
     } else {
       audio.pause();
@@ -113,6 +120,20 @@ const Player = () => {
       setTrackAnnouncement(`Now playing: ${currentTrack.title} by ${currentTrack.artist}`);
     }
   }, [currentIndex, currentTrack]);
+
+  useEffect(() => {
+    if (!autoplayBlocked) return;
+    const handler = () => {
+      resumeAudio();
+      setAutoplayBlocked(false);
+    };
+    document.addEventListener('click', handler, { once: true });
+    document.addEventListener('keydown', handler, { once: true });
+    return () => {
+      document.removeEventListener('click', handler);
+      document.removeEventListener('keydown', handler);
+    };
+  }, [autoplayBlocked, resumeAudio, setAutoplayBlocked]);
 
   useEffect(() => {
     return () => {
@@ -158,6 +179,16 @@ const Player = () => {
           >
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {autoplayBlocked && (
+        <div className="flex items-center justify-between bg-yellow-900/80 text-white text-xs px-4 py-2 rounded-md mb-2 max-w-7xl mx-auto cursor-pointer" role="button" tabIndex={0} onClick={() => { resumeAudio(); setAutoplayBlocked(false); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resumeAudio(); setAutoplayBlocked(false); } }}>
+          <div className="flex items-center gap-2">
+            <span className="text-yellow-300 font-bold mr-1" aria-hidden="true">🎵</span>
+            <span>Click anywhere to start playback</span>
+          </div>
+          <span className="text-yellow-300 text-xs underline">Tap to play</span>
         </div>
       )}
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useMemo, useCallback, ReactNode } from 'react';
 
 export type Track = {
   id: string;
@@ -20,6 +20,7 @@ type PlaybackState = {
   repeat: boolean;
   trackError: string | null;
   recentlyPlayed: Track[];
+  autoplayBlocked: boolean;
 };
 
 type PlaybackAction =
@@ -37,7 +38,9 @@ type PlaybackAction =
   | { type: 'SET_ERROR'; error: string }
   | { type: 'DISMISS_ERROR' }
   | { type: 'ADD_TO_RECENTLY_PLAYED'; track: Track }
-  | { type: 'CLEAR_RECENTLY_PLAYED' };
+  | { type: 'CLEAR_RECENTLY_PLAYED' }
+  | { type: 'SET_AUTOPLAY_BLOCKED'; blocked: boolean }
+  | { type: 'RESUME_AUDIO' };
 
 export type PlaybackContextValue = PlaybackState & {
   playTrack: (track: Track) => void;
@@ -55,6 +58,9 @@ export type PlaybackContextValue = PlaybackState & {
   dismissError: () => void;
   addToRecentlyPlayed: (track: Track) => void;
   clearRecentlyPlayed: () => void;
+  autoplayBlocked: boolean;
+  setAutoplayBlocked: (blocked: boolean) => void;
+  resumeAudio: () => void;
 };
 
 const defaultPlaylist: Track[] = [
@@ -88,6 +94,7 @@ const initialState: PlaybackState = {
   repeat: false,
   trackError: null,
   recentlyPlayed: [],
+  autoplayBlocked: false,
 };
 
 function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
@@ -150,6 +157,10 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
     }
     case 'CLEAR_RECENTLY_PLAYED':
       return { ...state, recentlyPlayed: [] };
+    case 'SET_AUTOPLAY_BLOCKED':
+      return { ...state, autoplayBlocked: action.blocked };
+    case 'RESUME_AUDIO':
+      return { ...state, autoplayBlocked: false };
     default:
       return state;
   }
@@ -159,6 +170,9 @@ const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  const setAutoplayBlocked = useCallback((blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }), []);
+  const resumeAudio = useCallback(() => dispatch({ type: 'RESUME_AUDIO' }), []);
 
   const value = useMemo<PlaybackContextValue>(() => ({
     ...state,
@@ -177,7 +191,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     dismissError: () => dispatch({ type: 'DISMISS_ERROR' }),
     addToRecentlyPlayed: (track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
     clearRecentlyPlayed: () => dispatch({ type: 'CLEAR_RECENTLY_PLAYED' }),
-  }), [state]);
+    autoplayBlocked: state.autoplayBlocked,
+    setAutoplayBlocked,
+    resumeAudio,
+  }), [state, setAutoplayBlocked, resumeAudio]);
 
   return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
 }
