@@ -1,4 +1,5 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
 
 export interface SectionDataState<T> {
   data: T[];
@@ -18,8 +19,8 @@ type UseSectionDataOptions<T> = {
 export function useSectionData<T>({
   queryKey,
   fetchFn,
-  staleTime = 1000 * 60 * 5,
-  retry = 1,
+  staleTime = CACHE_DURATIONS.MEDIUM,
+  retry = RETRY_CONFIG.DEFAULT,
   enabled = true,
 }: UseSectionDataOptions<T>): SectionDataState<T> {
   const { data, isLoading, isError } = useQuery<T[]>({

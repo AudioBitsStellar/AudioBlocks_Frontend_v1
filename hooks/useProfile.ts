@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getProfile, updateProfile, UpdateProfilePayload } from '@/lib/profileService';
+import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
 
 export const PROFILE_QUERY_KEY = ['user-profile'];
 
@@ -8,8 +9,8 @@ export function useGetProfile() {
   return useQuery({
     queryKey: PROFILE_QUERY_KEY,
     queryFn: getProfile,
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
   });
 }
 

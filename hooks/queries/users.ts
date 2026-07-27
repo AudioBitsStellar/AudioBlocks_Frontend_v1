@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
 
 // Query Keys
 export const userKeys = {
@@ -79,8 +80,8 @@ export function useUserProfile(userId: string) {
   return useQuery({
     queryKey: userKeys.profile(userId),
     queryFn: () => fetchUserProfile(userId),
-    staleTime: 1000 * 60 * 10,
-    retry: 1,
+    staleTime: CACHE_DURATIONS.LONG,
+    retry: RETRY_CONFIG.DEFAULT,
     enabled: !!userId,
   });
 }
@@ -89,8 +90,8 @@ export function useUserActivity(userId: string) {
   return useQuery({
     queryKey: userKeys.activity(userId),
     queryFn: () => fetchUserActivity(userId),
-    staleTime: 1000 * 60 * 2,
-    retry: 1,
+    staleTime: CACHE_DURATIONS.SHORT,
+    retry: RETRY_CONFIG.DEFAULT,
     enabled: !!userId,
   });
 }

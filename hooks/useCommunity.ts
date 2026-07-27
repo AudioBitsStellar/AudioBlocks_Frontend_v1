@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getLeaderboard, castVote, getMyVotes, CommunityArtist } from '@/lib/communityService';
+import { QUERY_KEYS, CACHE_DURATIONS } from '@/lib/constants';
 
 export function useArtistLeaderboard() {
   return useQuery<CommunityArtist[]>({
-    queryKey: ['community-leaderboard'],
+    queryKey: QUERY_KEYS.COMMUNITY_LEADERBOARD,
     queryFn: getLeaderboard,
-    staleTime: 1000 * 30,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
   });
 }
 
@@ -18,8 +19,8 @@ export function useCastVote() {
 
 export function useMyVotes() {
   return useQuery<(string | number)[]>({
-    queryKey: ['community-my-votes'],
+    queryKey: QUERY_KEYS.COMMUNITY_MY_VOTES,
     queryFn: getMyVotes,
-    staleTime: 1000 * 60 * 5,
+    staleTime: CACHE_DURATIONS.MEDIUM,
   });
 }

@@ -35,6 +35,7 @@ API.
 ## Key Features
 
 **For Listeners**
+
 - Discover and stream music across categories, trending, and curated sections
 - A built-in NFT marketplace for collecting tokenized music
 - A community space with artist voting and listening-time leaderboards
@@ -42,27 +43,28 @@ API.
 - Persistent play-queue with shuffle, repeat, and seek controls
 
 **For Artists** (via the companion `AudioBlocks_For_Artist` app)
+
 - Tokenized music with on-chain, transparently-enforced royalty splits
 - Direct fan engagement, without payment intermediaries
 
 ## Tech Stack
 
-| Concern | Library |
-|---|---|
-| Framework | Next.js 15 (App Router), React 19 |
-| Language | TypeScript (strict mode) |
-| Styling | Tailwind CSS 4, `tw-animate-css` |
-| UI primitives | shadcn-style components on Radix UI (`components/ui/`) |
-| Icons | `lucide-react`, `react-icons` (Font Awesome, Heroicons) |
-| Animation | `framer-motion` |
-| Carousels | `react-slick` |
-| Toasts | `sonner` |
-| Wallet (EVM) | Dynamic Labs SDK, `wagmi`, `viem` |
-| Data fetching | TanStack React Query (provisioned; see [Known Gaps](#known-gaps--in-progress)) |
-| HTTP client | `axios` |
-| Linting | ESLint 9 + `eslint-plugin-jsx-a11y` |
-| Formatting | Prettier |
-| Package manager | npm |
+| Concern         | Library                                                                        |
+| --------------- | ------------------------------------------------------------------------------ |
+| Framework       | Next.js 15 (App Router), React 19                                              |
+| Language        | TypeScript (strict mode)                                                       |
+| Styling         | Tailwind CSS 4, `tw-animate-css`                                               |
+| UI primitives   | shadcn-style components on Radix UI (`components/ui/`)                         |
+| Icons           | `lucide-react`, `react-icons` (Font Awesome, Heroicons)                        |
+| Animation       | `framer-motion`                                                                |
+| Carousels       | `react-slick`                                                                  |
+| Toasts          | `sonner`                                                                       |
+| Wallet (EVM)    | Dynamic Labs SDK, `wagmi`, `viem`                                              |
+| Data fetching   | TanStack React Query (provisioned; see [Known Gaps](#known-gaps--in-progress)) |
+| HTTP client     | `axios`                                                                        |
+| Linting         | ESLint 9 + `eslint-plugin-jsx-a11y`                                            |
+| Formatting      | Prettier                                                                       |
+| Package manager | npm                                                                            |
 
 ## Prerequisites
 
@@ -74,6 +76,7 @@ Before setting up the project locally, ensure you have the following installed:
 - **Git** — for cloning the repository
 
 Optional but recommended:
+
 - **The AudioBlock Backend** — running locally for full-featured development
   (clone from [`AudioBlock_Backend`](https://github.com/AudioBitsStellar/AudioBlock_Backend))
 
@@ -176,24 +179,24 @@ graph TD
 
 ### Public site — `app/(home)/`
 
-| Route | Description |
-|---|---|
-| `/` | Landing page: hero, featured tracks, sound carousel, "how it works", discovery |
-| `/artist-hub` | Marketing page directing artists to the artist dashboard app |
-| `/collective` | Community page: collective overview, members, events, FAQ |
-| `/marketPlace` | NFT marketplace demo |
+| Route          | Description                                                                    |
+| -------------- | ------------------------------------------------------------------------------ |
+| `/`            | Landing page: hero, featured tracks, sound carousel, "how it works", discovery |
+| `/artist-hub`  | Marketing page directing artists to the artist dashboard app                   |
+| `/collective`  | Community page: collective overview, members, events, FAQ                      |
+| `/marketPlace` | NFT marketplace demo                                                           |
 
 ### Authenticated app — `app/dashboard/` (requires `audioblocks_jwt` cookie)
 
-| Route | Description |
-|---|---|
-| `/dashboard` | Explore: categories, collections, events, artists, merch |
-| `/dashboard/playlist` | The listener's playlist |
-| `/dashboard/community` | Artist voting and listening-hours leaderboard |
-| `/dashboard/collection` | The listener's owned NFTs/assets |
-| `/dashboard/profile` | Listener profile |
-| `/dashboard/all-artists` | Browse all artists |
-| `/dashboard/all-collections` | Browse all NFT collections |
+| Route                        | Description                                              |
+| ---------------------------- | -------------------------------------------------------- |
+| `/dashboard`                 | Explore: categories, collections, events, artists, merch |
+| `/dashboard/playlist`        | The listener's playlist                                  |
+| `/dashboard/community`       | Artist voting and listening-hours leaderboard            |
+| `/dashboard/collection`      | The listener's owned NFTs/assets                         |
+| `/dashboard/profile`         | Listener profile                                         |
+| `/dashboard/all-artists`     | Browse all artists                                       |
+| `/dashboard/all-collections` | Browse all NFT collections                               |
 
 `middleware.ts` gates every `/dashboard/*` route on the presence of the
 `audioblocks_jwt` cookie, redirecting unauthenticated visitors to `/`.
@@ -292,11 +295,11 @@ public/                              # Static assets (images, icons, placeholder
 
 All environment variables are prefixed `NEXT_PUBLIC_` (client-accessible).
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `NEXT_PUBLIC_API_URL` | Yes | `http://localhost:4000/api` | Base URL of the AudioBlock Backend REST API |
-| `NEXT_PUBLIC_SITE_URL` | No | `http://localhost:3000` | Canonical site URL (used for metadata / SEO) |
-| `ANALYZE` | No | — | Set to `true` to run the bundle analyzer during `next build` |
+| Variable               | Required | Default                     | Description                                                  |
+| ---------------------- | -------- | --------------------------- | ------------------------------------------------------------ |
+| `NEXT_PUBLIC_API_URL`  | Yes      | `http://localhost:4000/api` | Base URL of the AudioBlock Backend REST API                  |
+| `NEXT_PUBLIC_SITE_URL` | No       | `http://localhost:3000`     | Canonical site URL (used for metadata / SEO)                 |
+| `ANALYZE`              | No       | —                           | Set to `true` to run the bundle analyzer during `next build` |
 
 Variables are validated at runtime by `lib/env.ts`. If `NEXT_PUBLIC_API_URL` is
 missing, the app logs an error and throws.
@@ -348,13 +351,13 @@ then click **Sign in** in the navbar and follow the Dynamic Labs flow.
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Starts the Next.js development server (port 3000) |
-| `npm run build` | Production build with TypeScript checking |
-| `npm start` | Serves the production build |
-| `npm run lint` | Runs ESLint across all files (includes jsx-a11y rules) |
-| `npm run format` | Formats the codebase with Prettier |
+| Command          | Description                                            |
+| ---------------- | ------------------------------------------------------ |
+| `npm run dev`    | Starts the Next.js development server (port 3000)      |
+| `npm run build`  | Production build with TypeScript checking              |
+| `npm start`      | Serves the production build                            |
+| `npm run lint`   | Runs ESLint across all files (includes jsx-a11y rules) |
+| `npm run format` | Formats the codebase with Prettier                     |
 
 ### Prettier configuration (`.prettierrc`)
 
@@ -390,16 +393,16 @@ The project enforces accessibility via:
 
 The following accessibility features are implemented across the app:
 
-| Feature | Status |
-|---|---|
-| Skip link to main content | ✅ `app/layout.tsx` |
-| Visible focus indicators | ✅ `*:focus-visible` in `globals.css` |
-| ARIA labels on buttons | ✅ Player controls, nav buttons, modals |
-| `role="slider"` on seek/volume | ✅ `components/common/Player.tsx` |
-| `aria-live` track announcements | ✅ Player announces "Now playing: Title by Artist" |
-| Focus trapping in modals | ✅ Comment panel, UserMenu, mobile nav, Share, AvatarCrop |
-| Keyboard-accessible lists | ✅ Recently Played cards |
-| `eslint-plugin-jsx-a11y` | ✅ Recommended ruleset |
+| Feature                         | Status                                                    |
+| ------------------------------- | --------------------------------------------------------- |
+| Skip link to main content       | ✅ `app/layout.tsx`                                       |
+| Visible focus indicators        | ✅ `*:focus-visible` in `globals.css`                     |
+| ARIA labels on buttons          | ✅ Player controls, nav buttons, modals                   |
+| `role="slider"` on seek/volume  | ✅ `components/common/Player.tsx`                         |
+| `aria-live` track announcements | ✅ Player announces "Now playing: Title by Artist"        |
+| Focus trapping in modals        | ✅ Comment panel, UserMenu, mobile nav, Share, AvatarCrop |
+| Keyboard-accessible lists       | ✅ Recently Played cards                                  |
+| `eslint-plugin-jsx-a11y`        | ✅ Recommended ruleset                                    |
 
 ## Contributing
 
@@ -408,6 +411,7 @@ We welcome contributions! Please follow these guidelines.
 ### Pull Request Process
 
 1. **Fork** the repository and create a feature branch from `main`:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -416,12 +420,14 @@ We welcome contributions! Please follow these guidelines.
    (see [Tech Stack](#tech-stack)).
 
 3. **Run linting** before committing:
+
    ```bash
    npm run lint
    npm run format
    ```
 
 4. **Write meaningful commit messages** — use conventional commits format:
+
    ```
    feat: add profile page layout
    fix: correct seek-bar time display
@@ -447,6 +453,7 @@ We welcome contributions! Please follow these guidelines.
 ### Reporting Issues
 
 Open a GitHub issue with:
+
 - A clear, descriptive title
 - Steps to reproduce (for bugs)
 - Expected vs. actual behavior
@@ -473,3 +480,42 @@ Open a GitHub issue with:
 2. **Phase 2** — Advanced analytics for artists and personalized recommendations for listeners
 3. **Phase 3** — Expand platform integrations with other Web3 ecosystems
 4. **Phase 4** — Scale to a global audience with enhanced performance optimization
+
+## Pre-commit Hooks
+
+This project uses Husky and lint-staged to enforce code quality before commits.
+
+### What Gets Checked
+
+When you commit code, the following checks run automatically on staged files:
+
+1. **ESLint** - Automatically fixes linting issues where possible
+2. **Prettier** - Formats code according to project standards
+3. **TypeScript Type Checking** - Validates types across the entire project
+
+### Setup
+
+The hooks are automatically installed when you run:
+
+```bash
+npm install
+```
+
+### Manual Trigger
+
+To manually run the pre-commit checks without committing:
+
+```bash
+npx lint-staged  # Run linting and formatting on staged files
+npx tsc --noEmit # Run TypeScript type checking
+```
+
+### Skipping Hooks (Not Recommended)
+
+If you absolutely need to skip the hooks (not recommended):
+
+```bash
+git commit --no-verify -m "your message"
+```
+
+**Note:** Commits that bypass hooks may fail CI checks and be rejected during code review.
