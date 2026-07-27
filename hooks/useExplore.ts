@@ -2,22 +2,23 @@ import { useQuery } from '@tanstack/react-query';
 import { getMerchListings, getEventListings } from '@/lib/exploreService';
 import { useReadContract, useReadContracts } from 'wagmi';
 import { abi, contractAddress } from '@/config/abi';
+import { QUERY_KEYS, CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
 
 export function useGetMerch() {
   return useQuery({
-    queryKey: ['explore-merch'],
+    queryKey: QUERY_KEYS.EXPLORE_MERCH,
     queryFn: getMerchListings,
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
   });
 }
 
 export function useGetEvents() {
   return useQuery({
-    queryKey: ['explore-events'],
+    queryKey: QUERY_KEYS.EXPLORE_EVENTS,
     queryFn: getEventListings,
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
   });
 }
 

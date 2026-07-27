@@ -177,3 +177,15 @@
     scrollbar-color: #444 #1e1e1e;
   }
 }
+
+/* Narrow-screen support (issue #137): 320px is the smallest width we
+ * explicitly target (iPhone SE and similar). min-width keeps the layout
+ * from being asked to render narrower than that floor, and overflow-x
+ * guards are a last line of defense against any element that doesn't
+ * shrink cleanly — the real fixes are the per-component ones (truncation,
+ * min touch targets, responsive widths), this is the safety net. */
+html,
+body {
+  min-width: 320px;
+  overflow-x: hidden;
+}

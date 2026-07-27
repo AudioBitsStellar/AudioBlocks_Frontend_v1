@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
 
 // Query Keys
 export const collectionKeys = {
@@ -82,8 +83,8 @@ export function useExploreCollections() {
   return useQuery({
     queryKey: collectionKeys.explore(),
     queryFn: fetchExploreCollections,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
   });
 }
 
@@ -91,8 +92,8 @@ export function useUserCollections(userId: string) {
   return useQuery({
     queryKey: collectionKeys.user(userId),
     queryFn: () => fetchUserCollections(userId),
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
     enabled: !!userId,
   });
 }
@@ -101,8 +102,8 @@ export function useCollectionDetail(id: string) {
   return useQuery({
     queryKey: collectionKeys.detail(id),
     queryFn: () => fetchCollectionDetail(id),
-    staleTime: 1000 * 60 * 10,
-    retry: 2,
+    staleTime: CACHE_DURATIONS.LONG,
+    retry: RETRY_CONFIG.IMPORTANT,
     enabled: !!id,
   });
 }

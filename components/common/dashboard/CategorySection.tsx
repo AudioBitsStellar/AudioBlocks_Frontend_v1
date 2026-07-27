@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -12,7 +13,7 @@ const categories = [
   { name: 'Jazz', image: '/dashboard/category5.jpg' },
 ];
 
-const CategorySection = () => {
+const CategorySection = memo(function CategorySection() {
   return (
     <section className="py-6">
      
@@ -47,6 +48,6 @@ const CategorySection = () => {
       </div>
     </section>
   );
-};
+});
 
 export default CategorySection;

@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useQueryClient } from '@tanstack/react-query';
 import { contractAddress, abi } from '@/config/abi';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -14,10 +16,26 @@ interface BuyButtonProps {
 
 const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
   const { writeContract, data: hash, isPending } = useWriteContract();
-  
+  const queryClient = useQueryClient();
+
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
+
+  // #142 — without this, a confirmed purchase never invalidates the NFT
+  // collection reads (useNFTCollection's balanceOf/getArtistSongs/getSongById
+  // calls), so the profile/collection pages keep showing stale ownership
+  // data until a full page refresh. wagmi's contract-read hooks are backed
+  // by the same TanStack Query cache these queryKey prefixes address, so
+  // this invalidates them wherever they're mounted — including on a
+  // completely different page than the one the purchase happened on.
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success('Purchase confirmed! Your collection has been updated.');
+      queryClient.invalidateQueries({ queryKey: ['readContract'] });
+      queryClient.invalidateQueries({ queryKey: ['readContracts'] });
+    }
+  }, [isSuccess, queryClient]);
 
   const handleBuy = async () => {
     try {

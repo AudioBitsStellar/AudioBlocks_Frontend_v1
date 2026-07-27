@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import Image from 'next/image';
 
 interface AudioCardProps {
@@ -11,7 +11,7 @@ interface AudioCardProps {
   onClick?: () => void;
 }
 
-const AudioCard: React.FC<AudioCardProps> = ({
+const AudioCard: React.FC<AudioCardProps> = memo(({
   title,
   artist,
   imageUrl,
@@ -50,6 +50,6 @@ const AudioCard: React.FC<AudioCardProps> = ({
       <div>{artist}</div>
     </button>
   );
-};
+});
 
 export default AudioCard;

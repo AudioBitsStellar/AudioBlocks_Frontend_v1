@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Image from 'next/image';
 // #155: static imports so next/image can auto-generate a real blurDataURL.
 import container2 from '@/public/home/Container2.png';
@@ -26,7 +27,7 @@ const features = [
   },
 ];
 
-const Featured = () => {
+const Featured = memo(function Featured() {
   return (
     <>
       <div className="max-w-lg px-4 md:px-0 text-center mx-auto mt-10">
@@ -61,6 +62,6 @@ const Featured = () => {
       </div>
     </>
   );
-};
+});
 
 export default Featured;

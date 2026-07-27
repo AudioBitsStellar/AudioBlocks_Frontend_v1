@@ -1,24 +1,25 @@
 import Cookies from 'js-cookie';
 import { getValidatedEnv } from './env';
+import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS } from './constants';
 
 const { NEXT_PUBLIC_API_URL } = getValidatedEnv();
 
 export class NetworkError extends Error {
-  constructor(message: string = 'Network Error') {
+  constructor(message: string = ERROR_MESSAGES.NETWORK) {
     super(message);
     this.name = 'NetworkError';
   }
 }
 
 export class AuthError extends Error {
-  constructor(message: string = 'Unauthorized') {
+  constructor(message: string = ERROR_MESSAGES.UNAUTHORIZED) {
     super(message);
     this.name = 'AuthError';
   }
 }
 
 export class NotFoundError extends Error {
-  constructor(message: string = 'Not Found') {
+  constructor(message: string = ERROR_MESSAGES.NOT_FOUND) {
     super(message);
     this.name = 'NotFoundError';
   }
@@ -40,8 +41,8 @@ interface FetchOptions extends RequestInit {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function fetchWithRetry(url: string, options: FetchOptions = {}, retries = 3, attempt = 1): Promise<Response> {
-  const { timeout = 15000, ...fetchOptions } = options;
+async function fetchWithRetry(url: string, options: FetchOptions = {}, retries = API_CONFIG.DEFAULT_RETRIES, attempt = 1): Promise<Response> {
+  const { timeout = API_CONFIG.DEFAULT_TIMEOUT, ...fetchOptions } = options;
 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
@@ -62,23 +63,23 @@ async function fetchWithRetry(url: string, options: FetchOptions = {}, retries =
     clearTimeout(id);
 
     if (!response.ok) {
-      if (response.status === 401) {
+      if (response.status === HTTP_STATUS.UNAUTHORIZED) {
         if (typeof window !== 'undefined') {
-          Cookies.remove('audioblocks_jwt');
+          Cookies.remove(AUTH.COOKIE_NAME);
         }
         throw new AuthError();
       }
-      if (response.status === 404) {
+      if (response.status === HTTP_STATUS.NOT_FOUND) {
         throw new NotFoundError();
       }
-      if (response.status === 429 && attempt <= retries) {
+      if (response.status === HTTP_STATUS.RATE_LIMIT && attempt <= retries) {
         const retryAfter = response.headers.get('Retry-After');
-        const delayMs = retryAfter ? parseInt(retryAfter) * 1000 : 1000 * Math.pow(2, attempt);
+        const delayMs = retryAfter ? parseInt(retryAfter) * 1000 : API_CONFIG.RETRY_DELAYS.RATE_LIMIT_FALLBACK;
         await delay(delayMs);
         return fetchWithRetry(url, options, retries, attempt + 1);
       }
-      if (response.status >= 500 && attempt <= retries) {
-        const delayMs = 1000 * Math.pow(2, attempt);
+      if (response.status >= HTTP_STATUS.SERVER_ERROR && attempt <= retries) {
+        const delayMs = API_CONFIG.RETRY_DELAYS.BASE_BACKOFF * Math.pow(2, attempt);
         await delay(delayMs);
         return fetchWithRetry(url, options, retries, attempt + 1);
       }
@@ -93,11 +94,11 @@ async function fetchWithRetry(url: string, options: FetchOptions = {}, retries =
       if (options.signal?.aborted) {
          throw error;
       }
-      throw new Error('Timeout');
+      throw new Error(ERROR_MESSAGES.TIMEOUT);
     }
     
     if (error instanceof TypeError && attempt <= retries) {
-      const delayMs = 1000 * Math.pow(2, attempt);
+      const delayMs = API_CONFIG.RETRY_DELAYS.BASE_BACKOFF * Math.pow(2, attempt);
       await delay(delayMs);
       return fetchWithRetry(url, options, retries, attempt + 1);
     }
@@ -112,14 +113,14 @@ async function fetchWithRetry(url: string, options: FetchOptions = {}, retries =
 
 async function request(endpoint: string, options: FetchOptions = {}) {
   const url = `${NEXT_PUBLIC_API_URL}${endpoint}`;
-  const token = Cookies.get('audioblocks_jwt');
+  const token = Cookies.get(AUTH.COOKIE_NAME);
   
   const headers = new Headers(options.headers);
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
   if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
+    headers.set(AUTH.TOKEN_HEADER, `${AUTH.TOKEN_PREFIX} ${token}`);
   }
 
   const response = await fetchWithRetry(url, { ...options, headers });

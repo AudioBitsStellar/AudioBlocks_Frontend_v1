@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import { API_ENDPOINTS } from './constants';
 
 export interface UserProfile {
   id: string;
@@ -22,11 +23,11 @@ export interface UpdateProfilePayload {
 }
 
 export async function getProfile(): Promise<UserProfile> {
-  const res = await apiClient.get('/api/user/profile');
+  const res = await apiClient.get(API_ENDPOINTS.USER_PROFILE);
   return res.data?.user ?? res.data;
 }
 
 export async function updateProfile(payload: UpdateProfilePayload): Promise<UserProfile> {
-  const res = await apiClient.put('/api/user/profile', payload);
+  const res = await apiClient.put(API_ENDPOINTS.USER_PROFILE, payload);
   return res.data?.user ?? res.data;
 }
