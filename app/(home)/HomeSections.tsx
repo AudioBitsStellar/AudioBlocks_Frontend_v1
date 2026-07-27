@@ -37,7 +37,9 @@ const Experience = dynamic(() => import('../../components/common/home/Experience
 
 export default function HomeSections() {
   useScrollRestoration('home');
+  return (
     <>
+
       <LazySection minHeight={360}>
         <Featured />
       </LazySection>
