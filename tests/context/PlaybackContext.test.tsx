@@ -21,6 +21,7 @@ vi.stubGlobal('HTMLAudioElement', class {
 describe('PlaybackContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -262,13 +263,172 @@ describe('PlaybackContext', () => {
     // We can't dispatch an unknown action directly because of TS types.
     // We can cast the return of usePlayback to any to test the default case of the reducer.
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
-    // We know that `enqueueTrack` calls `dispatch` internally. 
+
+    // We know that `enqueueTrack` calls `dispatch` internally.
     // Wait, we don't have access to `dispatch` directly.
     // The only way to hit the `default` case in a useReducer is if an action with an unknown type is dispatched.
     // Since our provider only exposes typed functions, it's impossible to dispatch an unknown type through the public API.
     // So the `default` case is unreachable from the context consumers.
     // To get 100% coverage, we would need to export the reducer function itself and test it directly.
     // But since we are testing the context, we can just check coverage and see if it hits 100%.
+  });
+
+  // ── Queue management (#116) ───────────────────────────────────────────
+
+  it('should add a track to the end of the queue', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    const track = { id: 'q1', title: 'Q1', artist: 'A', cover: 'C' };
+
+    act(() => result.current.addToQueue(track));
+    expect(result.current.queue).toHaveLength(1);
+    expect(result.current.queue[0]).toEqual(track);
+  });
+
+  it('should add a track to the front of the queue with position=next', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    const t1 = { id: 'q1', title: 'Q1', artist: 'A', cover: 'C' };
+    const t2 = { id: 'q2', title: 'Q2', artist: 'A', cover: 'C' };
+
+    act(() => result.current.addToQueue(t1, 'last'));
+    act(() => result.current.addToQueue(t2, 'next'));
+
+    expect(result.current.queue[0]).toEqual(t2);
+    expect(result.current.queue[1]).toEqual(t1);
+  });
+
+  it('should remove a track from the queue by index', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    const t1 = { id: 'q1', title: 'Q1', artist: 'A', cover: 'C' };
+    const t2 = { id: 'q2', title: 'Q2', artist: 'A', cover: 'C' };
+
+    act(() => result.current.addToQueue(t1));
+    act(() => result.current.addToQueue(t2));
+    act(() => result.current.removeFromQueue(0));
+
+    expect(result.current.queue).toHaveLength(1);
+    expect(result.current.queue[0]).toEqual(t2);
+  });
+
+  it('should reorder the queue', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    const t1 = { id: 'q1', title: 'Q1', artist: 'A', cover: 'C' };
+    const t2 = { id: 'q2', title: 'Q2', artist: 'A', cover: 'C' };
+    const t3 = { id: 'q3', title: 'Q3', artist: 'A', cover: 'C' };
+
+    act(() => result.current.addToQueue(t1));
+    act(() => result.current.addToQueue(t2));
+    act(() => result.current.addToQueue(t3));
+    act(() => result.current.reorderQueue(2, 0));
+
+    expect(result.current.queue[0]).toEqual(t3);
+    expect(result.current.queue[1]).toEqual(t1);
+    expect(result.current.queue[2]).toEqual(t2);
+  });
+
+  it('should clear the queue', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.addToQueue({ id: 'q1', title: 'Q1', artist: 'A', cover: 'C' }));
+    act(() => result.current.clearQueue());
+
+    expect(result.current.queue).toHaveLength(0);
+  });
+
+  it('should advance from queue when next() is called', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    const qTrack = { id: 'q-next', title: 'Q Next', artist: 'A', cover: 'C' };
+
+    act(() => result.current.addToQueue(qTrack));
+    act(() => result.current.next());
+
+    // The queued track should have been consumed and added to playlist.
+    expect(result.current.queue).toHaveLength(0);
+    expect(result.current.playlist.some((t) => t.id === 'q-next')).toBe(true);
+    expect(result.current.isPlaying).toBe(true);
+  });
+
+  it('should advance from queue with advanceQueue()', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    const t1 = { id: 'adv1', title: 'Adv1', artist: 'A', cover: 'C' };
+    const t2 = { id: 'adv2', title: 'Adv2', artist: 'A', cover: 'C' };
+
+    act(() => result.current.addToQueue(t1));
+    act(() => result.current.addToQueue(t2));
+    act(() => result.current.advanceQueue());
+
+    expect(result.current.queue).toHaveLength(1);
+    expect(result.current.queue[0]).toEqual(t2);
+    expect(result.current.isPlaying).toBe(true);
+  });
+
+  // ── History (#117) ────────────────────────────────────────────────────
+
+  it('should record a play event in history', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.recordPlay('track-1', 30000));
+
+    expect(result.current.history).toHaveLength(1);
+    expect(result.current.history[0].trackId).toBe('track-1');
+    expect(result.current.history[0].durationPlayed).toBe(30000);
+  });
+
+  it('should merge consecutive plays of the same track', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.recordPlay('track-1', 10000));
+    act(() => result.current.recordPlay('track-1', 20000));
+
+    expect(result.current.history).toHaveLength(1);
+    expect(result.current.history[0].durationPlayed).toBe(30000);
+  });
+
+  it('should keep separate entries for non-consecutive plays', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.recordPlay('track-1', 10000));
+    act(() => result.current.recordPlay('track-2', 5000));
+    act(() => result.current.recordPlay('track-1', 15000));
+
+    expect(result.current.history).toHaveLength(3);
+  });
+
+  it('should enforce a maximum of 200 history entries', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    for (let i = 0; i < 210; i++) {
+      act(() => result.current.recordPlay(`track-${i}`, 1000));
+    }
+
+    expect(result.current.history).toHaveLength(200);
+    // Most recent first
+    expect(result.current.history[0].trackId).toBe('track-209');
+  });
+
+  it('should getRecentlyPlayed returning unique tracks', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.recordPlay('track-1', 1000));
+    act(() => result.current.recordPlay('track-1', 2000));
+    act(() => result.current.recordPlay('track-2', 3000));
+    act(() => result.current.recordPlay('track-3', 4000));
+
+    const recent = result.current.getRecentlyPlayed(5);
+    // Should be 3 unique tracks (track-1 merged, track-2, track-3)
+    expect(recent).toHaveLength(3);
+    expect(recent[0].trackId).toBe('track-3');
+    expect(recent[1].trackId).toBe('track-2');
+    expect(recent[2].trackId).toBe('track-1');
+  });
+
+  it('should clear history on explicit action', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.recordPlay('track-1', 1000));
+    act(() => result.current.recordPlay('track-2', 2000));
+    expect(result.current.history).toHaveLength(2);
+
+    act(() => result.current.clearHistory());
+    expect(result.current.history).toHaveLength(0);
   });
 });
