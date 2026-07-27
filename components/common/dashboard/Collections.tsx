@@ -85,10 +85,10 @@ const Collections = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/tech.jpg'; }}
                   />
                 </div>
-                <div className="py-2 text-center md:text-left text-white">
-                  <p className="text-sm font-bold">{item.song}</p>
-                  <p className="text-xs text-on-muted font-normal">{item.artist}</p>
-                  <p className="text-sm font-medium">{item.description}</p>
+                <div className="py-2 text-center md:text-left text-white min-w-0">
+                  <p className="text-sm font-bold truncate">{item.song}</p>
+                  <p className="text-xs text-on-muted font-normal truncate">{item.artist}</p>
+                  <p className="text-sm font-medium truncate">{item.description}</p>
                 </div>
               </div>
             ))}

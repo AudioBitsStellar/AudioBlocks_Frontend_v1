@@ -77,10 +77,10 @@ const Merch = () => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="py-2 text-center md:text-left text-white">
-                  <p className="text-sm font-bold">{item.song}</p>
+                <div className="py-2 text-center md:text-left text-white min-w-0">
+                  <p className="text-sm font-bold truncate">{item.song}</p>
                   <p className="text-xs text-[#A3A3A3] font-normal">{item.artist}</p>
-                  <p className="text-sm font-medium">{item.description}</p>
+                  <p className="text-sm font-medium truncate">{item.description}</p>
                 </div>
               </div>
             ))}
