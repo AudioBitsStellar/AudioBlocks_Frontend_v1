@@ -88,10 +88,10 @@ const Artists = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/tech.jpg'; }}
                   />
                 </div>
-                <div className="py-2 text-center md:text-left text-white">
-                  <p className="text-sm font-bold">{artist.song}</p>
-                  <p className="text-xs text-on-muted font-normal">{artist.artist}</p>
-                  <p className="text-sm font-medium">{artist.description}</p>
+                <div className="py-2 text-center md:text-left text-white min-w-0">
+                  <p className="text-sm font-bold truncate">{artist.song}</p>
+                  <p className="text-xs text-on-muted font-normal truncate">{artist.artist}</p>
+                  <p className="text-sm font-medium truncate">{artist.description}</p>
                 </div>
               </div>
             ))}

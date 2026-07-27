@@ -75,12 +75,12 @@ const EventSection = () => {
                       />
                     </div>
                     <div className="p-2 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#1A1A1A] to-transparent space-y-1">
-                      <p className="text-base font-bold">{event.name}</p>
-                      <p className="text-xs text-white/70">{event.date}</p>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center text-xs gap-2 text-white/70">
-                          <Star className="w-4 h-4 text-white" />
-                          {event.going} Going • {event.price}
+                      <p className="text-base font-bold truncate">{event.name}</p>
+                      <p className="text-xs text-white/70 truncate">{event.date}</p>
+                      <div className="flex justify-between items-center gap-2">
+                        <div className="flex items-center text-xs gap-2 text-white/70 min-w-0 truncate">
+                          <Star className="w-4 h-4 text-white shrink-0" />
+                          <span className="truncate">{event.going} Going • {event.price}</span>
                         </div>
                         <button className="font-semibold cursor-pointer text-xs border rounded-xl px-4 py-2">
                           Buy Ticket

@@ -13,20 +13,20 @@ const TopNavbar = ({ onMenuClick }: TopNavbarProps) => {
   const isMobile = useIsMobile();
 
   return (
-    <header className="w-full px-4 md:px-8 py-4 shadow-md bg-[#161616] flex items-center justify-between">
-      <div className="flex items-center gap-3">
+    <header className="w-full px-4 md:px-8 py-4 shadow-md bg-[#161616] flex items-center justify-between gap-2">
+      <div className="flex items-center gap-3 min-w-0">
         {isMobile && (
           <button
             onClick={onMenuClick}
-            className="text-white cursor-pointer p-1"
+            className="text-white cursor-pointer shrink-0 w-11 h-11 flex items-center justify-center -ml-2"
             aria-label="Open navigation menu"
           >
             <Menu size={22} />
           </button>
         )}
-        <div>
-          <h2 className="text-sm md:text-base font-semibold">Welcome, Pete Lisk</h2>
-          <p className="text-xs text-gray-400">May 2025 | 11:00 AM GMT</p>
+        <div className="min-w-0">
+          <h2 className="text-sm md:text-base font-semibold truncate">Welcome, Pete Lisk</h2>
+          <p className="text-xs text-gray-400 truncate">May 2025 | 11:00 AM GMT</p>
         </div>
       </div>
 
@@ -42,10 +42,13 @@ const TopNavbar = ({ onMenuClick }: TopNavbarProps) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <button className="relative" aria-label="Notifications">
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          className="relative w-11 h-11 flex items-center justify-center"
+          aria-label="Notifications"
+        >
           <Bell className="text-white" size={20} />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
         </button>
 
         <UserMenu />
