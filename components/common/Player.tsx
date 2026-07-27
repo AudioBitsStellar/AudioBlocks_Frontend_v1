@@ -27,6 +27,100 @@ const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
 });
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
+
+const formatTime = (time: number) => {
+  const minutes = Math.floor(time / 60);
+  const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+  return `${minutes}:${seconds}`;
+};
+
+/**
+ * Renders the scrubber and drives it from a requestAnimationFrame loop instead
+ * of React state, so playback position updates at display refresh rate without
+ * re-rendering the rest of the player on every tick.
+ */
+const ProgressBar = memo(function ProgressBar({
+  audioRef,
+  duration,
+  isPlaying,
+  resetKey,
+}: {
+  audioRef: React.RefObject<HTMLAudioElement | null>;
+  duration: number;
+  isPlaying: boolean;
+  resetKey: string;
+}) {
+  const rangeRef = useRef<HTMLInputElement | null>(null);
+  const currentTimeRef = useRef<HTMLSpanElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const paint = useCallback((time: number) => {
+    const range = rangeRef.current;
+    if (range) {
+      range.value = String(time);
+      const pct = duration ? (time / duration) * 100 : 0;
+      range.style.background = `linear-gradient(to right, #B6195B 0%, #B6195B ${pct}%, rgb(82,82,82) ${pct}%, rgb(82,82,82) 100%)`;
+      range.setAttribute('aria-valuenow', String(Math.floor(time)));
+      range.setAttribute('aria-valuetext', `${formatTime(time)} of ${formatTime(duration)}`);
+    }
+    if (currentTimeRef.current) {
+      currentTimeRef.current.textContent = formatTime(time);
+    }
+  }, [duration]);
+
+  // Reset the scrubber to 0 whenever the track changes.
+  useEffect(() => {
+    paint(0);
+  }, [resetKey, paint]);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      return;
+    }
+    const tick = () => {
+      const audio = audioRef.current;
+      if (audio) paint(audio.currentTime);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+  }, [isPlaying, audioRef, paint]);
+
+  const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = Number(e.target.value);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+    }
+    paint(newTime);
+  }, [audioRef, paint]);
+
+  return (
+    <div className="flex items-center gap-2">
+      <span ref={currentTimeRef} className="text-xs text-white w-8">0:00</span>
+      <input
+        ref={rangeRef}
+        type="range"
+        min={0}
+        max={duration}
+        step={1}
+        defaultValue={0}
+        role="slider"
+        aria-label="Track position"
+        aria-valuemin={0}
+        aria-valuemax={duration}
+        onChange={handleSeek}
+        className="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+      />
+      <span className="text-xs text-white w-8 text-right">{formatTime(duration)}</span>
+    </div>
+  );
+});
+
 const Player = () => {
 
   const {
@@ -56,7 +150,6 @@ const Player = () => {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
@@ -73,7 +166,6 @@ const Player = () => {
 
   useEffect(() => {
     setCoverFailed(false);
-    setProgress(0);
     setIsBuffering(false);
     // Add to recently played when track changes
     if (currentTrack) {
@@ -106,14 +198,24 @@ const Player = () => {
     audio.muted = isMuted;
   }, [volume, isMuted]);
 
+  // Stop playback and release the audio resource when the tab is closed or the
+  // user navigates to an external URL, so streaming doesn't continue orphaned.
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (audioRef.current && isPlaying) {
-        setProgress(audioRef.current.currentTime);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isPlaying]);
+    const releaseAudio = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      audio.pause();
+      audio.src = '';
+      audio.load();
+    };
+    window.addEventListener('beforeunload', releaseAudio);
+    window.addEventListener('pagehide', releaseAudio);
+    return () => {
+      window.removeEventListener('beforeunload', releaseAudio);
+      window.removeEventListener('pagehide', releaseAudio);
+      releaseAudio();
+    };
+  }, []);
 
   useEffect(() => {
     if (currentTrack) {
@@ -155,12 +257,6 @@ const Player = () => {
     if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
     skipTimerRef.current = setTimeout(() => next(), 3000);
   }, [currentTrack, setError, next]);
-
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60).toString().padStart(2, '0');
-    return `${minutes}:${seconds}`;
-  };
 
   const coverSrc = useMemo(() => coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover, [coverFailed, currentTrack]);
 
@@ -259,38 +355,12 @@ const Player = () => {
                 {currentTrack?.artist}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-white w-8">{formatTime(progress)}</span>
-              <input
-                type="range"
-                min={0}
-                max={duration}
-                step={1}
-                value={progress}
-                role="slider"
-                aria-label="Track position"
-                aria-valuemin={0}
-                aria-valuemax={duration}
-                aria-valuenow={progress}
-                aria-valuetext={`${formatTime(progress)} of ${formatTime(duration)}`}
-                onChange={(e) => {
-                  const newTime = Number(e.target.value);
-                  if (audioRef.current) {
-                    audioRef.current.currentTime = newTime;
-                    setProgress(newTime);
-                  }
-                }}
-                className="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-                style={{
-                  background: `linear-gradient(to right, #B6195B 0%, #B6195B ${
-                    duration ? (progress / duration) * 100 : 0
-                  }%, rgb(82,82,82) ${
-                    duration ? (progress / duration) * 100 : 0
-                  }%, rgb(82,82,82) 100%)`,
-                }}
-              />
-              <span className="text-xs text-white w-8 text-right">{formatTime(duration)}</span>
-            </div>
+            <ProgressBar
+              audioRef={audioRef}
+              duration={duration}
+              isPlaying={isPlaying}
+              resetKey={trackId}
+            />
           </div>
         </div>
 
@@ -351,7 +421,6 @@ const Player = () => {
           }}
           onLoadedMetadata={(e) => {
             setDuration(e.currentTarget.duration);
-            setProgress(0);
           }}
           onWaiting={() => setIsBuffering(true)}
           onCanPlay={() => setIsBuffering(false)}
