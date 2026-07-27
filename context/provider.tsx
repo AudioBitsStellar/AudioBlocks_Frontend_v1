@@ -12,6 +12,7 @@ import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import { ReactNode } from "react";
 import { SdkViewSectionType, SdkViewType } from "@dynamic-labs/sdk-api";
 import WrongNetworkBanner from "@/components/common/WrongNetworkBanner";
+import { WalletProvider } from "@/context/WalletContext";
 
 
 const config = createConfig({
@@ -56,8 +57,10 @@ const  Provider=({ children }: { children: ReactNode })=> {
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
           <DynamicWagmiConnector>
-            <WrongNetworkBanner />
-            {children}
+            <WalletProvider>
+              <WrongNetworkBanner />
+              {children}
+            </WalletProvider>
           </DynamicWagmiConnector>
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
