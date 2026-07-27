@@ -64,7 +64,7 @@ async function fetchUserCollections(userId: string): Promise<Collection[]> {
   });
 }
 
-async function fetchCollectionDetail(id: string): Promise<Collection> {
+export async function fetchCollectionDetail(id: string): Promise<Collection> {
   // TODO: Replace with actual API call
   // const res = await apiClient.get(`/api/collections/${id}`);
   // return res.data;

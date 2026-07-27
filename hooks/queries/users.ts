@@ -14,8 +14,11 @@ export interface UserProfile {
   name: string;
   avatar: string;
   bio?: string;
+  socialLinks?: Record<string, string>;
   followers: number;
   following: number;
+  /** ISO timestamp of last profile update, used to cache-bust the avatar URL. */
+  updatedAt: string;
 }
 
 export interface UserActivity {
@@ -32,8 +35,10 @@ const mockUserProfile: UserProfile = {
   name: 'Alexia Stephen',
   avatar: '/AFRO.jpg',
   bio: 'Music enthusiast and collector',
+  socialLinks: { twitter: 'https://twitter.com/alexiastephen' },
   followers: 1234,
   following: 567,
+  updatedAt: '2024-03-15T10:30:00Z',
 };
 
 const mockActivities: UserActivity[] = [
@@ -52,7 +57,7 @@ const mockActivities: UserActivity[] = [
 ];
 
 // Query Functions
-async function fetchUserProfile(userId: string): Promise<UserProfile> {
+export async function fetchUserProfile(userId: string): Promise<UserProfile> {
   // TODO: Replace with actual API call
   // const res = await apiClient.get(`/api/users/${userId}`);
   // return res.data;
@@ -75,15 +80,41 @@ async function fetchUserActivity(userId: string): Promise<UserActivity[]> {
   });
 }
 
+/** Appends a cache-busting version param derived from the profile's last update time. */
+export function getVersionedAvatarUrl(avatar: string, updatedAt: string): string {
+  const version = encodeURIComponent(updatedAt);
+  const separator = avatar.includes('?') ? '&' : '?';
+  return `${avatar}${separator}v=${version}`;
+}
+
+/** Derives up to two initials from a display name, for use as an avatar fallback. */
+export function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  const first = parts[0][0];
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return `${first}${last}`.toUpperCase();
+}
+
 // Hooks
-export function useUserProfile(userId: string) {
-  return useQuery({
+export function useUserProfile(userId: string, currentUserId?: string) {
+  const query = useQuery({
     queryKey: userKeys.profile(userId),
     queryFn: () => fetchUserProfile(userId),
-    staleTime: CACHE_DURATIONS.LONG,
+    staleTime: CACHE_DURATIONS.MEDIUM,
     retry: RETRY_CONFIG.DEFAULT,
     enabled: !!userId,
+    // Stale-while-revalidate: keep showing the last known profile while a
+    // background refetch is in flight instead of flashing a loading state.
+    placeholderData: (previousData) => previousData,
   });
+
+  return {
+    ...query,
+    avatarUrl: query.data ? getVersionedAvatarUrl(query.data.avatar, query.data.updatedAt) : undefined,
+    initials: query.data ? getInitials(query.data.name) : undefined,
+    isCurrentUser: !!currentUserId && currentUserId === userId,
+  };
 }
 
 export function useUserActivity(userId: string) {
