@@ -431,4 +431,45 @@ describe('PlaybackContext', () => {
     act(() => result.current.clearHistory());
     expect(result.current.history).toHaveLength(0);
   });
+
+  // ── Crossfade (#115) ──────────────────────────────────────────────────
+
+  it('should default crossfadeDuration to 0 (disabled)', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    expect(result.current.crossfadeDuration).toBe(0);
+    expect(result.current.isCrossfading).toBe(false);
+  });
+
+  it('should set crossfade duration within 0-5 seconds', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.setCrossfadeDuration(3));
+    expect(result.current.crossfadeDuration).toBe(3);
+
+    act(() => result.current.setCrossfadeDuration(0));
+    expect(result.current.crossfadeDuration).toBe(0);
+  });
+
+  it('should clamp crossfade duration to the 0-5 range', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.setCrossfadeDuration(10));
+    expect(result.current.crossfadeDuration).toBe(5);
+
+    act(() => result.current.setCrossfadeDuration(-2));
+    expect(result.current.crossfadeDuration).toBe(0);
+
+    act(() => result.current.setCrossfadeDuration(Number.NaN));
+    expect(result.current.crossfadeDuration).toBe(0);
+  });
+
+  it('should toggle isCrossfading flag', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.setCrossfading(true));
+    expect(result.current.isCrossfading).toBe(true);
+
+    act(() => result.current.setCrossfading(false));
+    expect(result.current.isCrossfading).toBe(false);
+  });
 });

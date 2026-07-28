@@ -4,7 +4,7 @@ import {
 } from "@dynamic-labs/sdk-react-core";
 import { DynamicWagmiConnector } from "@dynamic-labs/wagmi-connector";
 import { createConfig, WagmiProvider } from "wagmi";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { http } from "viem";
 import { liskSepolia, mainnet, sepolia } from "viem/chains";
@@ -13,6 +13,7 @@ import { ReactNode } from "react";
 import { SdkViewSectionType, SdkViewType } from "@dynamic-labs/sdk-api";
 import WrongNetworkBanner from "@/components/common/WrongNetworkBanner";
 import { WalletProvider } from "@/context/WalletContext";
+import { queryClient } from "@/lib/queryClient";
 
 
 const config = createConfig({
@@ -24,8 +25,6 @@ const config = createConfig({
     [sepolia.id]: http()
 	},
 });
-
-const queryClient = new QueryClient();
 
 const  Provider=({ children }: { children: ReactNode })=> {
   return (
@@ -62,7 +61,9 @@ const  Provider=({ children }: { children: ReactNode })=> {
               {children}
             </WalletProvider>
           </DynamicWagmiConnector>
-          <ReactQueryDevtools initialIsOpen={false} />
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
         </QueryClientProvider>
       </WagmiProvider>
     </DynamicContextProvider>
