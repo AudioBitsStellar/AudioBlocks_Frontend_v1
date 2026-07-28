@@ -7,6 +7,7 @@ import TopNavbar from "@/components/common/dashboard/topnavbar";
 import { QueueDrawer } from "@/components/common/QueueDrawer";
 import { PlaybackProvider } from "@/context/PlaybackContext";
 import { useEdgeSwipe } from "@/hooks/useEdgeSwipe";
+import { PageTransition } from '@/components/ui/PageTransition';
 
 // Player reads/writes browser-only audio APIs (HTMLAudioElement, localStorage-backed
 // playback state); rendering it only on the client avoids server/client markup drift.
@@ -28,7 +29,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <TopNavbar onMenuClick={() => setMobileOpen(true)} />
 
           <main className="flex-1 px-4 md:px-6 py-4">
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </main>
 
           <Player />

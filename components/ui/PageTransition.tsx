@@ -1,0 +1,44 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useState, useEffect, ReactNode } from 'react';
+
+const variants = {
+  enter: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const transition = { duration: 0.2, ease: 'easeInOut' };
+
+export function PageTransition({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  if (reducedMotion) {
+    return <>{children}</>;
+  }
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={pathname}
+        variants={variants}
+        initial="enter"
+        animate="enter"
+        exit="exit"
+        transition={transition}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
