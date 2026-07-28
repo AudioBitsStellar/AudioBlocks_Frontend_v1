@@ -351,7 +351,7 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
 const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
-  // Hydrate queue and history from localStorage on mount.
+  // Hydrate queue, history, and volume from localStorage on mount (#121).
   const hydratedState: PlaybackState = {
     ...initialState,
     queue: loadFromStorage<Track[]>(QUEUE_STORAGE_KEY, []),
