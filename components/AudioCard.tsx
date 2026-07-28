@@ -1,10 +1,10 @@
-import React, { memo, useState } from 'react';
-import Image from 'next/image';
+import React, { memo } from 'react';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 
 interface AudioCardProps {
   title: string;
   artist: string;
-  imageUrl: string;
+  imageUrl: string | null | undefined;
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   altText?: string;
@@ -20,8 +20,6 @@ const AudioCard: React.FC<AudioCardProps> = memo(({
   altText,
   onClick,
 }) => {
-  const [imgSrc, setImgSrc] = useState(imageUrl);
-
   if (isLoading) {
     return <div data-testid="audio-card-skeleton" className={`skeleton size-${size}`}></div>;
   }
@@ -39,10 +37,11 @@ const AudioCard: React.FC<AudioCardProps> = memo(({
       onClick={onClick}
       onKeyDown={handleKeyDown}
     >
-      <Image
-        src={imgSrc}
+      {/* #130 — ArtworkImage handles null/undefined/404 src without console errors */}
+      <ArtworkImage
+        src={imageUrl}
+        title={title}
         alt={altText || `${title} by ${artist}`}
-        onError={() => setImgSrc('/placeholder-cover.svg')}
         width={100}
         height={100}
       />
