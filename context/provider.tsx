@@ -13,6 +13,8 @@ import { ReactNode } from "react";
 import { SdkViewSectionType, SdkViewType } from "@dynamic-labs/sdk-api";
 import WrongNetworkBanner from "@/components/common/WrongNetworkBanner";
 import { WalletProvider } from "@/context/WalletContext";
+import { UserPreferencesProvider } from "@/context/UserPreferencesContext";
+import { LoadingProvider } from "@/context/LoadingContext";
 import { queryClient } from "@/lib/queryClient";
 
 
@@ -57,8 +59,12 @@ const  Provider=({ children }: { children: ReactNode })=> {
         <QueryClientProvider client={queryClient}>
           <DynamicWagmiConnector>
             <WalletProvider>
-              <WrongNetworkBanner />
-              {children}
+              <LoadingProvider>
+                <UserPreferencesProvider>
+                  <WrongNetworkBanner />
+                  {children}
+                </UserPreferencesProvider>
+              </LoadingProvider>
             </WalletProvider>
           </DynamicWagmiConnector>
           {process.env.NODE_ENV === 'development' && (
