@@ -151,6 +151,7 @@ const QUEUE_STORAGE_KEY = 'audioblocks_queue';
 const HISTORY_STORAGE_KEY = 'audioblocks_history';
 const VOLUME_STORAGE_KEY = 'audioblocks_volume';
 const MUTED_STORAGE_KEY = 'audioblocks_muted';
+const RECENTLY_PLAYED_STORAGE_KEY = 'audioblocks_recently_played';
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -260,7 +261,7 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
       if (existingIndex >= 0) {
         updated = [action.track, ...state.recentlyPlayed.filter((_, i) => i !== existingIndex)];
       } else {
-        updated = [action.track, ...state.recentlyPlayed].slice(0, 10);
+        updated = [action.track, ...state.recentlyPlayed].slice(0, 20);
       }
       return { ...state, recentlyPlayed: updated };
     }
@@ -356,6 +357,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     ...initialState,
     queue: loadFromStorage<Track[]>(QUEUE_STORAGE_KEY, []),
     history: loadFromStorage<PlaybackEvent[]>(HISTORY_STORAGE_KEY, []),
+    recentlyPlayed: loadFromStorage<Track[]>(RECENTLY_PLAYED_STORAGE_KEY, []),
     // #121: restore volume and muted state from the device so the user's
     // preferred level survives page reloads and browser restarts.
     volume: loadFromStorage<number>(VOLUME_STORAGE_KEY, initialState.volume),
@@ -380,6 +382,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveToStorage(MUTED_STORAGE_KEY, state.isMuted);
   }, [state.isMuted]);
+
+  useEffect(() => {
+    saveToStorage(RECENTLY_PLAYED_STORAGE_KEY, state.recentlyPlayed);
+  }, [state.recentlyPlayed]);
 
   const setAutoplayBlocked = useCallback((blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }), []);
   const resumeAudio = useCallback(() => dispatch({ type: 'RESUME_AUDIO' }), []);
