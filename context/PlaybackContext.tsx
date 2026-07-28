@@ -149,6 +149,21 @@ const HISTORY_MAX = 200;
 
 const QUEUE_STORAGE_KEY = 'audioblocks_queue';
 const HISTORY_STORAGE_KEY = 'audioblocks_history';
+const VOLUME_STORAGE_KEY = 'audioblocks_volume';
+const MUTE_STORAGE_KEY = 'audioblocks_muted';
+
+// ── VolumeChange custom event (#121) ─────────────────────────────────────────
+
+export interface VolumeChangeDetail {
+  volume: number;
+  isMuted: boolean;
+}
+
+/** Dispatched on `window` whenever volume or mute state changes. */
+export function dispatchVolumeChange(detail: VolumeChangeDetail): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent<VolumeChangeDetail>('audioblocks:volumechange', { detail }));
+}
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -349,11 +364,13 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
 const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
-  // Hydrate queue and history from localStorage on mount.
+  // Hydrate queue, history, and volume from localStorage on mount (#121).
   const hydratedState: PlaybackState = {
     ...initialState,
     queue: loadFromStorage<Track[]>(QUEUE_STORAGE_KEY, []),
     history: loadFromStorage<PlaybackEvent[]>(HISTORY_STORAGE_KEY, []),
+    volume: loadFromStorage<number>(VOLUME_STORAGE_KEY, initialState.volume),
+    isMuted: loadFromStorage<boolean>(MUTE_STORAGE_KEY, initialState.isMuted),
   };
 
   const [state, dispatch] = useReducer(reducer, hydratedState);
@@ -366,6 +383,13 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveToStorage(HISTORY_STORAGE_KEY, state.history);
   }, [state.history]);
+
+  // Persist volume + mute to localStorage and dispatch VolumeChange event (#121).
+  useEffect(() => {
+    saveToStorage(VOLUME_STORAGE_KEY, state.volume);
+    saveToStorage(MUTE_STORAGE_KEY, state.isMuted);
+    dispatchVolumeChange({ volume: state.volume, isMuted: state.isMuted });
+  }, [state.volume, state.isMuted]);
 
   const setAutoplayBlocked = useCallback((blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }), []);
   const resumeAudio = useCallback(() => dispatch({ type: 'RESUME_AUDIO' }), []);
