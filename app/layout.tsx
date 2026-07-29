@@ -4,6 +4,7 @@ import './globals.css';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Provider from '@/context/provider';
+import { ToastProvider } from '@/context/ToastContext';
 import { Toaster } from 'sonner';
 import EnvCheck from '@/components/EnvCheck';
 import SWRegister from '@/components/SWRegister';
@@ -50,7 +51,7 @@ export default function RootLayout({
             Skip to main content
           </a>
           <Toaster position="bottom-right" closeButton />
-          {children}
+          <ToastProvider>{children}</ToastProvider>
           {/* Analytics script loaded after user interaction to reduce main thread blocking */}
           <Script
             id="analytics-script"

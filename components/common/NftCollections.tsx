@@ -2,11 +2,19 @@
 
 import { Inter } from 'next/font/google';
 import { Search } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import BuyButton from './BuyButton';
 
-const PAGE_SIZE = 5;
+interface CollectionItem {
+  id: string;
+  image: string;
+  artistName: string;
+  songName?: string;
+  eventName?: string;
+  itemName?: string;
+  price: string;
+}
 
 const inter = Inter({
   subsets: ['latin'],
@@ -104,114 +112,33 @@ function matchesPrice(price: string, min: string, max: string): boolean {
   return true;
 }
 
-const MusicCard = ({ item }: { item: any }) => (
-  <div
-    className="bg-transparent hover:bg-[#1E1E1E] shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-    style={{
-      width: '208.921875px',
-      height: '309.40625px',
-      borderRadius: '6.38px',
-      padding: '16px',
-      position: 'relative',
-    }}
-  >
-    <div className="flex justify-center">
-      <Image
-        src={item.image || '/placeholder.svg'}
-        alt={item.songName}
-         height={200}
-        width={200}
-        className="w-44 h-44 object-cover relative rounded-2xl -top-1 left-0.5"
-      />
-    </div>
-    <div
-      className="mt-3 flex flex-col justify-between"
-      style={{ height: 'calc(100% - 176px - 12px)' }}
-    >
-      <div>
-        <h3 className="font-semibold text-base text-white">{item.artistName}</h3>
-        <p className="text-[#A3A3A3] text-sm mb-2">{item.songName}</p>
+function Card({ item }: { item: CollectionItem }) {
+  return (
+    <div className="flex flex-col bg-surface border border-border-dark rounded-xl overflow-hidden transition-all duration-200 hover:bg-surface-hover hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98]">
+      <div className="relative aspect-square overflow-hidden">
+        <Image
+          src={item.image || '/placeholder.svg'}
+          alt={item.songName || item.eventName || item.itemName || 'Collection item'}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        />
       </div>
-       <div className="flex items-center justify-between mt-auto">
-         <BuyButton tokenId={item.id} price={item.price} label="Buy Now" />
-         <span className="font-bold text-sm text-[#A3A3A3]">{item.price}</span>
-       </div>
-
-    </div>
-  </div>
-);
-
-const EventCard = ({ item }: { item: any }) => (
-  <div
-    className="bg-transparent hover:bg-[#1E1E1E] shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-    style={{
-      width: '208.921875px',
-      height: '309.40625px',
-      borderRadius: '6.38px',
-      padding: '16px',
-      position: 'relative',
-    }}
-  >
-    <div className="flex justify-center">
-      <Image
-        src={item.image || '/placeholder.svg'}
-        alt={item.eventName}
-        height={200}
-        width={200}
-        className="w-44 h-44 object-cover relative rounded-2xl -top-1 left-0.5"
-      />
-    </div>
-    <div
-      className="mt-3 flex flex-col justify-between"
-      style={{ height: 'calc(100% - 176px - 12px)' }}
-    >
-      <div>
-        <h3 className="font-semibold text-base text-white">{item.artistName}</h3>
-        <p className="text-[#A3A3A3] text-sm mb-2">{item.eventName}</p>
+      <div className="flex flex-col gap-1.5 p-4 flex-1">
+        <div className="flex-1 space-y-0.5">
+          <h3 className="font-semibold text-sm text-white truncate">{item.artistName}</h3>
+          <p className="text-xs text-on-muted truncate">
+            {item.songName || item.eventName || item.itemName}
+          </p>
+        </div>
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-border-dark mt-auto">
+          <BuyButton tokenId={item.id} price={item.price} label="Buy Now" />
+          <span className="font-semibold text-xs text-on-muted shrink-0">{item.price}</span>
+        </div>
       </div>
-       <div className="flex items-center justify-between mt-auto">
-         <BuyButton tokenId={item.id} price={item.price} label="Buy Ticket" />
-         <span className="font-bold text-sm text-[#A3A3A3]">{item.price}</span>
-       </div>
-
     </div>
-  </div>
-);
-
-const MerchCard = ({ item }: { item: any }) => (
-  <div
-    className="bg-transparent shadow-lg overflow-hidden hover:shadow-xl hover:bg-[#1E1E1E] transition-shadow duration-300"
-    style={{
-      width: '208.921875px',
-      height: '309.40625px',
-      borderRadius: '6.38px',
-      padding: '16px',
-      position: 'relative',
-    }}
-  >
-    <Image
-      src={item.image || '/placeholder.svg'}
-      alt={item.itemName}
-      height={200}
-      width={200}
-      className="w-44 h-44 relative object-cover rounded-2xl -top-1 left-0.5"
-    />
-    <div
-      className="mt-3 flex flex-col justify-between"
-      style={{ height: 'calc(100% - 176px - 12px)' }}
-    >
-      <div>
-        <h3 className="font-semibold text-base text-white">{item.artistName}</h3>
-        <p className="text-[#A3A3A3] text-sm mb-2">{item.itemName}</p>
-      </div>
-       <div className="flex items-center justify-between mt-auto">
-         <BuyButton tokenId={item.id} price={item.price} label="Buy Merch" />
-         <span className="font-bold text-sm text-[#A3A3A3]">{item.price}</span>
-       </div>
-
-    </div>
-  </div>
-);
+  );
+}
 
 export default function NftCollection() {
   const [activeTab, setActiveTab] = useState('All');
@@ -221,9 +148,9 @@ export default function NftCollection() {
 
   const tabs = ['All', 'Latest', 'Tickets', 'Merches'];
 
-  const allItems = useMemo(() => [...musicData, ...eventData, ...merchData], []);
+  const allItems = useMemo<CollectionItem[]>(() => [...musicData, ...eventData, ...merchData], []);
 
-  const getTabData = () => {
+  const getTabData = useCallback(() => {
     switch (activeTab) {
       case 'Latest':
         return musicData;
@@ -234,31 +161,22 @@ export default function NftCollection() {
       default:
         return allItems;
     }
-  };
+  }, [activeTab, allItems]);
 
   const filtered = useMemo(() => {
     const tabData = getTabData();
-    return tabData.filter((item: any) => {
-      const searchable = `${item.artistName || ''} ${item.songName || item.eventName || item.itemName || ''}`.toLowerCase();
+    return tabData.filter((item: CollectionItem) => {
+      const searchable =
+        `${item.artistName || ''} ${item.songName || item.eventName || item.itemName || ''}`.toLowerCase();
       const matchesSearch = !search || searchable.includes(search.toLowerCase());
       const inPriceRange = matchesPrice(item.price, priceMin, priceMax);
       return matchesSearch && inPriceRange;
     });
-  }, [activeTab, search, priceMin, priceMax, allItems]);
-
-  const renderCard = (item: any) => {
-    if (eventData.some((event) => event.id === item.id)) {
-      return <EventCard key={item.id} item={item} />;
-    } else if (merchData.some((merch) => merch.id === item.id)) {
-      return <MerchCard key={item.id} item={item} />;
-    } else {
-      return <MusicCard key={item.id} item={item} />;
-    }
-  };
+  }, [getTabData, search, priceMin, priceMax]);
 
   return (
-    <div className="min-h-screen max-w-11/12 m-auto bg-black px-8 py-12">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-12">
+    <div className="min-h-screen max-w-11/12 mx-auto bg-black px-4 sm:px-8 py-8 sm:py-12">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12">
         <h1
           className={`${inter.className} capitalize text-3xl sm:text-4xl md:text-[48px] font-semibold leading-tight tracking-normal`}
         >
@@ -273,23 +191,22 @@ export default function NftCollection() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by artist or title..."
             aria-label="Search NFT collections"
-            className="w-full sm:w-80 h-11 pl-10 pr-5 py-2 rounded-full border border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full sm:w-80 h-11 pl-10 pr-5 py-2 rounded-full bg-surface-input border border-border-dark text-white placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-7">
-        <div className="flex space-x-4">
+        <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
             <button
               key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={`relative text-lg font-medium px-3 py-2 w-24 rounded-3xl transition-all duration-300 ease-in-out
-          ${
-            activeTab === tab
-              ? 'bg-[#885FA8] text-white scale-105'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
+              onClick={() => setActiveTab(tab)}
+              className={`relative text-sm font-medium px-4 py-2 rounded-full transition-all duration-200 ${
+                activeTab === tab
+                  ? 'bg-brand text-white'
+                  : 'bg-surface text-on-muted hover:bg-surface-hover hover:text-white'
+              }`}
             >
               {tab}
             </button>
@@ -297,85 +214,51 @@ export default function NftCollection() {
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          <label className="text-sm text-gray-400">Price:</label>
+          <label className="text-xs text-on-muted">Price:</label>
           <input
             type="number"
             value={priceMin}
             onChange={(e) => setPriceMin(e.target.value)}
             placeholder="Min"
             aria-label="Minimum price in ETH"
-            className="w-20 h-9 px-3 py-1 rounded-full border border-gray-300 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-20 h-9 px-3 py-1 rounded-full bg-surface-input border border-border-dark text-white text-sm placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
             min="0"
             step="0.1"
           />
-          <span className="text-gray-500">-</span>
+          <span className="text-on-muted">-</span>
           <input
             type="number"
             value={priceMax}
             onChange={(e) => setPriceMax(e.target.value)}
             placeholder="Max"
             aria-label="Maximum price in ETH"
-            className="w-20 h-9 px-3 py-1 rounded-full border border-gray-300 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-20 h-9 px-3 py-1 rounded-full bg-surface-input border border-border-dark text-white text-sm placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
             min="0"
             step="0.1"
           />
-          <span className="text-sm text-gray-400">ETH</span>
+          <span className="text-xs text-on-muted">ETH</span>
         </div>
-
-        {/* Load More */}
-        {(hasMore || isLoading) && (
-          <div className="flex justify-center mt-10">
-            <button
-              onClick={loadMore}
-              disabled={isLoading}
-              className="px-8 py-3 rounded-full bg-[#885FA8] text-white font-semibold text-sm hover:bg-[#724e91] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
-                  </svg>
-                  Loading…
-                </span>
-              ) : (
-                'Load More'
-              )}
-            </button>
-          </div>
-        )}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-500">
+        <div className="text-center py-20 text-on-muted">
           <p className="text-lg">No items match your filters.</p>
           <button
-            onClick={() => { setSearch(''); setPriceMin(''); setPriceMax(''); }}
-            className="mt-4 px-4 py-2 text-sm text-white bg-[#885FA8] rounded-full hover:bg-[#7a53a0]"
+            onClick={() => {
+              setSearch('');
+              setPriceMin('');
+              setPriceMax('');
+            }}
+            className="mt-4 px-4 py-2 text-sm text-white bg-brand rounded-full hover:bg-brand-hover"
           >
             Clear filters
           </button>
         </div>
       ) : (
-        <div className="max-w-full mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-            {filtered.map((item) => renderCard(item))}
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          {filtered.map((item) => (
+            <Card key={item.id} item={item} />
+          ))}
         </div>
       )}
     </div>
