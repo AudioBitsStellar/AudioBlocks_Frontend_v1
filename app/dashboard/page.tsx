@@ -9,6 +9,7 @@ import Collections from '@/components/common/dashboard/Collections';
 import EventSection from '@/components/common/dashboard/EventSection';
 import Merch from '@/components/common/dashboard/Merch';
 import RecentlyPlayed from '@/components/common/dashboard/RecentlyPlayed';
+import { ProfileCompletion } from '@/components/dashboard/ProfileCompletion';
 
 const genreFilters = ['All', 'Pop', 'Contemporary', 'Rock', 'Afro', 'Jazz'];
 
@@ -19,6 +20,8 @@ const ExplorePage = () => {
 
   return (
     <div>
+      <ProfileCompletion />
+
       <div className="flex flex-col gap-4 mb-6">
         <p className="text-xs font-medium text-left text-white mb-1">Explore</p>
 
