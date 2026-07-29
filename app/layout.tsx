@@ -8,6 +8,8 @@ import { Toaster } from 'sonner';
 import EnvCheck from '@/components/EnvCheck';
 import SWRegister from '@/components/SWRegister';
 import Script from 'next/script';
+import RouteProgress from '@/components/ui/RouteProgress';
+import { Suspense } from 'react';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -41,6 +43,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased dark bg-black text-white`}
       >
         <Provider>
+          <Suspense fallback={null}>
+            <RouteProgress />
+          </Suspense>
           <SWRegister />
           <EnvCheck />
           <a
