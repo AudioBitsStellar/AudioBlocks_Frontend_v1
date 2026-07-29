@@ -1,7 +1,49 @@
 'use client';
 
 import React, { Component, ReactNode, ErrorInfo } from 'react';
-import { AlertTriangle, RefreshCw, RotateCw, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  AlertTriangle,
+  RefreshCw,
+  RotateCw,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
+
+const UNKNOWN_ERROR_MESSAGE = 'An unknown error occurred';
+
+/**
+ * Normalizes any value caught by the error boundary into a proper Error
+ * instance. React error boundaries can receive null/undefined or non-Error
+ * values depending on how the error was thrown, so this guards against
+ * crashing the boundary itself while rendering the fallback UI.
+ */
+function normalizeError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (error === null || error === undefined) {
+    console.warn('[SectionErrorBoundary] Caught a null/undefined error.');
+    return new Error(UNKNOWN_ERROR_MESSAGE);
+  }
+
+  if (typeof error === 'string') {
+    console.warn('[SectionErrorBoundary] Caught a non-Error string value:', error);
+    return new Error(error.trim() || UNKNOWN_ERROR_MESSAGE);
+  }
+
+  console.warn('[SectionErrorBoundary] Caught an unexpected error shape:', error);
+  try {
+    const message =
+      typeof error === 'number' || typeof error === 'boolean'
+        ? String(error)
+        : UNKNOWN_ERROR_MESSAGE;
+    return new Error(message || UNKNOWN_ERROR_MESSAGE);
+  } catch {
+    return new Error(UNKNOWN_ERROR_MESSAGE);
+  }
+}
 
 export interface SectionErrorBoundaryProps {
   children: ReactNode;
@@ -36,14 +78,19 @@ export default class SectionErrorBoundary extends Component<
     };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<SectionErrorBoundaryState> {
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: unknown): Partial<SectionErrorBoundaryState> {
+    return { hasError: true, error: normalizeError(error) };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.setState({ errorInfo });
+  componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
+    const normalizedError = normalizeError(error);
+    this.setState({ errorInfo, error: normalizedError });
     // Always log error to console for debugging
-    console.error(`[SectionErrorBoundary${this.props.sectionName ? `: ${this.props.sectionName}` : ''}]`, error, errorInfo.componentStack);
+    console.error(
+      `[SectionErrorBoundary${this.props.sectionName ? `: ${this.props.sectionName}` : ''}]`,
+      normalizedError,
+      errorInfo.componentStack
+    );
   }
 
   handleRetry = () => {
@@ -80,10 +127,7 @@ export default class SectionErrorBoundary extends Component<
       } = this.props;
 
       const displaySection = sectionName ? sectionName : 'section';
-      const errorMessage =
-        fallbackMessage ??
-        this.state.error?.message ??
-        `Unable to display ${sectionName ? `the ${sectionName}` : 'this section'}. Something went wrong.`;
+      const errorMessage = fallbackMessage ?? this.state.error?.message ?? UNKNOWN_ERROR_MESSAGE;
 
       const minHeightStyle = typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
 
@@ -154,7 +198,8 @@ export default class SectionErrorBoundary extends Component<
             {this.state.showDetails && (
               <div className="mt-3 p-3 text-left bg-black/40 border border-border-dark rounded-lg overflow-x-auto text-xs font-mono text-gray-300 max-h-48">
                 <p className="font-bold text-red-400 mb-1">
-                  {this.state.error?.name || 'Error'}: {this.state.error?.message || 'Unknown error'}
+                  {this.state.error?.name || 'Error'}:{' '}
+                  {this.state.error?.message || 'Unknown error'}
                 </p>
                 {this.state.errorInfo?.componentStack && (
                   <pre className="whitespace-pre-wrap text-[11px] text-gray-400 leading-relaxed">
@@ -173,10 +218,6 @@ export default class SectionErrorBoundary extends Component<
       );
     }
 
-    return (
-      <React.Fragment key={this.state.remountKey}>
-        {this.props.children}
-      </React.Fragment>
-    );
+    return <React.Fragment key={this.state.remountKey}>{this.props.children}</React.Fragment>;
   }
 }
