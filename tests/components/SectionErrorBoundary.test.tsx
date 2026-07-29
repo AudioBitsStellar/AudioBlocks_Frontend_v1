@@ -10,6 +10,10 @@ const ProblemChild = ({ shouldThrow = false }: { shouldThrow?: boolean }) => {
   return <div>Normal Content</div>;
 };
 
+const ThrowValue = ({ value }: { value: unknown }) => {
+  throw value;
+};
+
 describe('SectionErrorBoundary Component', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -70,5 +74,49 @@ describe('SectionErrorBoundary Component', () => {
     fireEvent.click(retryButton);
 
     expect(onRetryMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a fallback message and does not crash when a null error is thrown', () => {
+    render(
+      <SectionErrorBoundary sectionName="Player">
+        <ThrowValue value={null} />
+      </SectionErrorBoundary>
+    );
+
+    expect(screen.getByText('Player Error')).toBeInTheDocument();
+    expect(screen.getByText('An unknown error occurred')).toBeInTheDocument();
+  });
+
+  it('shows a fallback message and does not crash when an undefined error is thrown', () => {
+    render(
+      <SectionErrorBoundary sectionName="Player">
+        <ThrowValue value={undefined} />
+      </SectionErrorBoundary>
+    );
+
+    expect(screen.getByText('Player Error')).toBeInTheDocument();
+    expect(screen.getByText('An unknown error occurred')).toBeInTheDocument();
+  });
+
+  it('handles a thrown string without crashing', () => {
+    render(
+      <SectionErrorBoundary sectionName="Player">
+        <ThrowValue value="plain string failure" />
+      </SectionErrorBoundary>
+    );
+
+    expect(screen.getByText('Player Error')).toBeInTheDocument();
+    expect(screen.getByText('plain string failure')).toBeInTheDocument();
+  });
+
+  it('handles a thrown number without crashing', () => {
+    render(
+      <SectionErrorBoundary sectionName="Player">
+        <ThrowValue value={42} />
+      </SectionErrorBoundary>
+    );
+
+    expect(screen.getByText('Player Error')).toBeInTheDocument();
+    expect(screen.getByText('42')).toBeInTheDocument();
   });
 });
