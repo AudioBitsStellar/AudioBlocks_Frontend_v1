@@ -12,7 +12,11 @@ export default function ErrorState({
   onRetry,
 }: Props) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+    <div
+      className="flex flex-col items-center justify-center gap-3 py-10 text-center"
+      role="alert"
+      aria-live="assertive"
+    >
       <AlertTriangle size={32} className="text-brand" />
       <p className="text-sm text-on-muted max-w-xs">{message}</p>
       {onRetry && (
