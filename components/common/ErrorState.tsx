@@ -48,14 +48,12 @@ export default function ErrorState({
 
   return (
     <div
+      className="flex flex-col items-center justify-center gap-3 py-10 text-center"
       role="alert"
-      className={cn('flex flex-col items-center justify-center gap-4 py-10 text-center', className)}
+      aria-live="assertive"
     >
-      <div className="flex items-center justify-center">{displayIllustration}</div>
-      <div className="space-y-1">
-        <h3 className="text-base font-semibold text-white">{displayTitle}</h3>
-        <p className="text-sm text-on-muted max-w-xs">{displayMessage}</p>
-      </div>
+      <AlertTriangle size={32} className="text-brand" />
+      <p className="text-sm text-on-muted max-w-xs">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
