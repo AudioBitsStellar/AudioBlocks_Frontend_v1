@@ -2,8 +2,7 @@
 
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import Image from 'next/image';
-import { Play } from 'lucide-react';
+import AudioCard from '@/components/ui/AudioCard';
 import { usePlayback } from '@/context/PlaybackContext';
 
 export default function TrackList({ tracks }: { tracks: any[] }) {
@@ -43,27 +42,17 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                 width: '100%',
                 transform: `translateY(${virtualItem.start}px)`,
               }}
-              className="flex items-center gap-4 p-3 hover:bg-surface-hover cursor-pointer transition border-b border-border-dark"
-              onClick={() => playTrack(track)}
             >
-              <div className="w-12 h-12 relative rounded overflow-hidden shrink-0">
-                <Image
-                  src={track.cover || '/placeholder-cover.svg'}
-                  alt={track.title}
-                  fill
-                  className="object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder-cover.svg';
-                  }}
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition flex items-center justify-center">
-                  <Play size={16} className="text-white ml-1" />
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-white truncate">{track.title}</h3>
-                <p className="text-xs text-gray-400 truncate">{track.artist}</p>
-              </div>
+              <AudioCard
+                className="border-b border-border-dark"
+                variant="compact"
+                artworkUrl={track.cover}
+                title={track.title}
+                artist={track.artist}
+                duration={track.duration}
+                onClick={() => playTrack(track)}
+                onPlay={() => playTrack(track)}
+              />
             </div>
           );
         })}
