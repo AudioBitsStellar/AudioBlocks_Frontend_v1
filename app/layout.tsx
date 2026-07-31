@@ -43,6 +43,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased dark bg-black text-white`}
       >
         <Provider>
+          <Suspense fallback={null}>
+            <RouteProgress />
+          </Suspense>
           <SWRegister />
           <EnvCheck />
           <AccessibilityAnnouncer />
