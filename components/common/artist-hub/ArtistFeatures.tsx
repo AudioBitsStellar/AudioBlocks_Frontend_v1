@@ -19,33 +19,33 @@ const ArtistFeatures = () => {
           {/* Artist Insights Card */}
           <div className="md:col-span-3">
             <Image
-              src="/artist_hub/Artist_insight.svg"
               alt="Artist Insights"
-              width={400}
-              height={500}
               className="w-full h-auto object-contain"
+              height={500}
+              src="/artist_hub/Artist_insight.svg"
+              width={400}
             />
           </div>
 
           {/* Artist Dashboard Card */}
           <div className="md:col-span-6">
             <Image
-              src="/artist_hub/Artist_dashboard.svg"
               alt="Artist Dashboard"
-              width={800}
-              height={500}
               className="w-full h-auto object-contain"
+              height={500}
+              src="/artist_hub/Artist_dashboard.svg"
+              width={800}
             />
           </div>
 
           {/* Creative Web3 Tool Card */}
           <div className="md:col-span-3">
             <Image
-              src="/artist_hub/Web3_tools.svg"
               alt="Creative Web3 Tool"
-              width={400}
-              height={500}
               className="w-full h-auto object-contain"
+              height={500}
+              src="/artist_hub/Web3_tools.svg"
+              width={400}
             />
           </div>
         </div>
@@ -55,11 +55,11 @@ const ArtistFeatures = () => {
           {/* Know What You Earn Card */}
           <div>
             <Image
-              src="/artist_hub/Earn_it.svg"
               alt="Know What You Earn, When You Earn It"
-              width={600}
-              height={400}
               className="w-full h-auto object-contain"
+              height={400}
+              src="/artist_hub/Earn_it.svg"
+              width={600}
             />
           </div>
 
@@ -75,13 +75,17 @@ const ArtistFeatures = () => {
                   Creative Milestones
                 </h3>
               </div>
-              
+
               {/* Description */}
               <p className="font-['Inter'] font-medium text-[16px] leading-[150%] text-[#A3A3A3] mb-8">
-                Introducing the Artist Milestone System, a clear path from first upload to joining the <span className="font-bold text-white">AudioBlocks</span> Collective. Progress as an artist isn't guesswork anymore, with <span className="font-bold text-white">AudioBlocks</span>, every step you take toward growth is recorded and celebrated.
+                Introducing the Artist Milestone System, a clear path from first upload to joining
+                the <span className="font-bold text-white">AudioBlocks</span> Collective. Progress
+                as an artist isn&apos;t guesswork anymore, with{' '}
+                <span className="font-bold text-white">AudioBlocks</span>, every step you take
+                toward growth is recorded and celebrated.
               </p>
             </div>
-            
+
             {/* CTA Button */}
             <div className="mt-auto">
               <button className="bg-[#D2045B] hover:bg-[#B8043F] text-white font-bold px-6 py-3 rounded-full flex items-center gap-3 transition-all duration-200">

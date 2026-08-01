@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { usePlayback } from '@/context/PlaybackContext';
 import { GripVertical, Play, Trash2 } from 'lucide-react';
+import { usePlayback } from '@/context/PlaybackContext';
 
 const sampleTracks = [
   {
@@ -76,40 +76,42 @@ const Playlist = () => {
           Your playlist is empty.
         </div>
       ) : (
-        <div className="flex flex-col gap-2" aria-label="Playlist tracks">
+        <div aria-label="Playlist tracks" className="flex flex-col gap-2">
           {tracks.map((track, i) => {
-            const globalIndex = playlist.findIndex((playlistTrack) => playlistTrack.url === track.url);
+            const globalIndex = playlist.findIndex(
+              (playlistTrack) => playlistTrack.url === track.url
+            );
             const isActive = globalIndex >= 0 && globalIndex === currentIndex && isPlaying;
 
             return (
               <div
                 key={track.id}
                 draggable
-                onDragStart={() => setDraggedTrackId(track.id)}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={() => handleDrop(track.id)}
-                onDragEnd={() => setDraggedTrackId(null)}
                 className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
                   isActive ? 'bg-surface border border-border-dark' : 'hover:bg-surface-hover'
                 } ${draggedTrackId === track.id ? 'opacity-50' : ''}`}
+                onDragEnd={() => setDraggedTrackId(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDragStart={() => setDraggedTrackId(track.id)}
+                onDrop={() => handleDrop(track.id)}
               >
                 <button
-                  type="button"
-                  className="cursor-grab text-on-muted hover:text-white touch-none"
                   aria-label={`Reorder ${track.title}`}
+                  className="cursor-grab text-on-muted hover:text-white touch-none"
                   title="Drag to reorder"
+                  type="button"
                 >
                   <GripVertical size={20} />
                 </button>
 
                 <button
-                  type="button"
-                  className="flex flex-1 min-w-0 items-center gap-4 text-left cursor-pointer"
-                  onClick={() => playTrack(track)}
                   aria-label={`Play ${track.title}`}
+                  className="flex flex-1 min-w-0 items-center gap-4 text-left cursor-pointer"
+                  type="button"
+                  onClick={() => playTrack(track)}
                 >
                   <span className="flex items-center justify-center w-8 h-8 rounded-full bg-brand shrink-0">
-                    <Play size={14} className="text-white ml-0.5" />
+                    <Play className="text-white ml-0.5" size={14} />
                   </span>
                   <span className="flex-1 min-w-0">
                     <span
@@ -126,11 +128,11 @@ const Playlist = () => {
                 <span className="text-xs text-on-muted shrink-0">{i + 1}</span>
 
                 <button
-                  type="button"
-                  className="p-2 rounded-md text-on-muted hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                  onClick={() => handleRemove(track.id)}
                   aria-label={`Remove ${track.title} from playlist`}
+                  className="p-2 rounded-md text-on-muted hover:text-red-400 hover:bg-red-400/10 transition-colors"
                   title="Remove from playlist"
+                  type="button"
+                  onClick={() => handleRemove(track.id)}
                 >
                   <Trash2 size={17} />
                 </button>

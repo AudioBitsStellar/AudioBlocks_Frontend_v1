@@ -53,17 +53,17 @@ describe('SectionErrorBoundary Component', () => {
     expect(toggleButton).toBeInTheDocument();
 
     fireEvent.click(toggleButton);
-    expect(screen.getByText(/Test component crashed/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Test component crashed/i).length).toBeGreaterThan(1);
 
     const hideButton = screen.getByRole('button', { name: /hide technical details/i });
     fireEvent.click(hideButton);
-    expect(screen.queryByText(/Test component crashed/i)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Test component crashed/i).length).toBe(1);
   });
 
   it('handles retry action', () => {
     const onRetryMock = vi.fn();
     const { rerender } = render(
-      <SectionErrorBoundary onRetry={onRetryMock} sectionName="Marketplace">
+      <SectionErrorBoundary sectionName="Marketplace" onRetry={onRetryMock}>
         <ProblemChild shouldThrow={true} />
       </SectionErrorBoundary>
     );

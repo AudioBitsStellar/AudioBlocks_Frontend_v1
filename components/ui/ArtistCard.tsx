@@ -1,8 +1,8 @@
 'use client';
 
+import { useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState, type ReactNode } from 'react';
 
 export interface ArtistCardArtist {
   id: string | number;
@@ -66,25 +66,25 @@ export default function ArtistCard({
       className={`group relative rounded-2xl border border-white/10 bg-[#171016] p-4 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-lg ${className}`}
     >
       <Link
-        href={artistHref}
-        className="absolute inset-0 flex min-w-0 items-center gap-3 p-4 pr-20"
         aria-label={`View ${artist.name}'s artist profile`}
+        className="absolute inset-0 flex min-w-0 items-center gap-3 p-4 pr-20"
+        href={artistHref}
       >
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-[#885FA8]">
           {imageSource && !imageFailed ? (
             <Image
-              src={imageSource}
-              alt={artist.name}
-              width={56}
-              height={56}
               unoptimized
+              alt={artist.name}
               className="h-full w-full object-cover"
+              height={56}
+              src={imageSource}
+              width={56}
               onError={() => setImageFailed(true)}
             />
           ) : (
             <span
-              className="flex h-full w-full items-center justify-center text-sm font-semibold text-white"
               aria-hidden="true"
+              className="flex h-full w-full items-center justify-center text-sm font-semibold text-white"
             >
               {getInitials(artist.name)}
             </span>
@@ -92,9 +92,7 @@ export default function ArtistCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-white">
-            {artist.name}
-          </h3>
+          <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-white">{artist.name}</h3>
           <div className="mt-1 flex items-center gap-3 text-xs text-[#A3A3A3]">
             <span>{formatCount(followers)} followers</span>
             <span aria-hidden="true">•</span>
@@ -104,9 +102,7 @@ export default function ArtistCard({
       </Link>
 
       {followButton && (
-        <div className="absolute right-4 top-1/2 z-10 -translate-y-1/2">
-          {followButton}
-        </div>
+        <div className="absolute right-4 top-1/2 z-10 -translate-y-1/2">{followButton}</div>
       )}
     </div>
   );

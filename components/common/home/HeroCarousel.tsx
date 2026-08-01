@@ -1,14 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useAccount } from 'wagmi';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import Cookies from 'js-cookie';
-import { Auth } from '@/hooks/useAuth';
+import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react';
+import { useAccount } from 'wagmi';
 import { usePlayback, type Track } from '@/context/PlaybackContext';
+import { Auth } from '@/hooks/useAuth';
 import FullScreenLoader from './FullScreenLoader';
 
 type SpotlightItem = Track & {
@@ -78,7 +78,7 @@ const HeroCarousel = () => {
       stopPreview();
       setActiveIndex((index + spotlightItems.length) % spotlightItems.length);
     },
-    [stopPreview],
+    [stopPreview]
   );
 
   const nextSlide = useCallback(() => {
@@ -102,9 +102,7 @@ const HeroCarousel = () => {
     audio.volume = 0.8;
     const playPromise = audio.play();
     if (playPromise) {
-      playPromise
-        .then(() => setIsPreviewing(true))
-        .catch(() => setIsPreviewing(false));
+      playPromise.then(() => setIsPreviewing(true)).catch(() => setIsPreviewing(false));
     }
   }, [isPreviewing, stopPreview]);
 
@@ -168,20 +166,20 @@ const HeroCarousel = () => {
     <section
       aria-label="Trending music spotlight"
       className="relative mx-auto h-[280px] w-full overflow-hidden text-white md:h-[400px]"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onFocus={() => setIsPaused(true)}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node)) setIsPaused(false);
       }}
+      onFocus={() => setIsPaused(true)}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >
-      <div className="absolute inset-0 bg-[#100b10]" aria-hidden="true" />
+      <div aria-hidden="true" className="absolute inset-0 bg-[#100b10]" />
       <div
+        aria-hidden="true"
         className="absolute -right-20 -top-32 h-96 w-96 rounded-full blur-[110px] transition-colors duration-700"
         style={{ backgroundColor: `${activeItem.accent}80` }}
-        aria-hidden="true"
       />
 
       <div className="relative mx-auto flex h-full w-11/12 max-w-7xl items-center justify-between gap-6 md:w-4/5">
@@ -198,43 +196,45 @@ const HeroCarousel = () => {
           </p>
           <div className="flex items-center gap-3">
             <button
-              onClick={handleStream}
               className="flex items-center gap-2 rounded-full bg-[#D2045B] px-4 py-2 text-sm font-medium transition hover:bg-[#B8043F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9] md:px-6"
+              onClick={handleStream}
             >
               Stream Now
-              <ArrowRight size={16} aria-hidden="true" />
+              <ArrowRight aria-hidden="true" size={16} />
             </button>
             <button
+              className="flex items-center gap-2 rounded-full border border-[#F2AFC9] px-4 py-2 text-sm font-medium transition hover:bg-[#885FA8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9]"
               onClick={() => {
                 playTrack(activeItem);
                 stopPreview();
               }}
-              className="flex items-center gap-2 rounded-full border border-[#F2AFC9] px-4 py-2 text-sm font-medium transition hover:bg-[#885FA8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9]"
             >
-              <Play size={14} fill="currentColor" aria-hidden="true" />
+              <Play aria-hidden="true" fill="currentColor" size={14} />
               Play track
             </button>
           </div>
         </div>
 
         <button
+          aria-label={
+            isPreviewing ? `Pause preview of ${activeItem.title}` : `Preview ${activeItem.title}`
+          }
+          className="group relative h-40 w-40 shrink-0 overflow-hidden rounded-2xl border border-white/30 shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9] md:h-64 md:w-64"
           type="button"
-          aria-label={isPreviewing ? `Pause preview of ${activeItem.title}` : `Preview ${activeItem.title}`}
           onClick={handleMobilePreview}
           onMouseEnter={togglePreview}
           onMouseLeave={stopPreview}
-          className="group relative h-40 w-40 shrink-0 overflow-hidden rounded-2xl border border-white/30 shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9] md:h-64 md:w-64"
         >
           <Image
-            src={activeItem.cover}
-            alt={`${activeItem.title} by ${activeItem.artist}`}
             fill
             priority
-            sizes="(max-width: 767px) 160px, 256px"
+            alt={`${activeItem.title} by ${activeItem.artist}`}
             className="object-cover transition duration-500 group-hover:scale-105"
+            sizes="(max-width: 767px) 160px, 256px"
+            src={activeItem.cover}
           />
           <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-            {isPreviewing ? <Pause size={28} fill="white" /> : <Play size={28} fill="white" />}
+            {isPreviewing ? <Pause fill="white" size={28} /> : <Play fill="white" size={28} />}
           </span>
           <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-1 text-[10px] uppercase tracking-wider">
             30 sec preview
@@ -243,41 +243,45 @@ const HeroCarousel = () => {
       </div>
 
       <button
-        type="button"
-        onClick={previousSlide}
         aria-label="Previous spotlight"
         className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/40 p-2 transition hover:bg-[#D2045B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white md:left-6"
+        type="button"
+        onClick={previousSlide}
       >
         <ArrowLeft size={18} />
       </button>
       <button
-        type="button"
-        onClick={nextSlide}
         aria-label="Next spotlight"
         className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/40 p-2 transition hover:bg-[#D2045B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white md:right-6"
+        type="button"
+        onClick={nextSlide}
       >
         <ArrowRight size={18} />
       </button>
 
-      <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2" role="tablist" aria-label="Spotlight slides">
+      <div
+        aria-label="Spotlight slides"
+        className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2"
+        role="tablist"
+      >
         {spotlightItems.map((item, index) => (
           <button
             key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={index === activeIndex}
             aria-label={`Show ${item.title}`}
-            onClick={() => selectSlide(index)}
+            aria-selected={index === activeIndex}
             className={`h-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${index === activeIndex ? 'w-7 bg-[#D2045B]' : 'w-2 bg-white/60'}`}
+            role="tab"
+            type="button"
+            onClick={() => selectSlide(index)}
           />
         ))}
       </div>
 
       <audio
         ref={audioRef}
+        aria-hidden="true"
         preload="none"
         src={`${process.env.NEXT_PUBLIC_API_URL || ''}/stream/${activeItem.id}`}
-        aria-hidden="true"
       />
       {loading && <FullScreenLoader />}
     </section>

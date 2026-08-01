@@ -1,9 +1,8 @@
 'use client';
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
-import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import {
   AlertCircle,
   Dot,
@@ -18,11 +17,16 @@ import {
   SkipForward,
   X,
 } from 'lucide-react';
+import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import { usePlayback } from '@/context/PlaybackContext';
 
 // Lazy-load CommentPanel to reduce initial bundle size
 const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
-  loading: () => <div className="fixed bottom-0 right-0 bg-[#1e1e1e] w-80 h-20 flex items-center justify-center text-gray-400">Loading comments...</div>,
+  loading: () => (
+    <div className="fixed bottom-0 right-0 bg-[#1e1e1e] w-80 h-20 flex items-center justify-center text-gray-400">
+      Loading comments...
+    </div>
+  ),
   ssr: false,
 });
 
@@ -30,7 +34,9 @@ const COVER_FALLBACK = '/placeholder-cover.svg';
 
 const formatTime = (time: number) => {
   const minutes = Math.floor(time / 60);
-  const seconds = Math.floor(time % 60).toString().padStart(2, '0');
+  const seconds = Math.floor(time % 60)
+    .toString()
+    .padStart(2, '0');
   return `${minutes}:${seconds}`;
 };
 
@@ -54,19 +60,22 @@ const ProgressBar = memo(function ProgressBar({
   const currentTimeRef = useRef<HTMLSpanElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  const paint = useCallback((time: number) => {
-    const range = rangeRef.current;
-    if (range) {
-      range.value = String(time);
-      const pct = duration ? (time / duration) * 100 : 0;
-      range.style.background = `linear-gradient(to right, #B6195B 0%, #B6195B ${pct}%, rgb(82,82,82) ${pct}%, rgb(82,82,82) 100%)`;
-      range.setAttribute('aria-valuenow', String(Math.floor(time)));
-      range.setAttribute('aria-valuetext', `${formatTime(time)} of ${formatTime(duration)}`);
-    }
-    if (currentTimeRef.current) {
-      currentTimeRef.current.textContent = formatTime(time);
-    }
-  }, [duration]);
+  const paint = useCallback(
+    (time: number) => {
+      const range = rangeRef.current;
+      if (range) {
+        range.value = String(time);
+        const pct = duration ? (time / duration) * 100 : 0;
+        range.style.background = `linear-gradient(to right, #B6195B 0%, #B6195B ${pct}%, rgb(82,82,82) ${pct}%, rgb(82,82,82) 100%)`;
+        range.setAttribute('aria-valuenow', String(Math.floor(time)));
+        range.setAttribute('aria-valuetext', `${formatTime(time)} of ${formatTime(duration)}`);
+      }
+      if (currentTimeRef.current) {
+        currentTimeRef.current.textContent = formatTime(time);
+      }
+    },
+    [duration]
+  );
 
   // Reset the scrubber to 0 whenever the track changes.
   useEffect(() => {
@@ -91,30 +100,35 @@ const ProgressBar = memo(function ProgressBar({
     };
   }, [isPlaying, audioRef, paint]);
 
-  const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = Number(e.target.value);
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
-    }
-    paint(newTime);
-  }, [audioRef, paint]);
+  const handleSeek = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newTime = Number(e.target.value);
+      if (audioRef.current) {
+        audioRef.current.currentTime = newTime;
+      }
+      paint(newTime);
+    },
+    [audioRef, paint]
+  );
 
   return (
     <div className="flex items-center gap-2">
-      <span ref={currentTimeRef} className="text-xs text-white w-8">0:00</span>
+      <span ref={currentTimeRef} className="text-xs text-white w-8">
+        0:00
+      </span>
       <input
         ref={rangeRef}
-        type="range"
-        min={0}
-        max={duration}
-        step={1}
-        defaultValue={0}
-        role="slider"
         aria-label="Track position"
-        aria-valuemin={0}
         aria-valuemax={duration}
-        onChange={handleSeek}
+        aria-valuemin={0}
         className="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+        defaultValue={0}
+        max={duration}
+        min={0}
+        role="slider"
+        step={1}
+        type="range"
+        onChange={handleSeek}
       />
       <span className="text-xs text-white w-8 text-right">{formatTime(duration)}</span>
     </div>
@@ -122,7 +136,6 @@ const ProgressBar = memo(function ProgressBar({
 });
 
 const Player = () => {
-
   const {
     playlist,
     currentIndex,
@@ -179,7 +192,7 @@ const Player = () => {
 
   const streamUrl = useMemo(
     () => resolveStreamUrl(currentTrack, currentIndex),
-    [currentTrack, currentIndex, resolveStreamUrl],
+    [currentTrack, currentIndex, resolveStreamUrl]
   );
 
   const resolveNextIndex = useCallback(() => {
@@ -391,7 +404,7 @@ const Player = () => {
       audio.pause();
       incomingAudioRef.current?.pause();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, currentIndex]);
 
   useEffect(() => {
@@ -514,20 +527,23 @@ const Player = () => {
     skipTimerRef.current = setTimeout(() => next(), 3000);
   }, [currentTrack, setError, next, cleanupIncoming]);
 
-  const coverSrc = useMemo(() => coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover, [coverFailed, currentTrack]);
+  const coverSrc = useMemo(
+    () => (coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover),
+    [coverFailed, currentTrack]
+  );
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-surface-elevated px-8 py-3 shadow-lg z-50">
       {trackError && (
         <div className="flex items-center justify-between bg-red-900/80 text-white text-xs px-4 py-2 rounded-md mb-2 max-w-7xl mx-auto">
           <div className="flex items-center gap-2">
-            <AlertCircle size={14} className="shrink-0" />
+            <AlertCircle className="shrink-0" size={14} />
             <span>{trackError}</span>
           </div>
           <button
-            onClick={dismissError}
             aria-label="Dismiss error"
             className="ml-4 hover:opacity-70 shrink-0"
+            onClick={dismissError}
           >
             <X size={14} />
           </button>
@@ -535,9 +551,26 @@ const Player = () => {
       )}
 
       {autoplayBlocked && (
-        <div className="flex items-center justify-between bg-yellow-900/80 text-white text-xs px-4 py-2 rounded-md mb-2 max-w-7xl mx-auto cursor-pointer" role="button" tabIndex={0} onClick={() => { resumeAudio(); setAutoplayBlocked(false); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); resumeAudio(); setAutoplayBlocked(false); } }}>
+        <div
+          className="flex items-center justify-between bg-yellow-900/80 text-white text-xs px-4 py-2 rounded-md mb-2 max-w-7xl mx-auto cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            resumeAudio();
+            setAutoplayBlocked(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              resumeAudio();
+              setAutoplayBlocked(false);
+            }
+          }}
+        >
           <div className="flex items-center gap-2">
-            <span className="text-yellow-300 font-bold mr-1" aria-hidden="true">🎵</span>
+            <span aria-hidden="true" className="text-yellow-300 font-bold mr-1">
+              🎵
+            </span>
             <span>Click anywhere to start playback</span>
           </div>
           <span className="text-yellow-300 text-xs underline">Tap to play</span>
@@ -545,7 +578,7 @@ const Player = () => {
       )}
 
       {/* aria-live region for track change announcements */}
-      <div aria-live="polite" aria-atomic="true" className="sr-only">
+      <div aria-atomic="true" aria-live="polite" className="sr-only">
         {trackAnnouncement}
       </div>
 
@@ -553,36 +586,40 @@ const Player = () => {
         {/* Left Controls */}
         <div className="flex items-center gap-3">
           <button
-            onClick={toggleShuffle}
             aria-label="Toggle shuffle"
             className={`hover:text-gray-300 cursor-pointer text-white ${shuffle ? 'text-pink-500' : ''}`}
+            onClick={toggleShuffle}
           >
             <Shuffle size={16} />
           </button>
-          <button onClick={prev} aria-label="Previous track" className="hover:text-gray-300 cursor-pointer text-white">
+          <button
+            aria-label="Previous track"
+            className="hover:text-gray-300 cursor-pointer text-white"
+            onClick={prev}
+          >
             <SkipBack size={16} />
           </button>
           <button
-            onClick={handleTogglePlay}
             aria-label={isBuffering ? 'Loading' : isPlaying ? 'Pause' : 'Play'}
-            disabled={isBuffering}
             className="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
+            disabled={isBuffering}
+            onClick={handleTogglePlay}
           >
             {isBuffering ? (
-              <Loader2 size={14} className="text-gray-800 animate-spin" />
+              <Loader2 className="text-gray-800 animate-spin" size={14} />
             ) : isPlaying ? (
-              <FaPause size={14} className="text-gray-800" />
+              <FaPause className="text-gray-800" size={14} />
             ) : (
-              <FaPlay size={14} className="text-gray-800" />
+              <FaPlay className="text-gray-800" size={14} />
             )}
           </button>
-          <button onClick={next} aria-label="Next track" className="hover:text-gray-300 text-white">
+          <button aria-label="Next track" className="hover:text-gray-300 text-white" onClick={next}>
             <SkipForward size={15} />
           </button>
           <button
-            onClick={toggleRepeat}
             aria-label="Toggle repeat"
             className={`hover:text-gray-300 text-white ${repeat ? 'text-pink-500' : ''}`}
+            onClick={toggleRepeat}
           >
             <Repeat size={16} />
           </button>
@@ -591,10 +628,10 @@ const Player = () => {
         {/* Cover art with fallback */}
         <div className="h-12 w-12 relative shrink-0">
           <Image
-            src={coverSrc}
-            alt={currentTrack?.title ?? 'Now playing'}
             fill
+            alt={currentTrack?.title ?? 'Now playing'}
             className="rounded-md object-cover"
+            src={coverSrc}
             onError={() => setCoverFailed(true)}
           />
         </div>
@@ -607,7 +644,7 @@ const Player = () => {
                 {currentTrack?.title}
               </div>
               <div className="text-gray-400 flex items-center text-xs truncate">
-                <Dot size={20} className="mr-4 text-white" />
+                <Dot className="mr-4 text-white" size={20} />
                 {currentTrack?.artist}
               </div>
             </div>
@@ -623,44 +660,53 @@ const Player = () => {
         {/* Right Controls */}
         <div className="flex items-center border-l-2 pl-4 gap-4 relative">
           <button
+            aria-label="Comments"
             className="hover:text-gray-300 cursor-pointer text-white"
             onClick={() => setShowComments(true)}
-            aria-label="Comments"
           >
             <MessageSquare size={16} />
           </button>
-          <button className="hover:text-gray-300 cursor-pointer text-white" aria-label="Add to playlist">
+          <button
+            aria-label="Add to playlist"
+            className="hover:text-gray-300 cursor-pointer text-white"
+          >
             <ListPlus size={16} />
           </button>
-          <button className="hover:text-gray-300 font-bold cursor-pointer text-white" aria-label="Like">
+          <button
+            aria-label="Like"
+            className="hover:text-gray-300 font-bold cursor-pointer text-white"
+          >
             <Heart size={16} />
           </button>
-          <button className="hover:text-gray-300 cursor-pointer text-white" aria-label="More options">
+          <button
+            aria-label="More options"
+            className="hover:text-gray-300 cursor-pointer text-white"
+          >
             <Ellipsis size={16} />
           </button>
           <div className="relative group flex items-center justify-center">
             <button
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
               className="hover:text-gray-300 text-white"
               onClick={toggleMute}
-              aria-label={isMuted ? 'Unmute' : 'Mute'}
             >
               {isMuted || volume === 0 ? <FaVolumeMute size={16} /> : <FaVolumeUp size={16} />}
             </button>
             <div className="absolute bottom-16 p-4 rounded-md bg-[#161616] rotate-[-90deg] items-center justify-center hidden group-hover:flex group-focus-within:flex">
               <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={isMuted ? 0 : volume}
-                role="slider"
                 aria-label="Volume"
-                aria-valuemin={0}
                 aria-valuemax={1}
+                aria-valuemin={0}
                 aria-valuenow={isMuted ? 0 : volume}
                 aria-valuetext={`${Math.round((isMuted ? 0 : volume) * 100)}%`}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
                 className="w-24 h-1 bg-gray-300 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max={1}
+                min={0}
+                role="slider"
+                step={0.01}
+                type="range"
+                value={isMuted ? 0 : volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
               />
             </div>
           </div>
@@ -671,6 +717,7 @@ const Player = () => {
           key={streamUrl}
           ref={audioRef}
           src={streamUrl}
+          onCanPlay={() => setIsBuffering(false)}
           onEnded={() => {
             if (crossfadeActiveRef.current) {
               finishCrossfade();
@@ -679,33 +726,30 @@ const Player = () => {
             if (repeat) audioRef.current?.play();
             else next();
           }}
+          onError={handleAudioError}
           onLoadedMetadata={(e) => {
             setDuration(e.currentTarget.duration);
           }}
-          onWaiting={() => setIsBuffering(true)}
-          onCanPlay={() => setIsBuffering(false)}
           onPlaying={() => setIsBuffering(false)}
-          onError={handleAudioError}
+          onWaiting={() => setIsBuffering(true)}
         />
         {/* Incoming audio element used during crossfade (#115) */}
         {incomingUrl && (
           <audio
             ref={incomingAudioRef}
-            src={incomingUrl}
-            preload="auto"
             aria-hidden="true"
+            preload="auto"
+            src={incomingUrl}
             onError={() => {
               cleanupIncoming();
             }}
           />
         )}
         {/* Expose crossfade state for tests / a11y tooling */}
-        <span data-crossfading={isCrossfading ? 'true' : 'false'} className="sr-only" />
+        <span className="sr-only" data-crossfading={isCrossfading ? 'true' : 'false'} />
       </div>
 
-      {showComments && (
-        <CommentPanel onClose={() => setShowComments(false)} trackId={trackId} />
-      )}
+      {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}
     </div>
   );
 };

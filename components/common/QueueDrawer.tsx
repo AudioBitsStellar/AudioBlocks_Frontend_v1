@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { GripVertical, Trash2, X } from 'lucide-react';
 import Image from 'next/image';
+import { GripVertical, Trash2, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { usePlayback } from '@/context/PlaybackContext';
 
@@ -42,10 +42,13 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
     dragOverItem.current = null;
   }, [reorderQueue]);
 
-  const handleRemove = useCallback((index: number) => {
-    removeFromQueue(index);
-    setRemoveIndex(null);
-  }, [removeFromQueue]);
+  const handleRemove = useCallback(
+    (index: number) => {
+      removeFromQueue(index);
+      setRemoveIndex(null);
+    },
+    [removeFromQueue]
+  );
 
   const handleClear = useCallback(() => {
     clearQueue();
@@ -55,11 +58,10 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        side="right"
-        className="touch-pan-y bg-[#161616] text-white border-l-white/10 flex flex-col"
         aria-label="Track queue"
+        className="touch-pan-y bg-[#161616] text-white border-l-white/10 flex flex-col"
         role="dialog"
-        aria-expanded={open}
+        side="right"
       >
         <SheetHeader>
           <SheetTitle className="text-white flex items-center justify-between">
@@ -82,15 +84,15 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                 <li
                   key={`${track.id}-${index}`}
                   draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragEnter={() => handleDragEnter(index)}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={(e) => e.preventDefault()}
                   className="flex items-center gap-2 rounded-md bg-white/5 px-2 py-2 hover:bg-white/10 transition cursor-default"
+                  onDragEnd={handleDragEnd}
+                  onDragEnter={() => handleDragEnter(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragStart={() => handleDragStart(index)}
                 >
                   <div
-                    className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-white shrink-0"
                     aria-label={`Drag to reorder ${track.title}`}
+                    className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-white shrink-0"
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
@@ -104,10 +106,10 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
 
                   <div className="relative w-10 h-10 rounded overflow-hidden shrink-0">
                     <Image
-                      src={track.cover || '/placeholder-cover.svg'}
-                      alt={track.title}
                       fill
+                      alt={track.title}
                       className="object-cover"
+                      src={track.cover || '/placeholder-cover.svg'}
                       onError={(e) => {
                         e.currentTarget.src = '/placeholder-cover.svg';
                       }}
@@ -122,24 +124,24 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                   {removeIndex === index ? (
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
-                        onClick={() => handleRemove(index)}
                         className="text-xs text-red-400 hover:text-red-300 underline"
+                        onClick={() => handleRemove(index)}
                       >
                         Remove
                       </button>
                       <button
-                        onClick={() => setRemoveIndex(null)}
-                        className="text-gray-400 hover:text-white"
                         aria-label="Cancel remove"
+                        className="text-gray-400 hover:text-white"
+                        onClick={() => setRemoveIndex(null)}
                       >
                         <X size={14} />
                       </button>
                     </div>
                   ) : (
                     <button
-                      onClick={() => setRemoveIndex(index)}
                       aria-label={`Remove ${track.title} from queue`}
                       className="shrink-0 text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition"
+                      onClick={() => setRemoveIndex(index)}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -157,14 +159,14 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                 <span className="text-xs text-gray-400">Clear all tracks?</span>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={handleClear}
                     className="text-xs text-red-400 hover:text-red-300 underline"
+                    onClick={handleClear}
                   >
                     Yes
                   </button>
                   <button
-                    onClick={() => setShowClearConfirm(false)}
                     className="text-xs text-gray-400 hover:text-white"
+                    onClick={() => setShowClearConfirm(false)}
                   >
                     Cancel
                   </button>
@@ -172,8 +174,8 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
               </div>
             ) : (
               <button
-                onClick={() => setShowClearConfirm(true)}
                 className="text-xs text-gray-400 underline hover:text-white"
+                onClick={() => setShowClearConfirm(true)}
               >
                 Clear queue
               </button>

@@ -1,9 +1,9 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { FiSearch } from 'react-icons/fi';
 import { Music } from 'lucide-react';
+import { FiSearch } from 'react-icons/fi';
+import { Card } from '@/components/ui/card';
 import ArtistCard, { type Artist } from './ArtistCard';
 
 const genres = ['All', 'Electronic', 'Pop', 'Contemporary'];
@@ -31,12 +31,12 @@ const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: Vot
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="flex items-center bg-transparent border rounded-full px-4 py-2 w-full sm:w-auto sm:flex-1">
-          <FiSearch className="text-gray-400 text-lg shrink-0" aria-hidden="true" />
+          <FiSearch aria-hidden="true" className="text-gray-400 text-lg shrink-0" />
           <input
-            type="search"
-            placeholder="Search by artists"
             aria-label="Search artists"
             className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-on-muted"
+            placeholder="Search by artists"
+            type="search"
           />
         </div>
 
@@ -79,7 +79,7 @@ const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: Vot
         </div>
       ) : filteredArtists.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Music size={48} className="text-on-muted mb-4" />
+          <Music className="text-on-muted mb-4" size={48} />
           <h3 className="text-white text-lg font-semibold mb-2">No artists found</h3>
           <p className="text-on-muted text-sm max-w-sm">
             {filter === 'All'

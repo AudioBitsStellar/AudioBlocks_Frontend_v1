@@ -63,10 +63,7 @@ export function WaveformDisplay({
   const isDraggingRef = useRef(false);
 
   // Clamp height between 60px and 200px
-  const clampedHeight = useMemo(
-    () => Math.max(60, Math.min(200, height)),
-    [height]
-  );
+  const clampedHeight = useMemo(() => Math.max(60, Math.min(200, height)), [height]);
 
   // Determine actual waveform progress fraction [0, 1]
   const currentProgress = useMemo(() => {
@@ -166,7 +163,16 @@ export function WaveformDisplay({
     ctx.arc(playheadX, 3, 3, 0, Math.PI * 2);
     ctx.arc(playheadX, heightPx - 3, 3, 0, Math.PI * 2);
     ctx.fill();
-  }, [clampedHeight, barWidth, barGap, rawAmplitudes, currentProgress, playedColor, unplayedColor, playheadColor]);
+  }, [
+    clampedHeight,
+    barWidth,
+    barGap,
+    rawAmplitudes,
+    currentProgress,
+    playedColor,
+    unplayedColor,
+    playheadColor,
+  ]);
 
   // Handle ResizeObserver & redraw
   useEffect(() => {
@@ -230,7 +236,7 @@ export function WaveformDisplay({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!interactive || !onSeek) return;
-    let step = 0.05; // 5% seek
+    const step = 0.05; // 5% seek
     let newProgress = currentProgress;
 
     if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
@@ -252,32 +258,39 @@ export function WaveformDisplay({
     triggerSeek(newProgress);
   };
 
-  const formattedTime = typeof currentTime === 'number'
-    ? `${Math.floor(currentTime / 60)}:${Math.floor(currentTime % 60).toString().padStart(2, '0')}`
-    : `${Math.round(currentProgress * 100)}%`;
+  const formattedTime =
+    typeof currentTime === 'number'
+      ? `${Math.floor(currentTime / 60)}:${Math.floor(currentTime % 60)
+          .toString()
+          .padStart(2, '0')}`
+      : `${Math.round(currentProgress * 100)}%`;
 
   return (
     <div
       ref={containerRef}
+      aria-label="Audio waveform playback position"
+      aria-valuemax={duration ?? 100}
+      aria-valuemin={0}
+      aria-valuenow={
+        typeof currentTime === 'number'
+          ? Math.round(currentTime)
+          : Math.round(currentProgress * 100)
+      }
+      aria-valuetext={`Playback position ${formattedTime}`}
       className={`relative w-full rounded-xl bg-surface p-3 overflow-hidden select-none focus:outline-none focus:ring-2 focus:ring-brand ${
         interactive ? 'cursor-pointer' : ''
       } ${className}`}
+      role={interactive ? 'slider' : 'img'}
       style={{
         minHeight: '60px',
         maxHeight: '200px',
         height: `${clampedHeight}px`,
       }}
       tabIndex={interactive ? 0 : -1}
-      role={interactive ? 'slider' : 'img'}
-      aria-label="Audio waveform playback position"
-      aria-valuemin={0}
-      aria-valuemax={duration ?? 100}
-      aria-valuenow={typeof currentTime === 'number' ? Math.round(currentTime) : Math.round(currentProgress * 100)}
-      aria-valuetext={`Playback position ${formattedTime}`}
+      onKeyDown={handleKeyDown}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onKeyDown={handleKeyDown}
     >
       <canvas ref={canvasRef} className="block w-full h-full" />
     </div>

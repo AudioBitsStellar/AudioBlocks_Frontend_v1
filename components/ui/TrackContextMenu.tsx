@@ -10,7 +10,7 @@ export interface Track {
   artistId?: string | number;
   album?: string;
   coverUrl?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TrackContextMenuProps {
@@ -169,15 +169,16 @@ export function TrackContextMenu({
     const winWidth = window.innerWidth;
     const winHeight = window.innerHeight;
 
-    let { x, y } = position;
-    if (x + rect.width > winWidth - 10) {
-      x = winWidth - rect.width - 10;
-    }
-    if (y + rect.height > winHeight - 10) {
-      y = winHeight - rect.height - 10;
-    }
-
-    setPosition({ x: Math.max(10, x), y: Math.max(10, y) });
+    setPosition((prev) => {
+      let { x, y } = prev;
+      if (x + rect.width > winWidth - 10) {
+        x = winWidth - rect.width - 10;
+      }
+      if (y + rect.height > winHeight - 10) {
+        y = winHeight - rect.height - 10;
+      }
+      return { x: Math.max(10, x), y: Math.max(10, y) };
+    });
 
     // Focus the first item inside menu
     if (itemRefs.current[0]) {
@@ -254,7 +255,7 @@ export function TrackContextMenu({
     };
   }, [isOpen, closeMenu, menuItems.length]);
 
-  const handleSelect = (item: typeof menuItems[number]) => {
+  const handleSelect = (item: (typeof menuItems)[number]) => {
     item.action();
     closeMenu();
   };
@@ -262,28 +263,28 @@ export function TrackContextMenu({
   return (
     <div
       ref={containerRef}
-      onContextMenu={handleContextMenu}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
       className={`relative inline-block ${className}`}
+      onContextMenu={handleContextMenu}
+      onTouchCancel={handleTouchEnd}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      onTouchStart={handleTouchStart}
     >
       {children}
 
       {isOpen && (
         <div
           ref={menuRef}
+          aria-label={`Options for ${track.title}`}
+          aria-orientation="vertical"
+          className="w-52 py-1.5 rounded-xl bg-surface/95 backdrop-blur-md border border-border-dark shadow-2xl text-white outline-none focus:outline-none animate-in fade-in zoom-in-95 duration-100"
+          role="menu"
           style={{
             position: 'fixed',
             top: `${position.y}px`,
             left: `${position.x}px`,
             zIndex: 9999,
           }}
-          className="w-52 py-1.5 rounded-xl bg-surface/95 backdrop-blur-md border border-border-dark shadow-2xl text-white outline-none focus:outline-none animate-in fade-in zoom-in-95 duration-100"
-          role="menu"
-          aria-orientation="vertical"
-          aria-label={`Options for ${track.title}`}
         >
           <div className="px-3 py-1.5 mb-1 border-b border-border-dark/60 text-xs font-semibold text-on-muted truncate">
             {track.title}
@@ -295,8 +296,6 @@ export function TrackContextMenu({
               ref={(el) => {
                 itemRefs.current[index] = el;
               }}
-              onClick={() => handleSelect(item)}
-              onMouseEnter={() => setFocusedIndex(index)}
               className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-medium transition-colors text-left focus:outline-none ${
                 focusedIndex === index
                   ? 'bg-brand text-white font-semibold'
@@ -304,6 +303,8 @@ export function TrackContextMenu({
               }`}
               role="menuitem"
               tabIndex={focusedIndex === index ? 0 : -1}
+              onClick={() => handleSelect(item)}
+              onMouseEnter={() => setFocusedIndex(index)}
             >
               <span className="shrink-0 text-current">{item.icon}</span>
               <span className="truncate">{item.label}</span>

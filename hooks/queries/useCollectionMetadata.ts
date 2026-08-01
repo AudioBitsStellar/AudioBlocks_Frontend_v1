@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import apiClient, { NotFoundError } from '@/lib/apiClient';
 import { useWallet } from '@/context/WalletContext';
+import apiClient, { NotFoundError } from '@/lib/apiClient';
 
 export const COLLECTION_METADATA_STALE_TIME = 60 * 1000;
 
@@ -57,7 +57,7 @@ function normalizeMetadata(id: string, data: Partial<CollectionMetadata>): Colle
 
 export async function fetchCollectionMetadata(
   id: string,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<CollectionMetadata | null> {
   try {
     const res = await apiClient.get(`/api/collections/${id}/metadata`, { signal });

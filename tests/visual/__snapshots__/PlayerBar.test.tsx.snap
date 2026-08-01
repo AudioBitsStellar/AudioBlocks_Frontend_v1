@@ -395,7 +395,11 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </div>
       </div>
       <audio
-        src="undefined/stream/track-1"
+        src="http://localhost:3000/stream/track-1"
+      />
+      <span
+        class="sr-only"
+        data-crossfading="false"
       />
     </div>
   </div>
@@ -797,7 +801,11 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </div>
       </div>
       <audio
-        src="undefined/stream/track-1"
+        src="http://localhost:3000/stream/track-1"
+      />
+      <span
+        class="sr-only"
+        data-crossfading="false"
       />
     </div>
   </div>
@@ -1199,7 +1207,11 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </div>
       </div>
       <audio
-        src="undefined/stream/track-1"
+        src="http://localhost:3000/stream/track-1"
+      />
+      <span
+        class="sr-only"
+        data-crossfading="false"
       />
     </div>
   </div>
@@ -1601,7 +1613,11 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </div>
       </div>
       <audio
-        src="undefined/stream/track-1"
+        src="http://localhost:3000/stream/track-1"
+      />
+      <span
+        class="sr-only"
+        data-crossfading="false"
       />
     </div>
   </div>
@@ -2003,7 +2019,11 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </div>
       </div>
       <audio
-        src="undefined/stream/track-1"
+        src="http://localhost:3000/stream/track-1"
+      />
+      <span
+        class="sr-only"
+        data-crossfading="false"
       />
     </div>
   </div>
@@ -2405,7 +2425,11 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </div>
       </div>
       <audio
-        src="undefined/stream/track-1"
+        src="http://localhost:3000/stream/track-1"
+      />
+      <span
+        class="sr-only"
+        data-crossfading="false"
       />
     </div>
   </div>
@@ -2807,7 +2831,11 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </div>
       </div>
       <audio
-        src="undefined/stream/track-1"
+        src="http://localhost:3000/stream/track-1"
+      />
+      <span
+        class="sr-only"
+        data-crossfading="false"
       />
     </div>
   </div>
@@ -3209,7 +3237,11 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </div>
       </div>
       <audio
-        src="undefined/stream/track-1"
+        src="http://localhost:3000/stream/track-1"
+      />
+      <span
+        class="sr-only"
+        data-crossfading="false"
       />
     </div>
   </div>
@@ -3611,7 +3643,11 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </div>
       </div>
       <audio
-        src="undefined/stream/track-1"
+        src="http://localhost:3000/stream/track-1"
+      />
+      <span
+        class="sr-only"
+        data-crossfading="false"
       />
     </div>
   </div>

@@ -14,15 +14,15 @@ export default function DashboardNotFound() {
         </p>
         <div className="flex items-center gap-4 justify-center">
           <Link
-            href="/dashboard"
             className="inline-flex items-center gap-2 bg-brand hover:opacity-80 text-white px-6 py-3 rounded-full transition"
+            href="/dashboard"
           >
             <Home size={16} />
             Go to Dashboard
           </Link>
           <button
-            onClick={() => window.history.back()}
             className="inline-flex items-center gap-2 bg-[#1E181D] hover:bg-[#885FA8] text-gray-300 px-6 py-3 rounded-full transition"
+            onClick={() => window.history.back()}
           >
             <ArrowLeft size={16} />
             Go Back

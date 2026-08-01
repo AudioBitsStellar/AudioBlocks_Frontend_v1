@@ -4,9 +4,9 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { collectionsData } from '@/components/common/dashboard/data';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
-import { collectionsData } from '@/components/common/dashboard/data';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -20,7 +20,7 @@ const AllCollectionsPage = () => {
   return (
     <div className="text-white min-h-screen">
       <div className="text-sm text-on-muted mb-4">
-        <Link href="/dashboard" className="hover:text-white transition-colors">
+        <Link className="hover:text-white transition-colors" href="/dashboard">
           Dashboard
         </Link>
         <span className="mx-2">/</span>
@@ -30,9 +30,9 @@ const AllCollectionsPage = () => {
       <div className="flex items-center gap-4 mb-8">
         <Link href="/dashboard">
           <Button
-            variant="outline"
-            size="icon"
             className="border-border-dark bg-surface-input text-on-muted hover:bg-surface-hover"
+            size="icon"
+            variant="outline"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -45,11 +45,11 @@ const AllCollectionsPage = () => {
           <div key={item.id} className="hover:bg-surface-hover p-3 rounded-lg transition-colors">
             <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
               <Image
-                src={item.image}
                 alt={item.song}
-                width={300}
-                height={300}
                 className="w-full h-full object-cover"
+                height={300}
+                src={item.image}
+                width={300}
               />
             </div>
             <p className="text-sm font-bold text-white">{item.song}</p>

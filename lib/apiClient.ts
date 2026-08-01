@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie';
-import { getValidatedEnv } from './env';
 import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS } from './constants';
+import { getValidatedEnv } from './env';
 
 const { NEXT_PUBLIC_API_URL } = getValidatedEnv();
 
@@ -83,7 +83,7 @@ async function fetchWithRetry(
   url: string,
   options: FetchOptions = {},
   retries = API_CONFIG.DEFAULT_RETRIES,
-  attempt = 1,
+  attempt = 1
 ): Promise<Response> {
   const { timeout = API_CONFIG.DEFAULT_TIMEOUT, ...fetchOptions } = options;
 
@@ -133,9 +133,9 @@ async function fetchWithRetry(
     }
 
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     clearTimeout(id);
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       if (options.signal?.aborted) {
         throw error;
       }
@@ -198,7 +198,7 @@ const apiClient = {
    * @param config - Optional request and retry configuration.
    * @returns The parsed response data, status code, and response headers.
    */
-  post: (url: string, data?: any, config?: FetchOptions) =>
+  post: (url: string, data?: unknown, config?: FetchOptions) =>
     request(url, { ...config, method: 'POST', body: JSON.stringify(data) }),
 
   /**
@@ -209,7 +209,7 @@ const apiClient = {
    * @param config - Optional request and retry configuration.
    * @returns The parsed response data, status code, and response headers.
    */
-  put: (url: string, data?: any, config?: FetchOptions) =>
+  put: (url: string, data?: unknown, config?: FetchOptions) =>
     request(url, { ...config, method: 'PUT', body: JSON.stringify(data) }),
 
   /**

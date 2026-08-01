@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useInfiniteQuery, type InfinitePage, type PageParam } from '@/hooks/useInfiniteQuery';
 
 type Item = { id: string };
@@ -28,9 +28,7 @@ describe('useInfiniteQuery', () => {
       p2: { data: [{ id: '3' }], nextCursor: null },
     });
 
-    const { result } = renderHook(() =>
-      useInfiniteQuery<Item>({ key: 'items', fetcher }),
-    );
+    const { result } = renderHook(() => useInfiniteQuery<Item>({ key: 'items', fetcher }));
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -45,9 +43,7 @@ describe('useInfiniteQuery', () => {
       p2: { data: [{ id: '2' }], nextCursor: null },
     });
 
-    const { result } = renderHook(() =>
-      useInfiniteQuery<Item>({ key: 'items-more', fetcher }),
-    );
+    const { result } = renderHook(() => useInfiniteQuery<Item>({ key: 'items-more', fetcher }));
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -67,9 +63,7 @@ describe('useInfiniteQuery', () => {
       start: { data: [], nextCursor: null },
     });
 
-    const { result } = renderHook(() =>
-      useInfiniteQuery<Item>({ key: 'empty', fetcher }),
-    );
+    const { result } = renderHook(() => useInfiniteQuery<Item>({ key: 'empty', fetcher }));
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -85,9 +79,7 @@ describe('useInfiniteQuery', () => {
       return { data: [{ id: 'fresh' }], nextCursor: null };
     });
 
-    const { result } = renderHook(() =>
-      useInfiniteQuery<Item>({ key: 'refetch-key', fetcher }),
-    );
+    const { result } = renderHook(() => useInfiniteQuery<Item>({ key: 'refetch-key', fetcher }));
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.data[0]?.id).toBe('old');
@@ -110,9 +102,7 @@ describe('useInfiniteQuery', () => {
       throw new Error('boom');
     });
 
-    const { result } = renderHook(() =>
-      useInfiniteQuery<Item>({ key: 'err', fetcher }),
-    );
+    const { result } = renderHook(() => useInfiniteQuery<Item>({ key: 'err', fetcher }));
 
     await waitFor(() => expect(result.current.error).not.toBeNull());
     expect(result.current.error?.message).toBe('boom');
@@ -122,11 +112,15 @@ describe('useInfiniteQuery', () => {
   it('aborts in-flight requests when the key changes', async () => {
     let resolveFirst: ((value: InfinitePage<Item>) => void) | null = null;
 
+    let callCount = 0;
     const fetcher = vi.fn((cursor: PageParam, signal: AbortSignal) => {
-      if (cursor === null) {
+      callCount++;
+      if (callCount === 1) {
         return new Promise<InfinitePage<Item>>((resolve, reject) => {
           resolveFirst = resolve;
-          signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+          signal.addEventListener('abort', () =>
+            reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }))
+          );
         });
       }
       return Promise.resolve({ data: [{ id: 'b' }], nextCursor: null });
@@ -134,7 +128,7 @@ describe('useInfiniteQuery', () => {
 
     const { result, rerender } = renderHook(
       ({ key }: { key: string }) => useInfiniteQuery<Item>({ key, fetcher }),
-      { initialProps: { key: 'a' } },
+      { initialProps: { key: 'a' } }
     );
 
     expect(result.current.isLoading).toBe(true);
@@ -152,17 +146,19 @@ describe('useInfiniteQuery', () => {
   });
 
   it('accepts initialData without an immediate fetch', async () => {
-    const fetcher = vi.fn(async (): Promise<InfinitePage<Item>> => ({
-      data: [{ id: 'server' }],
-      nextCursor: null,
-    }));
+    const fetcher = vi.fn(
+      async (): Promise<InfinitePage<Item>> => ({
+        data: [{ id: 'server' }],
+        nextCursor: null,
+      })
+    );
 
     const { result } = renderHook(() =>
       useInfiniteQuery<Item>({
         key: 'seeded',
         fetcher,
         initialData: [{ id: 'seed' }],
-      }),
+      })
     );
 
     expect(result.current.isLoading).toBe(false);

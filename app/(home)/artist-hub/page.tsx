@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
-import ArtistHubHero from '@/components/common/artist-hub/ArtistHubHero';
 import ArtistFeatures from '@/components/common/artist-hub/ArtistFeatures';
+import ArtistHubHero from '@/components/common/artist-hub/ArtistHubHero';
 import ArtistUpgrade from '@/components/common/artist-hub/ArtistUpgrade';
+import type { Metadata } from 'next';
 
 const TITLE = 'Artist Hub — Upload, Earn & Sell Music NFTs | AudioBlocks';
 const DESCRIPTION =
@@ -33,4 +33,3 @@ export default function ArtistHub() {
     </>
   );
 }
-

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
 const mockSessionStorage: Record<string, string> = {};
@@ -8,8 +8,12 @@ beforeEach(() => {
   mockSessionStorage['audioblocks_scroll_positions'] = JSON.stringify({ '/test': 500 });
   vi.stubGlobal('sessionStorage', {
     getItem: vi.fn((key: string) => mockSessionStorage[key] ?? null),
-    setItem: vi.fn((key: string, val: string) => { mockSessionStorage[key] = val; }),
-    removeItem: vi.fn((key: string) => { delete mockSessionStorage[key]; }),
+    setItem: vi.fn((key: string, val: string) => {
+      mockSessionStorage[key] = val;
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete mockSessionStorage[key];
+    }),
   });
 });
 

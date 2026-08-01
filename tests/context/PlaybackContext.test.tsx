@@ -13,10 +13,13 @@ vi.stubGlobal('webkitAudioContext', AudioContextMock);
 
 const mockPlay = vi.fn();
 const mockPause = vi.fn();
-vi.stubGlobal('HTMLAudioElement', class {
-  play = mockPlay;
-  pause = mockPause;
-});
+vi.stubGlobal(
+  'HTMLAudioElement',
+  class {
+    play = mockPlay;
+    pause = mockPause;
+  }
+);
 
 describe('PlaybackContext', () => {
   beforeEach(() => {
@@ -43,13 +46,15 @@ describe('PlaybackContext', () => {
 
   it('should throw error if usePlayback is used outside of provider', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => renderHook(() => usePlayback())).toThrow('usePlayback must be used inside PlaybackProvider');
+    expect(() => renderHook(() => usePlayback())).toThrow(
+      'usePlayback must be used inside PlaybackProvider'
+    );
     consoleSpy.mockRestore();
   });
 
   it('should handle play and pause', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     act(() => {
       result.current.play();
     });
@@ -63,7 +68,7 @@ describe('PlaybackContext', () => {
 
   it('should handle NEXT track', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     act(() => {
       result.current.next();
     });
@@ -73,9 +78,9 @@ describe('PlaybackContext', () => {
 
   it('should handle NEXT track with shuffle', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     const mathSpy = vi.spyOn(Math, 'random').mockReturnValue(0.9);
-    
+
     act(() => {
       result.current.toggleShuffle();
     });
@@ -91,7 +96,7 @@ describe('PlaybackContext', () => {
 
   it('should handle PREV track', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     act(() => {
       result.current.prev();
     });
@@ -106,7 +111,7 @@ describe('PlaybackContext', () => {
 
   it('should handle SET_INDEX', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     act(() => {
       result.current.setCurrentIndex(2);
     });
@@ -116,7 +121,7 @@ describe('PlaybackContext', () => {
 
   it('should handle SET_VOLUME and TOGGLE_MUTE', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     act(() => {
       result.current.setVolume(0.5);
     });
@@ -136,7 +141,7 @@ describe('PlaybackContext', () => {
 
   it('should handle TOGGLE_REPEAT', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     act(() => {
       result.current.toggleRepeat();
     });
@@ -145,7 +150,7 @@ describe('PlaybackContext', () => {
 
   it('should handle PLAY_TRACK for existing track', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     const existingTrack = result.current.playlist[1];
     act(() => {
       result.current.playTrack(existingTrack);
@@ -156,10 +161,10 @@ describe('PlaybackContext', () => {
 
   it('should handle PLAY_TRACK for new track', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     const newTrack = { id: 'new-1', title: 'New', artist: 'Art', cover: 'cov' };
     const initialLength = result.current.playlist.length;
-    
+
     act(() => {
       result.current.playTrack(newTrack);
     });
@@ -170,10 +175,10 @@ describe('PlaybackContext', () => {
 
   it('should handle ENQUEUE_TRACK', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     const newTrack = { id: 'enq-1', title: 'Enq', artist: 'Art', cover: 'cov' };
     const initialLength = result.current.playlist.length;
-    
+
     act(() => {
       result.current.enqueueTrack(newTrack);
     });
@@ -183,7 +188,7 @@ describe('PlaybackContext', () => {
 
   it('should handle SET_ERROR and DISMISS_ERROR', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     act(() => {
       result.current.setError('Network error');
     });
@@ -198,7 +203,7 @@ describe('PlaybackContext', () => {
 
   it('should handle ADD_TO_RECENTLY_PLAYED (new track)', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     const track1 = { id: 't1', title: 'T1', artist: 'A', cover: 'C' };
     act(() => {
       result.current.addToRecentlyPlayed(track1);
@@ -209,10 +214,10 @@ describe('PlaybackContext', () => {
 
   it('should handle ADD_TO_RECENTLY_PLAYED (existing track moves to front)', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     const track1 = { id: 't1', title: 'T1', artist: 'A', cover: 'C' };
     const track2 = { id: 't2', title: 'T2', artist: 'A', cover: 'C' };
-    
+
     act(() => {
       result.current.addToRecentlyPlayed(track1);
     });
@@ -222,43 +227,46 @@ describe('PlaybackContext', () => {
     act(() => {
       result.current.addToRecentlyPlayed(track1);
     });
-    
+
     expect(result.current.recentlyPlayed.length).toBe(2);
     expect(result.current.recentlyPlayed[0]).toEqual(track1);
     expect(result.current.recentlyPlayed[1]).toEqual(track2);
   });
 
-  it('should handle ADD_TO_RECENTLY_PLAYED limit to 10 tracks', () => {
+  it('should handle ADD_TO_RECENTLY_PLAYED limit to 20 tracks', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
-    for (let i = 0; i < 11; i++) {
+
+    for (let i = 0; i < 21; i++) {
       act(() => {
         result.current.addToRecentlyPlayed({
-          id: `t${i}`, title: `T${i}`, artist: 'A', cover: 'C'
+          id: `t${i}`,
+          title: `T${i}`,
+          artist: 'A',
+          cover: 'C',
         });
       });
     }
-    
-    expect(result.current.recentlyPlayed.length).toBe(10);
-    expect(result.current.recentlyPlayed[0].id).toBe('t10');
-    expect(result.current.recentlyPlayed[9].id).toBe('t1');
+
+    expect(result.current.recentlyPlayed.length).toBe(20);
+    expect(result.current.recentlyPlayed[0].id).toBe('t20');
+    expect(result.current.recentlyPlayed[19].id).toBe('t1');
   });
 
   it('should handle CLEAR_RECENTLY_PLAYED', () => {
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
-    
+
     const track1 = { id: 't1', title: 'T1', artist: 'A', cover: 'C' };
     act(() => {
       result.current.addToRecentlyPlayed(track1);
     });
     expect(result.current.recentlyPlayed.length).toBe(1);
-    
+
     act(() => {
       result.current.clearRecentlyPlayed();
     });
     expect(result.current.recentlyPlayed.length).toBe(0);
   });
-  
+
   it('should return un-modified state for unknown action type', () => {
     // We can't dispatch an unknown action directly because of TS types.
     // We can cast the return of usePlayback to any to test the default case of the reducer.

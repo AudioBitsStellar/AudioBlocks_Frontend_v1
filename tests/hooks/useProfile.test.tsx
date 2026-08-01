@@ -1,8 +1,7 @@
-﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+﻿import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
-
+import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useGetProfile, PROFILE_QUERY_KEY } from '@/hooks/useProfile';
 import { getProfile } from '@/lib/profileService';
 import type { UserProfile } from '@/lib/profileService';

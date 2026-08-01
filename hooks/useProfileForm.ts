@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { useFormState, FormValues } from '@/hooks/useFormState';
-import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
 
 const DRAFT_STORAGE_KEY = 'audioblocks_profile_draft';
 
@@ -27,12 +27,15 @@ export function useProfileForm(): UseProfileFormReturn {
   const { data: profile, isLoading } = useGetProfile();
   const { mutateAsync: saveProfile, isPending: isSubmitting } = useUpdateProfile();
 
-  const serverValues: FormValues = {
-    displayName: profile?.name ?? '',
-    bio: profile?.bio ?? '',
-    website: profile?.website ?? '',
-    twitter: profile?.twitter ?? '',
-  };
+  const serverValues: FormValues = useMemo(
+    () => ({
+      displayName: profile?.name ?? '',
+      bio: profile?.bio ?? '',
+      website: profile?.website ?? '',
+      twitter: profile?.twitter ?? '',
+    }),
+    [profile?.name, profile?.bio, profile?.website, profile?.twitter]
+  );
 
   const [draft, setDraft] = useLocalStorage<FormValues | null>(DRAFT_STORAGE_KEY, null);
 
@@ -95,13 +98,13 @@ export function useProfileForm(): UseProfileFormReturn {
     form.setValues(serverValues);
     form.resetTouched();
     setDraft(null);
-  }, [form, serverValues, setDraft]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [form, serverValues, setDraft]);
 
   const discardDraft = useCallback(() => {
     setDraft(null);
     form.setValues(serverValues);
     form.resetTouched();
-  }, [form, serverValues, setDraft]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [form, serverValues, setDraft]);
 
   return {
     values: form.values,

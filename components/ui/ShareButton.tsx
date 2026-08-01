@@ -1,7 +1,7 @@
 'use client';
 
-import { Loader2, Share2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface ShareButtonProps {
@@ -11,12 +11,7 @@ export interface ShareButtonProps {
   className?: string;
 }
 
-export function ShareButton({
-  url,
-  title,
-  text,
-  className = '',
-}: ShareButtonProps) {
+export function ShareButton({ url, title, text, className = '' }: ShareButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,23 +66,23 @@ export function ShareButton({
 
   return (
     <button
-      type="button"
-      onClick={handleShare}
-      disabled={isLoading}
       aria-label="Share"
       className={`relative inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      disabled={isLoading}
+      type="button"
+      onClick={handleShare}
     >
       {isLoading ? (
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
       ) : (
-        <Share2 className="h-4 w-4" aria-hidden="true" />
+        <Share2 aria-hidden="true" className="h-4 w-4" />
       )}
       <span>{isLoading ? 'Sharing...' : 'Share'}</span>
       {isCopied && (
         <span
-          role="status"
           aria-live="polite"
           className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white shadow-lg"
+          role="status"
         >
           Copied!
         </span>

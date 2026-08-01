@@ -1,9 +1,9 @@
+import { useEffect, useState, useCallback } from 'react';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
-import apiClient from '@/lib/apiClient';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
+import { useAccount } from 'wagmi';
+import apiClient from '@/lib/apiClient';
 
 /**
  * Distinguishes a user declining/cancelling a wallet signature prompt from a
@@ -39,9 +39,11 @@ export const Auth = () => {
 
       try {
         setLoading(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const signature: any = await primaryWallet.signMessage(message);
 
-        await authenticateUser('listener', user.email!, address, signature, message);
+        await authenticateUser('listener', user.email!, address, signature as string, message);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.log(err);
         if (isUserRejectionError(err)) {
@@ -50,64 +52,67 @@ export const Auth = () => {
           toast.error('Failed to sign the authentication message. Please try again.');
         }
       } finally {
-        setLoading(false); 
+        setLoading(false);
         setShouldTriggerSignature(false); // Prevent future auto-triggers
       }
     };
 
     runSignatureFlow();
-  }, [user?.userId, primaryWallet, address, shouldTriggerSignature]);
+  }, [user?.userId, user?.email, primaryWallet, address, shouldTriggerSignature, authenticateUser]);
 
+  const authenticateUser = useCallback(
+    async (
+      role: string,
+      email: string,
+      walletAddress: unknown,
+      signature: string,
+      message: string
+    ) => {
+      try {
+        const response = await apiClient.post('/api/auth/login', {
+          role,
+          email,
+          walletAddress,
+          signature,
+          message,
+        });
 
+        const token = response.data.user.token;
+        Cookies.set('audioblocks_jwt', token);
+        toast.success(response.data?.message);
+        return response.data;
 
-  const authenticateUser = async (
-    role: string,
-    email: string,
-    walletAddress: any,
-    signature: string,
-    message: string
-  ) => {
-    try {
-      const response = await apiClient.post('/api/auth/login', {
-        role,
-        email,
-        walletAddress,
-        signature,
-        message,
-      });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        const errorMsg = error?.response?.data?.message;
 
-      const token = response.data.user.token;
-      Cookies.set('audioblocks_jwt', token);
-      toast.success(response.data?.message);
-      return response.data;
-
-    } catch (error: any) {
-      const errorMsg = error?.response?.data?.message;
-
-      if (errorMsg?.toLowerCase().includes('user not found')) {
+        if (errorMsg?.toLowerCase().includes('user not found')) {
           try {
             const registerResponse = await apiClient.post('/api/auth/register', {
-            role,
-            email,
-            walletAddress,
-            signature,
-            message,
-          });
+              role,
+              email,
+              walletAddress,
+              signature,
+              message,
+            });
 
-          const registerToken = registerResponse.data?.user?.token;
-          Cookies.set('audioblocks_jwt', registerToken);
-          toast.success(registerResponse.data?.message);
-          return registerResponse.data;
-        } catch (registerError: any) {
-          toast.error(registerError?.response?.data?.message || 'Registration failed');
+            const registerToken = registerResponse.data?.user?.token;
+            Cookies.set('audioblocks_jwt', registerToken);
+            toast.success(registerResponse.data?.message);
+            return registerResponse.data;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (registerError: any) {
+            toast.error(registerError?.response?.data?.message || 'Registration failed');
+            handleLogOut();
+          }
+        } else {
           handleLogOut();
+          toast.error(error.response?.data?.message);
         }
-      } else {
-        handleLogOut();
-        toast.error(error.response?.data?.message);
       }
-    }
-  };
+    },
+    [handleLogOut]
+  );
 
   return { setShouldTriggerSignature, handleLogOut, loading };
 };

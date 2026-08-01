@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
 
 interface NatureSlide {
   id: number;
@@ -26,7 +26,8 @@ const natureSlides: NatureSlide[] = [
   {
     id: 1,
     title: 'Music My Way',
-    description: 'Dancing lights paint the arctic sky in ethereal colors, making music that make the stars dance',
+    description:
+      'Dancing lights paint the arctic sky in ethereal colors, making music that make the stars dance',
     artist: 'Northern Norway',
     image: '/nft.svg',
     gradient: '1000 Bids',
@@ -34,7 +35,8 @@ const natureSlides: NatureSlide[] = [
   {
     id: 2,
     title: 'Coral Reef Paradise',
-    description: 'Underwater wonderland teeming with vibrant marine life, a symphony of colors and sounds',
+    description:
+      'Underwater wonderland teeming with vibrant marine life, a symphony of colors and sounds',
     artist: 'Wiffi Drips',
     image: '/wif.jpg',
     gradient: '5000 Bids',
@@ -42,7 +44,8 @@ const natureSlides: NatureSlide[] = [
   {
     id: 3,
     title: 'SILWY',
-    description: "Raw power of earth's molten core creating new landscapes, a fiery dance of creation",
+    description:
+      "Raw power of earth's molten core creating new landscapes, a fiery dance of creation",
     artist: 'Mchivir',
     image: '/chilli.jpg',
     gradient: '2000 Bids',
@@ -107,9 +110,18 @@ export default function NatureDepthSlider({
   const slide = natureSlides[currentIndex];
 
   return (
-    <section className="relative overflow-hidden rounded-xl" aria-label="Featured marketplace items">
+    <section
+      aria-label="Featured marketplace items"
+      className="relative overflow-hidden rounded-xl"
+    >
       <div className="relative min-h-[420px]">
-        <Image src={slide.image} alt={slide.title} fill className="object-cover" priority={currentIndex === 0} />
+        <Image
+          fill
+          alt={slide.title}
+          className="object-cover"
+          priority={currentIndex === 0}
+          src={slide.image}
+        />
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex min-h-[420px] flex-col justify-end p-6 text-white md:p-10">
           <p className="text-sm font-medium">{slide.artist}</p>
@@ -121,17 +133,29 @@ export default function NatureDepthSlider({
 
       {showControls && (
         <div className="absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 justify-between px-4">
-          <Button type="button" variant="outline" size="icon" aria-label="Previous slide" onClick={() => goToSlide(currentIndex - 1)}>
+          <Button
+            aria-label="Previous slide"
+            size="icon"
+            type="button"
+            variant="outline"
+            onClick={() => goToSlide(currentIndex - 1)}
+          >
             <ArrowLeft />
           </Button>
-          <Button type="button" variant="outline" size="icon" aria-label="Next slide" onClick={() => goToSlide(currentIndex + 1)}>
+          <Button
+            aria-label="Next slide"
+            size="icon"
+            type="button"
+            variant="outline"
+            onClick={() => goToSlide(currentIndex + 1)}
+          >
             <ArrowRight />
           </Button>
         </div>
       )}
 
       {showProgress && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 h-1 bg-white/20" aria-hidden="true">
+        <div aria-hidden="true" className="absolute bottom-0 left-0 right-0 z-20 h-1 bg-white/20">
           <div className="h-full bg-white" style={{ width: `${reducedMotion ? 0 : progress}%` }} />
         </div>
       )}
