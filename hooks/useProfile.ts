@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getProfile, updateProfile, UpdateProfilePayload } from '@/lib/profileService';
 import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
+import { getProfile, updateProfile, UpdateProfilePayload } from '@/lib/profileService';
 
 export const PROFILE_QUERY_KEY = ['user-profile'];
 
@@ -23,6 +23,7 @@ export function useUpdateProfile() {
       queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
       toast.success('Profile updated successfully!');
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
       const msg = error?.response?.data?.message || 'Failed to update profile. Please try again.';
       toast.error(msg);

@@ -6,7 +6,7 @@ import * as PlaybackContextModule from '@/context/PlaybackContext';
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -19,9 +19,10 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 vi.mock('next/image', () => ({
-  default: (props: any) => {
+  default: (props: React.ComponentProps<'img'>) => {
+    const { alt = '', ...rest } = props;
     // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} />;
+    return <img alt={alt} {...rest} />;
   },
 }));
 
@@ -84,7 +85,11 @@ describe('PlayerBar Visual Regression (DOM Snapshots)', () => {
   };
 
   const setViewport = (width: number) => {
-    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: width });
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: width,
+    });
     window.dispatchEvent(new Event('resize'));
   };
 
@@ -119,7 +124,7 @@ describe('PlayerBar Visual Regression (DOM Snapshots)', () => {
         const { container } = renderWithContext({ isPlaying: true });
         expect(container).toMatchSnapshot();
       });
-      
+
       it('renders loading (buffering) state correctly', () => {
         const { container, baseElement } = renderWithContext({ isPlaying: true });
         const audio = baseElement.querySelector('audio');

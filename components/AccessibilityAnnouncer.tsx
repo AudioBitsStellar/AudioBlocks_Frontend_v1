@@ -3,11 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLoading } from '@/context/LoadingContext';
 import { usePlayback } from '@/context/PlaybackContext';
-import {
-  ANNOUNCEMENT_EVENT,
-  AnnouncementDetail,
-  useAnnounce,
-} from '@/hooks/useAnnounce';
+import { ANNOUNCEMENT_EVENT, AnnouncementDetail, useAnnounce } from '@/hooks/useAnnounce';
 
 type LiveMessage = {
   id: number;
@@ -73,28 +69,28 @@ export default function AccessibilityAnnouncer() {
     if (trackError) announce(trackError, 'assertive');
   }, [announce, trackError]);
 
+  const loading = isAnyLoading();
   useEffect(() => {
-    const loading = isAnyLoading();
     if (previousLoading.current && !loading) announce('Loading complete', 'polite');
     previousLoading.current = loading;
-  }, [announce, isAnyLoading, isAnyLoading()]);
+  }, [announce, loading]);
 
   return (
     <>
       <div
         key={`polite-${politeMessage.id}`}
-        aria-live="polite"
         aria-atomic="true"
+        aria-live="polite"
         className="sr-only"
       >
         {politeMessage.message}
       </div>
       <div
         key={`assertive-${assertiveMessage.id}`}
-        role="alert"
-        aria-live="assertive"
         aria-atomic="true"
+        aria-live="assertive"
         className="sr-only"
+        role="alert"
       >
         {assertiveMessage.message}
       </div>

@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
 const FOCUSABLE =
@@ -126,10 +126,10 @@ export function Modal({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
           exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
         >
           <motion.div
@@ -138,32 +138,32 @@ export function Modal({
           />
           <motion.div
             ref={contentRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label={title}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
             aria-describedby={description ? 'modal-description' : undefined}
-            tabIndex={-1}
+            aria-label={title}
+            aria-modal="true"
             className={cn(
               'relative z-10 w-full rounded-xl bg-surface border border-border-dark shadow-2xl p-6 outline-none',
               sizeStyles[size],
               className
             )}
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            role="dialog"
+            tabIndex={-1}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             <button
-              onClick={onClose}
-              className="absolute top-4 right-4 text-on-muted hover:text-white transition-colors"
               aria-label="Close"
+              className="absolute top-4 right-4 text-on-muted hover:text-white transition-colors"
+              onClick={onClose}
             >
               <X size={18} />
             </button>
             {title && <h2 className="text-lg font-semibold text-white pr-8">{title}</h2>}
             {description && (
-              <p id="modal-description" className="text-sm text-on-muted mt-1">
+              <p className="text-sm text-on-muted mt-1" id="modal-description">
                 {description}
               </p>
             )}

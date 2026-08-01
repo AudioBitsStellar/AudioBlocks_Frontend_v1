@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Button } from '@/components/ui/button';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'UI/Button',
@@ -8,7 +8,8 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A versatile button component with multiple variants and sizes. Supports loading state, disabled state, and custom icons.',
+        component:
+          'A versatile button component with multiple variants and sizes. Supports loading state, disabled state, and custom icons.',
       },
     },
   },

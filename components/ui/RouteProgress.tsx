@@ -1,7 +1,7 @@
 'use client';
 
-import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const START_DELAY = 200;
 const COMPLETE_DURATION = 300;
@@ -111,7 +111,8 @@ export default function RouteProgress() {
       if (destination.origin !== window.location.origin) return;
 
       const current = new URL(window.location.href);
-      if (destination.pathname === current.pathname && destination.search === current.search) return;
+      if (destination.pathname === current.pathname && destination.search === current.search)
+        return;
 
       startTransition();
     };

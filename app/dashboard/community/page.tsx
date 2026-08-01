@@ -1,12 +1,12 @@
 ﻿'use client';
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@radix-ui/react-tabs';
 import { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@radix-ui/react-tabs';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useArtistLeaderboard, useCastVote, useMyVotes } from '@/hooks/useCommunity';
-import { useQueryClient } from '@tanstack/react-query';
-import VoteTab from './_components/VoteTab';
 import LeaderboardTab from './_components/LeaderboardTab';
+import VoteTab from './_components/VoteTab';
 
 const CommunityTabs = () => {
   const [selectedTab, setSelectedTab] = useState('vote');
@@ -49,21 +49,21 @@ const CommunityTabs = () => {
       </div>
 
       <Tabs
+        className="w-full"
         defaultValue="vote"
         value={selectedTab}
         onValueChange={(value) => setSelectedTab(value)}
-        className="w-full"
       >
         <TabsList className="flex gap-4 py-4">
           <TabsTrigger
-            value="vote"
             className="data-[state=active]:bg-brand font-medium text-sm cursor-pointer data-[state=active]:text-white text-on-muted bg-surface-input px-3 py-2 rounded-xl"
+            value="vote"
           >
             Vote
           </TabsTrigger>
           <TabsTrigger
-            value="leaderboard"
             className="data-[state=active]:bg-brand font-medium text-sm cursor-pointer data-[state=active]:text-white text-on-muted bg-surface-input px-3 py-2 rounded-xl"
+            value="leaderboard"
           >
             Leaderboards
           </TabsTrigger>
@@ -72,10 +72,10 @@ const CommunityTabs = () => {
         <TabsContent value="vote">
           <VoteTab
             artists={artists}
-            isLoading={artistsLoading}
             isError={artistsError}
-            myVotes={myVotes}
+            isLoading={artistsLoading}
             isVoting={voteMutation.isPending}
+            myVotes={myVotes}
             onVote={handleVote}
           />
         </TabsContent>

@@ -44,7 +44,10 @@ const HowItWorks = () => {
   return (
     <section aria-labelledby="how-it-works-heading" className="py-15 w-4/5 m-auto text-white">
       <div className="max-w-lg mx-auto text-center mb-12">
-        <h2 id="how-it-works-heading" className="font-semibold text-[#A3A3A3] text-2xl mb-2 md:text-4xl leading-[100%] tracking-[0%] capitalize font-poppins">
+        <h2
+          className="font-semibold text-[#A3A3A3] text-2xl mb-2 md:text-4xl leading-[100%] tracking-[0%] capitalize font-poppins"
+          id="how-it-works-heading"
+        >
           How it <span className="text-white">Works </span>
         </h2>
         <p className="text-[#A3A3A3] text-sm font-medium">
@@ -84,9 +87,12 @@ const HowItWorks = () => {
 
         {/* Artists Card */}
         <div className="border border-[#27272B] rounded-2xl p-6 relative">
-          <div className='flex justify-between items-center'>
+          <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold mb-3 text-white">Artists</h3>
-            <button aria-label="Learn more about AudioBlocks for Artists" className="border-[#F2AFC9] border-[0.1px] cursor-pointer rounded-full p-1 focus-visible:ring-2 focus-visible:ring-[#F2AFC9] focus-visible:ring-offset-2 focus-visible:ring-offset-black">
+            <button
+              aria-label="Learn more about AudioBlocks for Artists"
+              className="border-[#F2AFC9] border-[0.1px] cursor-pointer rounded-full p-1 focus-visible:ring-2 focus-visible:ring-[#F2AFC9] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            >
               <ArrowUpRight aria-hidden="true" className="top-6 right-6 text-[#F2AFC9] w-5 h-5" />
             </button>
           </div>

@@ -74,15 +74,15 @@ export function Icon({
   return (
     <svg
       {...props}
-      width={iconSize}
-      height={iconSize}
-      className={className}
       aria-hidden={ariaHiddenAttribute ?? ariaHidden}
-      focusable="false"
+      className={className}
       fill="none"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
+      focusable="false"
+      height={iconSize}
       style={{ color: 'inherit', ...props.style }}
+      viewBox="0 0 24 24"
+      width={iconSize}
+      xmlns="http://www.w3.org/2000/svg"
     >
       {isKnownIcon && <use href={`/icons/sprite.svg#${name}`} />}
     </svg>

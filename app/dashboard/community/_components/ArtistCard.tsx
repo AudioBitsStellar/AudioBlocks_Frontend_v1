@@ -1,9 +1,9 @@
 ﻿'use client';
 
-import { Card } from '@/components/ui/card';
-import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { SquareCheck, UserRound } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import type { CommunityArtist } from '@/lib/communityService';
 
 const ShareModal = dynamic(() => import('@/components/common/dashboard/Share'), {
@@ -28,11 +28,11 @@ const ArtistCard = ({ artist, hasVoted, isVoting, onVote }: ArtistCardProps) => 
   return (
     <Card className="hover:bg-surface bg-transparent border-none p-4 rounded-xl text-white flex justify-center flex-col items-center">
       <Image
-        src={artist.image}
         alt={artist.name}
-        width={300}
-        height={300}
         className="w-2/3 m-auto h-20 object-cover rounded-md"
+        height={300}
+        src={artist.image}
+        width={300}
       />
       <div className="text-on-muted text-center -mt-4">
         <h3 className="text-lg text-white font-bold">{artist.name}</h3>
@@ -50,9 +50,9 @@ const ArtistCard = ({ artist, hasVoted, isVoting, onVote }: ArtistCardProps) => 
           <ShareModal link={`https://audioblocks.com/vote/${slugify(artist.name)}`} />
         </div>
         <button
-          onClick={() => onVote(artist.id)}
-          disabled={isVoting || hasVoted}
           className="mt-auto bg-brand w-full hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold shadow"
+          disabled={isVoting || hasVoted}
+          onClick={() => onVote(artist.id)}
         >
           {isVoting ? 'Voting…' : hasVoted ? 'Voted' : 'Vote'}
         </button>

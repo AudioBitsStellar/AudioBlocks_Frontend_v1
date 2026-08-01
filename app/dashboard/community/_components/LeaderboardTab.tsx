@@ -17,7 +17,7 @@ const LeaderboardTab = ({ artists }: LeaderboardTabProps) => {
 
       {artists.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center border border-gray-800 rounded-lg">
-          <UserRound size={48} className="text-on-muted mb-4" />
+          <UserRound className="text-on-muted mb-4" size={48} />
           <h3 className="text-white text-lg font-semibold mb-2">No leaderboard data yet</h3>
           <p className="text-on-muted text-sm max-w-sm">
             Votes will appear here once artists start receiving votes.
@@ -26,21 +26,21 @@ const LeaderboardTab = ({ artists }: LeaderboardTabProps) => {
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-800">
           <table
-            className="w-full text-sm text-left text-gray-300 min-w-[480px]"
             aria-label="Top listeners leaderboard"
+            className="w-full text-sm text-left text-gray-300 min-w-[480px]"
           >
             <thead className="text-on-muted font-semibold text-sm">
               <tr>
-                <th scope="col" className="px-6 py-3">
+                <th className="px-6 py-3" scope="col">
                   #
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th className="px-6 py-3" scope="col">
                   Top Listeners
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th className="px-6 py-3" scope="col">
                   Votes
                 </th>
-                <th scope="col" className="px-6 py-3">
+                <th className="px-6 py-3" scope="col">
                   Genre
                 </th>
               </tr>

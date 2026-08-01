@@ -51,7 +51,7 @@ const skeletonClasses: Record<AudioCardVariant, string> = {
 
 function normalizeVariant(
   variant: AudioCardVariant | undefined,
-  size: AudioCardProps['size'],
+  size: AudioCardProps['size']
 ): AudioCardVariant {
   if (variant) return variant;
   if (size === 'sm') return 'compact';
@@ -84,9 +84,9 @@ const AudioCard = memo(function AudioCard({
   if (isLoading) {
     return (
       <div
-        data-testid="audio-card-skeleton"
         aria-busy="true"
         className={`animate-pulse bg-surface-hover ${skeletonClasses[resolvedVariant]} ${className}`}
+        data-testid="audio-card-skeleton"
       />
     );
   }
@@ -100,31 +100,31 @@ const AudioCard = memo(function AudioCard({
   return (
     <div
       className={`group border border-transparent bg-transparent text-white transition-colors hover:border-border-dark hover:bg-surface-hover focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-black ${variantClasses[resolvedVariant]} ${onClick ? 'cursor-pointer' : ''} ${className}`}
-      onClick={onClick}
-      onKeyDown={handleKeyDown}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
     >
       <div className={`relative overflow-hidden ${artworkClasses[resolvedVariant]}`}>
         <ArtworkImage
+          alt={altText || `${title} by ${artist}`}
+          className="h-full w-full object-cover"
+          height={320}
           src={artwork}
           title={title}
-          alt={altText || `${title} by ${artist}`}
           width={320}
-          height={320}
-          className="h-full w-full object-cover"
         />
         {onPlay && (
           <button
-            type="button"
             aria-label={`Play ${title}`}
+            className="absolute inset-0 m-auto flex h-10 w-10 items-center justify-center rounded-full bg-brand text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            type="button"
             onClick={(event) => {
               event.stopPropagation();
               onPlay();
             }}
-            className="absolute inset-0 m-auto flex h-10 w-10 items-center justify-center rounded-full bg-brand text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
-            <Play size={17} fill="currentColor" aria-hidden="true" />
+            <Play aria-hidden="true" fill="currentColor" size={17} />
           </button>
         )}
       </div>
@@ -140,15 +140,15 @@ const AudioCard = memo(function AudioCard({
           {actions?.play}
           {onSave && (
             <button
-              type="button"
               aria-label={`Save ${title}`}
+              className="rounded-full p-2 text-on-muted transition-colors hover:bg-black/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              type="button"
               onClick={(event) => {
                 event.stopPropagation();
                 onSave();
               }}
-              className="rounded-full p-2 text-on-muted transition-colors hover:bg-black/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
-              <Heart size={18} aria-hidden="true" />
+              <Heart aria-hidden="true" size={18} />
             </button>
           )}
           {actions?.save}

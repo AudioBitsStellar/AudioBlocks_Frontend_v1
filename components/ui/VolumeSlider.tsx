@@ -9,8 +9,7 @@ type PlaybackVolumeState = {
   setVolume: (volume: number) => void;
 };
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 /**
  * Converts the linear audio volume used by the audio element into the
@@ -22,8 +21,7 @@ const volumeToSliderValue = (volume: number) => Math.sqrt(clamp(volume, 0, 1)) *
  * Converts a slider position into linear audio volume.
  * A quadratic curve gives finer control at lower perceived volume levels.
  */
-const sliderValueToVolume = (sliderValue: number) =>
-  Math.pow(clamp(sliderValue, 0, 100) / 100, 2);
+const sliderValueToVolume = (sliderValue: number) => Math.pow(clamp(sliderValue, 0, 100) / 100, 2);
 
 export function VolumeSlider() {
   const playback = usePlayback() as unknown as PlaybackVolumeState;
@@ -41,7 +39,7 @@ export function VolumeSlider() {
     (event: React.ChangeEvent<HTMLInputElement>) => {
       playback.setVolume(sliderValueToVolume(Number(event.target.value)));
     },
-    [playback],
+    [playback]
   );
 
   const handleKeyDown = useCallback(
@@ -70,7 +68,7 @@ export function VolumeSlider() {
       event.preventDefault();
       playback.setVolume(sliderValueToVolume(nextSliderValue));
     },
-    [playback, sliderValue],
+    [playback, sliderValue]
   );
 
   const handleMuteToggle = useCallback(() => {
@@ -90,10 +88,10 @@ export function VolumeSlider() {
   return (
     <div className="flex items-center gap-2 text-white">
       <button
-        type="button"
-        onClick={handleMuteToggle}
         aria-label={isMuted ? 'Unmute' : 'Mute'}
         className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors hover:text-[#F2AFC9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9]"
+        type="button"
+        onClick={handleMuteToggle}
       >
         <VolumeX
           aria-hidden="true"
@@ -114,19 +112,19 @@ export function VolumeSlider() {
       </button>
 
       <input
-        type="range"
-        min={0}
-        max={100}
-        step={1}
-        value={sliderValue}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
         aria-label="Volume"
-        aria-valuemin={0}
         aria-valuemax={100}
+        aria-valuemin={0}
         aria-valuenow={Math.round(sliderValue)}
         aria-valuetext={`${Math.round(volume * 100)}%`}
         className="h-1.5 w-24 cursor-pointer accent-[#D2045B]"
+        max={100}
+        min={0}
+        step={1}
+        type="range"
+        value={sliderValue}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
       />
     </div>
   );

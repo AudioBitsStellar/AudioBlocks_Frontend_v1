@@ -5,8 +5,8 @@
 // browser chrome. Gradient colors are deterministically derived from the
 // track title so the same track always renders the same placeholder.
 
-import Image from 'next/image';
 import { useState } from 'react';
+import Image from 'next/image';
 
 // ── Gradient helpers ──────────────────────────────────────────────────────────
 
@@ -52,9 +52,9 @@ export function ArtworkImage({
   if (useFallback) {
     return (
       <div
-        role="img"
         aria-label={alt ?? title}
         className={className}
+        role="img"
         style={{
           background: gradient,
           width: fill ? '100%' : width,
@@ -67,12 +67,12 @@ export function ArtworkImage({
 
   return (
     <Image
-      src={src as string}
       alt={alt ?? title}
-      width={fill ? undefined : width}
-      height={fill ? undefined : height}
-      fill={fill}
       className={className}
+      fill={fill}
+      height={fill ? undefined : height}
+      src={src as string}
+      width={fill ? undefined : width}
       onError={() => setUseFallback(true)}
     />
   );

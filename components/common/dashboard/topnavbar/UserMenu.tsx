@@ -1,15 +1,15 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { FiUser, FiRepeat, FiFolder, FiX, FiLogIn } from 'react-icons/fi';
-import { FaWallet } from 'react-icons/fa';
 import Link from 'next/link';
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { Auth } from '@/hooks/useAuth';
 import { useRouter, usePathname } from 'next/navigation';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
+import { FaWallet } from 'react-icons/fa';
+import { FiUser, FiRepeat, FiFolder, FiX, FiLogIn } from 'react-icons/fi';
+import { Auth } from '@/hooks/useAuth';
 
 const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,35 +42,32 @@ const UserMenu = () => {
     }
   }, [isOpen]);
 
-  const handlePanelKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-        toggleRef.current?.focus();
-        return;
-      }
-      if (e.key === 'Tab') {
-        const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
-          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
-        );
-        if (!focusable || focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
+  const handlePanelKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+      toggleRef.current?.focus();
+      return;
+    }
+    if (e.key === 'Tab') {
+      const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
       }
-    },
-    []
-  );
+    }
+  }, []);
 
   const logOut = () => {
     Cookies.remove('audioblocks_jwt');
@@ -79,40 +76,40 @@ const UserMenu = () => {
   };
 
   return (
-    <div className="relative z-50" ref={menuRef}>
+    <div ref={menuRef} className="relative z-50">
       <button
-        onClick={() => setIsOpen(true)}
         ref={toggleRef}
         aria-label="Open user menu"
         className="w-8 h-8 rounded-full overflow-hidden border border-gray-700 cursor-pointer"
+        onClick={() => setIsOpen(true)}
       >
         <Image
-          src="/tech.jpg"
           alt="User"
-          width={40}
-          height={40}
           className="object-cover w-full h-full"
+          height={40}
+          src="/tech.jpg"
+          width={40}
         />
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ x: '100%' }}
             animate={{ x: 0 }}
+            aria-label="User menu"
+            aria-modal="true"
+            className="fixed top-0 right-0 w-60 h-screen bg-[#111111] shadow-lg border-l border-[#2B2B2B] px-5 py-6 flex flex-col"
             exit={{ x: '100%' }}
+            initial={{ x: '100%' }}
+            role="dialog"
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             onKeyDown={handlePanelKeyDown}
-            role="dialog"
-            aria-modal="true"
-            aria-label="User menu"
-            className="fixed top-0 right-0 w-60 h-screen bg-[#111111] shadow-lg border-l border-[#2B2B2B] px-5 py-6 flex flex-col"
           >
             <button
-              onClick={() => setIsOpen(false)}
               ref={closeButtonRef}
               aria-label="Close user menu"
               className="text-[#A3A3A3] cursor-pointer hover:text-white absolute top-4 right-4"
+              onClick={() => setIsOpen(false)}
             >
               <FiX size={22} />
             </button>
@@ -121,15 +118,17 @@ const UserMenu = () => {
               <>
                 <div className="flex items-center truncate border-b pb-3 gap-3 mb-8 mt-2">
                   <Image
-                    src="/tech.jpg"
                     alt="User Avatar"
-                    width={50}
-                    height={50}
                     className="rounded-full"
+                    height={50}
+                    src="/tech.jpg"
+                    width={50}
                   />
                   <div>
                     <p className="font-semibold text-white text-sm">
-                      {(user as Record<string, any>)?.name || user?.email?.split('@')[0] || 'User'}
+                      {(user as Record<string, string>)?.name ||
+                        user?.email?.split('@')[0] ||
+                        'User'}
                     </p>
                     <p className="text-xs overflow-hidden text-ellipsis text-[#A3A3A3]">
                       {user?.email}
@@ -139,25 +138,25 @@ const UserMenu = () => {
 
                 <div className="space-y-6 text-sm text-[#A3A3A3] font-semibold">
                   <Link
+                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                     href="/dashboard/profile"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                   >
                     <FiUser />
                     <span>Profile</span>
                   </Link>
                   <Link
+                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                     href="#"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                   >
                     <FiRepeat />
                     <span>Swap</span>
                   </Link>
                   <Link
+                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                     href="/dashboard/collection"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                   >
                     <FiFolder />
                     <span>My Collections</span>
@@ -178,7 +177,7 @@ const UserMenu = () => {
             ) : (
               <div className="flex flex-col items-center justify-center flex-1 gap-6">
                 <div className="w-16 h-16 rounded-full bg-[#1A1A1A] flex items-center justify-center">
-                  <FiUser size={28} className="text-[#A3A3A3]" />
+                  <FiUser className="text-[#A3A3A3]" size={28} />
                 </div>
                 <div className="text-center">
                   <p className="text-white font-semibold mb-1">Welcome</p>
@@ -187,9 +186,9 @@ const UserMenu = () => {
                   </p>
                 </div>
                 <Link
+                  className="flex items-center gap-2 bg-[#D2045B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#b80348] transition cursor-pointer"
                   href="/"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 bg-[#D2045B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#b80348] transition cursor-pointer"
                 >
                   <FiLogIn />
                   <span>Connect Wallet</span>

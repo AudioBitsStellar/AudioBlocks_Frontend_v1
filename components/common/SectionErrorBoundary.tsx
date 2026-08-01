@@ -133,10 +133,10 @@ export default class SectionErrorBoundary extends Component<
 
       return (
         <div
-          className={`flex flex-col items-center justify-center p-6 rounded-xl bg-surface border border-border-dark text-center w-full transition-all ${className}`}
-          style={{ minHeight: minHeightStyle }}
-          role="alert"
           aria-live="assertive"
+          className={`flex flex-col items-center justify-center p-6 rounded-xl bg-surface border border-border-dark text-center w-full transition-all ${className}`}
+          role="alert"
+          style={{ minHeight: minHeightStyle }}
         >
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-brand/10 text-brand mb-3">
             <AlertTriangle size={24} />
@@ -150,28 +150,28 @@ export default class SectionErrorBoundary extends Component<
 
           <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
             <button
-              onClick={this.handleRetry}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand hover:bg-pink-700 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-background"
               aria-label={`Retry loading ${displaySection}`}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand hover:bg-pink-700 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-background"
+              onClick={this.handleRetry}
             >
-              <RefreshCw size={14} className="animate-none" />
+              <RefreshCw className="animate-none" size={14} />
               Retry Section
             </button>
 
             <button
-              onClick={this.handleReloadPage}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-200 bg-surface-input hover:bg-surface-hover border border-border-dark rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand"
               aria-label="Reload entire page"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-200 bg-surface-input hover:bg-surface-hover border border-border-dark rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand"
+              onClick={this.handleReloadPage}
             >
               <RotateCw size={14} />
               Reload Page
             </button>
 
             <a
-              href={supportHref}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors focus:outline-none focus:underline"
-              target={supportHref.startsWith('http') ? '_blank' : undefined}
+              href={supportHref}
               rel={supportHref.startsWith('http') ? 'noopener noreferrer' : undefined}
+              target={supportHref.startsWith('http') ? '_blank' : undefined}
             >
               <HelpCircle size={14} />
               Contact Support
@@ -180,9 +180,9 @@ export default class SectionErrorBoundary extends Component<
 
           <div className="w-full max-w-lg mt-2">
             <button
-              onClick={this.toggleDetails}
-              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-200 transition-colors focus:outline-none"
               aria-expanded={this.state.showDetails}
+              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-200 transition-colors focus:outline-none"
+              onClick={this.toggleDetails}
             >
               {this.state.showDetails ? (
                 <>

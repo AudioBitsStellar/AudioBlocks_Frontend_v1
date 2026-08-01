@@ -1,15 +1,15 @@
 'use client';
 
+import { useState } from 'react';
+import Link from 'next/link';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, Copy } from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
-import { FaShare, FaSnapchatGhost, FaTelegramPlane } from "react-icons/fa";
-import { FaFacebook } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
+import { FaShare, FaSnapchatGhost, FaTelegramPlane } from 'react-icons/fa';
+import { FaFacebook } from 'react-icons/fa';
+import { FaXTwitter } from 'react-icons/fa6';
 import { toast } from 'sonner';
 
-const ShareModal=({ link }: { link: string })=> {
+const ShareModal = ({ link }: { link: string }) => {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -31,7 +31,7 @@ const ShareModal=({ link }: { link: string })=> {
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
         <button aria-label="Share">
-          <FaShare size={15} className='cursor-pointer'/>
+          <FaShare className="cursor-pointer" size={15} />
         </button>
       </Dialog.Trigger>
 
@@ -39,7 +39,9 @@ const ShareModal=({ link }: { link: string })=> {
         <Dialog.Overlay className="fixed inset-0 bg-black/50" />
         <Dialog.Content className="fixed z-50 top-1/2 left-1/2 w-[90%] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg bg-[#1E1E1E] p-6 shadow-xl focus:outline-none text-white">
           <div className="flex justify-between items-start mb-4">
-            <Dialog.Title className="text-lg font-semibold text-[#F4F4F5]">Share with your friends!</Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold text-[#F4F4F5]">
+              Share with your friends!
+            </Dialog.Title>
             <Dialog.Close asChild>
               <button className="hover:text-gray-400 transition">
                 <X className="w-5 h-5" />
@@ -50,16 +52,38 @@ const ShareModal=({ link }: { link: string })=> {
           <p className="text-sm text-gray-300 mb-3">Share this link via</p>
 
           <div className="flex gap-4 mb-4">
-            <Link href={`https://www.facebook.com/sharer/sharer.php?u=${link}`} target="_blank" className='border p-1 rounded-md' rel="noopener noreferrer" aria-label="Share on Facebook">
-              <FaFacebook className="w-6 h-6 hover:scale-110 text-[#1877F2] transition"/>
+            <Link
+              aria-label="Share on Facebook"
+              className="border p-1 rounded-md"
+              href={`https://www.facebook.com/sharer/sharer.php?u=${link}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <FaFacebook className="w-6 h-6 hover:scale-110 text-[#1877F2] transition" />
             </Link>
-            <Link href="#" className='border p-1 rounded-md' target="_blank" aria-label="Share on Snapchat">
-              <FaSnapchatGhost className="w-6 h-6 hover:scale-110 transition text-white" />  
+            <Link
+              aria-label="Share on Snapchat"
+              className="border p-1 rounded-md"
+              href="#"
+              target="_blank"
+            >
+              <FaSnapchatGhost className="w-6 h-6 hover:scale-110 transition text-white" />
             </Link>
-            <Link href="#" className='border p-1 rounded-md'  target="_blank" aria-label="Share on X / Twitter">
+            <Link
+              aria-label="Share on X / Twitter"
+              className="border p-1 rounded-md"
+              href="#"
+              target="_blank"
+            >
               <FaXTwitter className="w-6 h-6 hover:scale-110 text-white transition" />
             </Link>
-            <Link href={`https://t.me/share/url?url=${link}`} className='border p-1 rounded-md' target="_blank" rel="noopener noreferrer" aria-label="Share on Telegram">
+            <Link
+              aria-label="Share on Telegram"
+              className="border p-1 rounded-md"
+              href={`https://t.me/share/url?url=${link}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
               <FaTelegramPlane className="w-6 h-6 hover:scale-110 transition bg-[#1877F2] p-1 rounded-full text-white" />
             </Link>
           </div>
@@ -68,13 +92,13 @@ const ShareModal=({ link }: { link: string })=> {
 
           <div className="flex items-center rounded-md overflow-hidden">
             <input
-              value={link}
               readOnly
               className="w-full px-3 py-2 text-sm border rounded-md mr-3  bg-transparent text-white outline-none"
+              value={link}
             />
             <button
-              onClick={handleCopy}
               className="bg-[#D2045B] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b80348] transition flex items-center gap-1"
+              onClick={handleCopy}
             >
               <Copy className="w-4 h-4" />
               {copied ? 'Copied' : 'Copy'}
@@ -84,6 +108,6 @@ const ShareModal=({ link }: { link: string })=> {
       </Dialog.Portal>
     </Dialog.Root>
   );
-}
+};
 
 export default ShareModal;

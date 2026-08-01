@@ -1,12 +1,12 @@
 'use client';
 
-import { notFound } from 'next/navigation';
-import { useNFTCollection } from '@/hooks/useNFTCollection';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { useMemo } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useNFTCollection } from '@/hooks/useNFTCollection';
 
 export default function ArtistDetailPage({ params }: { params: { id: string } }) {
   const { songs, isLoading } = useNFTCollection();
@@ -29,7 +29,10 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
 
   return (
     <div className="p-6">
-      <Link href="/dashboard/all-artists" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors">
+      <Link
+        className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors"
+        href="/dashboard/all-artists"
+      >
         <ArrowLeft size={16} />
         Back to Artists
       </Link>
@@ -39,7 +42,7 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
         {artistSongs.map((song, i) => (
           <div key={i} className="bg-surface-elevated rounded-lg overflow-hidden">
             <div className="relative aspect-square">
-              <Image src="/audio.jpg" alt={song.songCID} fill className="object-cover" />
+              <Image fill alt={song.songCID} className="object-cover" src="/audio.jpg" />
             </div>
             <div className="p-3">
               <p className="text-sm text-white truncate">{song.songCID}</p>

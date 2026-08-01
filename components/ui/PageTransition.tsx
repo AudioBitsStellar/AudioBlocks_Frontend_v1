@@ -1,8 +1,8 @@
 'use client';
 
+import { useState, useEffect, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useState, useEffect, ReactNode } from 'react';
 
 const variants = {
   enter: { opacity: 1 },
@@ -31,11 +31,11 @@ export function PageTransition({ children }: { children: ReactNode }) {
     <AnimatePresence mode="wait">
       <motion.div
         key={pathname}
-        variants={variants}
-        initial="enter"
         animate="enter"
         exit="exit"
+        initial="enter"
         transition={transition}
+        variants={variants}
       >
         {children}
       </motion.div>

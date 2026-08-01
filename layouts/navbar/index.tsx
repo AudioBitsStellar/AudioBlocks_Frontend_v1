@@ -1,15 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowRight, Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Variants, motion, AnimatePresence } from 'framer-motion';
 import { DynamicUserProfile, useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { Auth } from '@/hooks/useAuth';
-import FullScreenLoader from '@/components/common/home/FullScreenLoader';
+import { Variants, motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import { toast } from 'sonner';
+import FullScreenLoader from '@/components/common/home/FullScreenLoader';
+import { Auth } from '@/hooks/useAuth';
 
 /**
  * True if the visitor has no injected EVM wallet extension at all
@@ -33,7 +33,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const {setShouldTriggerSignature, loading} = Auth();
+  const { setShouldTriggerSignature, loading } = Auth();
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileCloseRef = useRef<HTMLButtonElement | null>(null);
 
@@ -43,34 +43,31 @@ const Navbar = () => {
     }
   }, [isMenuOpen]);
 
-  const handleMobileMenuKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsMenuOpen(false);
-        return;
-      }
-      if (e.key === 'Tab') {
-        const focusable = mobileMenuRef.current?.querySelectorAll<HTMLElement>(
-          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
-        );
-        if (!focusable || focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
+  const handleMobileMenuKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsMenuOpen(false);
+      return;
+    }
+    if (e.key === 'Tab') {
+      const focusable = mobileMenuRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
       }
-    },
-    []
-  );
+    }
+  }, []);
 
   const { setShowAuthFlow } = useDynamicContext();
   const { setShowDynamicUserProfile, user } = useDynamicContext();
@@ -92,7 +89,6 @@ const Navbar = () => {
     setShowAuthFlow(true);
   };
 
-  
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -140,21 +136,21 @@ const Navbar = () => {
       <div className="flex h-[51px] items-center justify-between py-4 max-w-11/12 mx-auto">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <Image src="/logo2.png" height={100} width={100} alt="AudioBlocks Logo" />
+          <Image alt="AudioBlocks Logo" height={100} src="/logo2.png" width={100} />
         </div>
 
         {/* Desktop Nav */}
         <div className="hidden md:flex bg-[#0F0F0F] rounded-full border border-gray-800 p-1 items-center justify-between">
-          <Link href="/" className={linkClass('/')}>
+          <Link className={linkClass('/')} href="/">
             Home
           </Link>
-          <Link href="/artist-hub" className={linkClass('/artist-hub')}>
+          <Link className={linkClass('/artist-hub')} href="/artist-hub">
             Artist Hub
           </Link>
-          <Link href="/marketPlace" className={linkClass('/marketPlace')}>
+          <Link className={linkClass('/marketPlace')} href="/marketPlace">
             Marketplace
           </Link>
-          <Link href="/collective" className={linkClass('/collective')}>
+          <Link className={linkClass('/collective')} href="/collective">
             Collective
           </Link>
         </div>
@@ -163,8 +159,8 @@ const Navbar = () => {
         <div className="hidden md:flex">
           {!user?.userId ? (
             <button
-              onClick={handleAuthentication}
               className="px-4 cursor-pointer py-2 gap-3 rounded-full bg-[#D2045B] hover:bg-[#B8043F] flex justify-between items-center text-white font-bold transition-all duration-200 whitespace-nowrap text-sm hover:scale-105 shadow-lg hover:shadow-xl"
+              onClick={handleAuthentication}
             >
               Sign in
               <div className="bg-black rounded-full p-1">
@@ -176,7 +172,7 @@ const Navbar = () => {
               className="px-4 cursor-pointer py-2 gap-3 rounded-4xl bg-[#D2045B] hover:bg-[#B8043F] flex justify-between items-center text-white font-bold transition-all duration-200 whitespace-nowrap text-sm hover:scale-105 shadow-lg hover:shadow-xl"
               onClick={() => setShowDynamicUserProfile(true)}
             >
-              {user?.email} 
+              {user?.email}
             </button>
           )}
 
@@ -186,8 +182,8 @@ const Navbar = () => {
         {/* Mobile Menu Button */}
         <div className="flex md:hidden">
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#D2045B]"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? (
               <X className="h-6 w-6 text-white" />
@@ -203,22 +199,22 @@ const Navbar = () => {
         {isMenuOpen && (
           <motion.div
             ref={mobileMenuRef}
-            variants={menuVariants}
-            initial="hidden"
             animate="visible"
-            exit="exit"
-            onKeyDown={handleMobileMenuKeyDown}
-            role="dialog"
-            aria-modal="true"
             aria-label="Navigation menu"
+            aria-modal="true"
             className="fixed top-0 right-0 bottom-0 w-4/5 max-w-xs bg-[#000] z-50 shadow-lg border-l border-gray-900"
+            exit="exit"
+            initial="hidden"
+            role="dialog"
+            variants={menuVariants}
+            onKeyDown={handleMobileMenuKeyDown}
           >
             <div className="flex justify-between items-center p-4 border-b border-gray-700">
-              <Image src="/logo2.png" height={40} width={40} alt="AudioBlocks Logo" />
+              <Image alt="AudioBlocks Logo" height={40} src="/logo2.png" width={40} />
               <button
                 ref={mobileCloseRef}
-                onClick={() => setIsMenuOpen(false)}
                 aria-label="Close navigation menu"
+                onClick={() => setIsMenuOpen(false)}
               >
                 <X className="h-6 w-6 text-white" />
               </button>
@@ -228,8 +224,8 @@ const Navbar = () => {
               {navLinks.map(({ name, href }) => (
                 <motion.div key={href} variants={itemVariants}>
                   <Link
-                    href={href}
                     className={`block text-base ${linkClass(href)}`}
+                    href={href}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {name}
@@ -240,8 +236,8 @@ const Navbar = () => {
               <motion.div variants={itemVariants}>
                 {!user?.userId ? (
                   <button
-                    onClick={handleAuthentication}
                     className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
+                    onClick={handleAuthentication}
                   >
                     Sign in
                     <div className="bg-black rounded-full p-1">

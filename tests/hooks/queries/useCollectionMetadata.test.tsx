@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   useCollectionMetadata,
   collectionMetadataKeys,
@@ -157,7 +157,7 @@ describe('useCollectionMetadata', () => {
     await waitFor(() =>
       expect(invalidateSpy).toHaveBeenCalledWith({
         queryKey: collectionMetadataKeys.all,
-      }),
+      })
     );
   });
 });

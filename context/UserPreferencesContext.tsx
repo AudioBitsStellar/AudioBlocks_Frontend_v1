@@ -59,7 +59,7 @@ const SYNC_DEBOUNCE_MS = 1500;
 export function UserPreferencesProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useLocalStorage<UserPreferences>(
     PREFS_STORAGE_KEY,
-    DEFAULT_PREFERENCES,
+    DEFAULT_PREFERENCES
   );
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -98,13 +98,13 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     return () => {
       if (syncTimerRef.current !== null) clearTimeout(syncTimerRef.current);
     };
-  }, [preferences]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [preferences]);
 
   const setPreference = useCallback(
     <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
       setPreferences({ ...preferences, [key]: value });
     },
-    [preferences, setPreferences],
+    [preferences, setPreferences]
   );
 
   const resetPreferences = useCallback(() => {
@@ -113,13 +113,11 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<UserPreferencesContextValue>(
     () => ({ preferences, isSyncing, syncError, setPreference, resetPreferences }),
-    [preferences, isSyncing, syncError, setPreference, resetPreferences],
+    [preferences, isSyncing, syncError, setPreference, resetPreferences]
   );
 
   return (
-    <UserPreferencesContext.Provider value={value}>
-      {children}
-    </UserPreferencesContext.Provider>
+    <UserPreferencesContext.Provider value={value}>{children}</UserPreferencesContext.Provider>
   );
 }
 

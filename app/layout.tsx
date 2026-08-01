@@ -1,16 +1,17 @@
-import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
+import { Toaster } from 'sonner';
 import './globals.css';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import Provider from '@/context/provider';
-import { ToastProvider } from '@/context/ToastContext';
-import { Toaster } from 'sonner';
+import AccessibilityAnnouncer from '@/components/AccessibilityAnnouncer';
 import EnvCheck from '@/components/EnvCheck';
 import SWRegister from '@/components/SWRegister';
-import Script from 'next/script';
-import AccessibilityAnnouncer from '@/components/AccessibilityAnnouncer';
-
+import RouteProgress from '@/components/ui/RouteProgress';
+import Provider from '@/context/provider';
+import { ToastProvider } from '@/context/ToastContext';
+import type { Metadata } from 'next';
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -50,18 +51,18 @@ export default function RootLayout({
           <EnvCheck />
           <AccessibilityAnnouncer />
           <a
-            href="#main-content"
             className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:font-semibold"
+            href="#main-content"
           >
             Skip to main content
           </a>
-          <Toaster position="bottom-right" closeButton />
+          <Toaster closeButton position="bottom-right" />
           <ToastProvider>{children}</ToastProvider>
           {/* Analytics script loaded after user interaction to reduce main thread blocking */}
           <Script
             id="analytics-script"
-            strategy="lazyOnload"
             src="https://www.google-analytics.com/analytics.js"
+            strategy="lazyOnload"
           />
         </Provider>
       </body>

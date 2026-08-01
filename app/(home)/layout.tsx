@@ -1,8 +1,8 @@
+import { ReactNode } from 'react';
 import GoToTopButton from '@/components/common/home/GoToTopButton';
+import { PageTransition } from '@/components/ui/PageTransition';
 import Footer from '@/layouts/footer';
 import Navbar from '@/layouts/navbar';
-import { PageTransition } from '@/components/ui/PageTransition';
-import { ReactNode } from 'react';
 
 export default function WebLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
@@ -10,12 +10,10 @@ export default function WebLayout({ children }: Readonly<{ children: ReactNode }
       <div>
         <Navbar />
         <main id="main-content">
-          <PageTransition>
-            {children}
-          </PageTransition>
+          <PageTransition>{children}</PageTransition>
         </main>
-        <GoToTopButton/>
-        <Footer/>
+        <GoToTopButton />
+        <Footer />
       </div>
     </>
   );

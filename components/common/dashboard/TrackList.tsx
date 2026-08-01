@@ -5,6 +5,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import AudioCard from '@/components/ui/AudioCard';
 import { usePlayback } from '@/context/PlaybackContext';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function TrackList({ tracks }: { tracks: any[] }) {
   const { playTrack } = usePlayback();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -33,8 +34,8 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
           return (
             <div
               key={virtualItem.key}
-              data-index={virtualItem.index}
               ref={virtualizer.measureElement}
+              data-index={virtualItem.index}
               style={{
                 position: 'absolute',
                 top: 0,
@@ -44,12 +45,12 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
               }}
             >
               <AudioCard
-                className="border-b border-border-dark"
-                variant="compact"
-                artworkUrl={track.cover}
-                title={track.title}
                 artist={track.artist}
+                artworkUrl={track.cover}
+                className="border-b border-border-dark"
                 duration={track.duration}
+                title={track.title}
+                variant="compact"
                 onClick={() => playTrack(track)}
                 onPlay={() => playTrack(track)}
               />

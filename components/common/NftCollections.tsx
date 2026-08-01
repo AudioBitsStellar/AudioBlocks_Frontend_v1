@@ -1,9 +1,9 @@
 'use client';
 
-import { Inter } from 'next/font/google';
-import { Search } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
+import { Inter } from 'next/font/google';
 import Image from 'next/image';
+import { Search } from 'lucide-react';
 import BuyButton from './BuyButton';
 
 interface CollectionItem {
@@ -117,11 +117,11 @@ function Card({ item }: { item: CollectionItem }) {
     <div className="flex flex-col bg-surface border border-border-dark rounded-xl overflow-hidden transition-all duration-200 hover:bg-surface-hover hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98]">
       <div className="relative aspect-square overflow-hidden">
         <Image
-          src={item.image || '/placeholder.svg'}
-          alt={item.songName || item.eventName || item.itemName || 'Collection item'}
           fill
+          alt={item.songName || item.eventName || item.itemName || 'Collection item'}
           className="object-cover"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          src={item.image || '/placeholder.svg'}
         />
       </div>
       <div className="flex flex-col gap-1.5 p-4 flex-1">
@@ -132,7 +132,7 @@ function Card({ item }: { item: CollectionItem }) {
           </p>
         </div>
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-border-dark mt-auto">
-          <BuyButton tokenId={item.id} price={item.price} label="Buy Now" />
+          <BuyButton label="Buy Now" price={item.price} tokenId={item.id} />
           <span className="font-semibold text-xs text-on-muted shrink-0">{item.price}</span>
         </div>
       </div>
@@ -186,12 +186,12 @@ export default function NftCollection() {
         <div className="relative w-full sm:w-auto">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
+            aria-label="Search NFT collections"
+            className="w-full sm:w-80 h-11 pl-10 pr-5 py-2 rounded-full bg-surface-input border border-border-dark text-white placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
+            placeholder="Search by artist or title..."
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by artist or title..."
-            aria-label="Search NFT collections"
-            className="w-full sm:w-80 h-11 pl-10 pr-5 py-2 rounded-full bg-surface-input border border-border-dark text-white placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
       </div>
@@ -201,12 +201,12 @@ export default function NftCollection() {
           {tabs.map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
               className={`relative text-sm font-medium px-4 py-2 rounded-full transition-all duration-200 ${
                 activeTab === tab
                   ? 'bg-brand text-white'
                   : 'bg-surface text-on-muted hover:bg-surface-hover hover:text-white'
               }`}
+              onClick={() => setActiveTab(tab)}
             >
               {tab}
             </button>
@@ -216,25 +216,25 @@ export default function NftCollection() {
         <div className="flex items-center gap-2 ml-auto">
           <label className="text-xs text-on-muted">Price:</label>
           <input
-            type="number"
-            value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
-            placeholder="Min"
             aria-label="Minimum price in ETH"
             className="w-20 h-9 px-3 py-1 rounded-full bg-surface-input border border-border-dark text-white text-sm placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
             min="0"
+            placeholder="Min"
             step="0.1"
+            type="number"
+            value={priceMin}
+            onChange={(e) => setPriceMin(e.target.value)}
           />
           <span className="text-on-muted">-</span>
           <input
-            type="number"
-            value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
-            placeholder="Max"
             aria-label="Maximum price in ETH"
             className="w-20 h-9 px-3 py-1 rounded-full bg-surface-input border border-border-dark text-white text-sm placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
             min="0"
+            placeholder="Max"
             step="0.1"
+            type="number"
+            value={priceMax}
+            onChange={(e) => setPriceMax(e.target.value)}
           />
           <span className="text-xs text-on-muted">ETH</span>
         </div>
@@ -244,12 +244,12 @@ export default function NftCollection() {
         <div className="text-center py-20 text-on-muted">
           <p className="text-lg">No items match your filters.</p>
           <button
+            className="mt-4 px-4 py-2 text-sm text-white bg-brand rounded-full hover:bg-brand-hover"
             onClick={() => {
               setSearch('');
               setPriceMin('');
               setPriceMax('');
             }}
-            className="mt-4 px-4 py-2 text-sm text-white bg-brand rounded-full hover:bg-brand-hover"
           >
             Clear filters
           </button>
