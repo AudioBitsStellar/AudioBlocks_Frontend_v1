@@ -31,35 +31,6 @@ export const Auth = () => {
   const [shouldTriggerSignature, setShouldTriggerSignature] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const runSignatureFlow = async () => {
-      if (!user?.userId || !primaryWallet || !address || !shouldTriggerSignature) return;
-
-      const message = `Welcome to AudioBlocks! Sign this message to authenticate: ${new Date().toISOString()}`;
-
-      try {
-        setLoading(true);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const signature: any = await primaryWallet.signMessage(message);
-
-        await authenticateUser('listener', user.email!, address, signature as string, message);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        console.log(err);
-        if (isUserRejectionError(err)) {
-          toast.error('Signature request was cancelled. Please sign the message to continue.');
-        } else {
-          toast.error('Failed to sign the authentication message. Please try again.');
-        }
-      } finally {
-        setLoading(false);
-        setShouldTriggerSignature(false); // Prevent future auto-triggers
-      }
-    };
-
-    runSignatureFlow();
-  }, [user?.userId, user?.email, primaryWallet, address, shouldTriggerSignature, authenticateUser]);
-
   const authenticateUser = useCallback(
     async (
       role: string,
@@ -113,6 +84,35 @@ export const Auth = () => {
     },
     [handleLogOut]
   );
+
+  useEffect(() => {
+    const runSignatureFlow = async () => {
+      if (!user?.userId || !primaryWallet || !address || !shouldTriggerSignature) return;
+
+      const message = `Welcome to AudioBlocks! Sign this message to authenticate: ${new Date().toISOString()}`;
+
+      try {
+        setLoading(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const signature: any = await primaryWallet.signMessage(message);
+
+        await authenticateUser('listener', user.email!, address, signature as string, message);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        console.log(err);
+        if (isUserRejectionError(err)) {
+          toast.error('Signature request was cancelled. Please sign the message to continue.');
+        } else {
+          toast.error('Failed to sign the authentication message. Please try again.');
+        }
+      } finally {
+        setLoading(false);
+        setShouldTriggerSignature(false); // Prevent future auto-triggers
+      }
+    };
+
+    runSignatureFlow();
+  }, [user?.userId, user?.email, primaryWallet, address, shouldTriggerSignature, authenticateUser]);
 
   return { setShouldTriggerSignature, handleLogOut, loading };
 };
