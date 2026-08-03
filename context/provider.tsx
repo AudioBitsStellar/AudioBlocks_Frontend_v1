@@ -10,6 +10,7 @@ import { http } from 'viem';
 import { liskSepolia, mainnet, sepolia } from 'viem/chains';
 import { createConfig, WagmiProvider } from 'wagmi';
 import WrongNetworkBanner from '@/components/common/WrongNetworkBanner';
+import { TransactionProvider } from '@/context/TransactionContext';
 import { LoadingProvider } from '@/context/LoadingContext';
 import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
 import { WalletProvider } from '@/context/WalletContext';
@@ -57,12 +58,14 @@ const Provider = ({ children }: { children: ReactNode }) => {
         <QueryClientProvider client={queryClient}>
           <DynamicWagmiConnector>
             <WalletProvider>
-              <LoadingProvider>
-                <UserPreferencesProvider>
-                  <WrongNetworkBanner />
-                  {children}
-                </UserPreferencesProvider>
-              </LoadingProvider>
+              <TransactionProvider>
+                <LoadingProvider>
+                  <UserPreferencesProvider>
+                    <WrongNetworkBanner />
+                    {children}
+                  </UserPreferencesProvider>
+                </LoadingProvider>
+              </TransactionProvider>
             </WalletProvider>
           </DynamicWagmiConnector>
           {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
