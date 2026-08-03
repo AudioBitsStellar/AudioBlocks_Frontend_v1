@@ -1,7 +1,6 @@
 'use client';
 
-import { Bell, Menu } from 'lucide-react';
-import { FiSearch } from 'react-icons/fi';
+import { Bell, Menu, Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import UserMenu from './UserMenu';
 
@@ -32,7 +31,7 @@ const TopNavbar = ({ onMenuClick }: TopNavbarProps) => {
 
       <div className="flex-1 mx-4 max-w-2xl hidden md:flex">
         <div className="flex items-center w-full bg-[#1E1E1E] rounded-xl px-4 py-2">
-          <FiSearch className="text-gray-400 text-lg" />
+          <Search className="text-gray-400 text-lg" />
           <input
             aria-label="Search by artists, songs or albums"
             className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-gray-400"

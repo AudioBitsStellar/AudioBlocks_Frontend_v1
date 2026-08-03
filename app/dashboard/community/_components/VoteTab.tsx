@@ -1,8 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { Music } from 'lucide-react';
-import { FiSearch } from 'react-icons/fi';
+import { Music, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import ArtistCard, { type Artist } from './ArtistCard';
 
@@ -31,7 +30,7 @@ const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: Vot
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="flex items-center bg-transparent border rounded-full px-4 py-2 w-full sm:w-auto sm:flex-1">
-          <FiSearch aria-hidden="true" className="text-gray-400 text-lg shrink-0" />
+          <Search aria-hidden="true" className="text-gray-400 text-lg shrink-0" />
           <input
             aria-label="Search artists"
             className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-on-muted"

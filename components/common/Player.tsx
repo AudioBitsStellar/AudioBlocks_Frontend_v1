@@ -11,13 +11,16 @@ import {
   ListPlus,
   Loader2,
   MessageSquare,
+  Play,
+  Pause,
   Repeat,
   Shuffle,
   SkipBack,
   SkipForward,
+  Volume2,
+  VolumeX,
   X,
 } from 'lucide-react';
-import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import { usePlayback } from '@/context/PlaybackContext';
 
 // Lazy-load CommentPanel to reduce initial bundle size
@@ -608,9 +611,9 @@ const Player = () => {
             {isBuffering ? (
               <Loader2 className="text-gray-800 animate-spin" size={14} />
             ) : isPlaying ? (
-              <FaPause className="text-gray-800" size={14} />
+              <Pause className="text-gray-800" size={14} />
             ) : (
-              <FaPlay className="text-gray-800" size={14} />
+              <Play className="text-gray-800" size={14} />
             )}
           </button>
           <button aria-label="Next track" className="hover:text-gray-300 text-white" onClick={next}>
@@ -690,7 +693,7 @@ const Player = () => {
               className="hover:text-gray-300 text-white"
               onClick={toggleMute}
             >
-              {isMuted || volume === 0 ? <FaVolumeMute size={16} /> : <FaVolumeUp size={16} />}
+              {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
             <div className="absolute bottom-16 p-4 rounded-md bg-[#161616] rotate-[-90deg] items-center justify-center hidden group-hover:flex group-focus-within:flex">
               <input
