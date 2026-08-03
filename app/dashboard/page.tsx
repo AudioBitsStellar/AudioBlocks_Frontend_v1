@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FiSearch } from 'react-icons/fi';
+import { Search } from 'lucide-react';
 import Artists from '@/components/common/dashboard/Artists';
 import CategorySection from '@/components/common/dashboard/CategorySection';
 import Collections from '@/components/common/dashboard/Collections';
@@ -27,7 +27,7 @@ const ExplorePage = () => {
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex items-center bg-transparent border border-border-dark rounded-full px-4 py-2 w-full sm:max-w-xs">
-            <FiSearch aria-hidden="true" className="text-on-muted text-lg shrink-0" />
+            <Search aria-hidden="true" className="text-on-muted text-lg shrink-0" />
             <input
               aria-label="Search explore page"
               className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-on-muted"

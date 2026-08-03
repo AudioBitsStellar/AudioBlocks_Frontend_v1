@@ -7,8 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
-import { FaWallet } from 'react-icons/fa';
-import { FiUser, FiRepeat, FiFolder, FiX, FiLogIn } from 'react-icons/fi';
+import { Wallet, User, Repeat, Folder, X, LogIn } from 'lucide-react';
 import { Auth } from '@/hooks/useAuth';
 
 const UserMenu = () => {
@@ -111,7 +110,7 @@ const UserMenu = () => {
               className="text-[#A3A3A3] cursor-pointer hover:text-white absolute top-4 right-4"
               onClick={() => setIsOpen(false)}
             >
-              <FiX size={22} />
+              <X size={22} />
             </button>
 
             {isAuthenticated ? (
@@ -142,7 +141,7 @@ const UserMenu = () => {
                     href="/dashboard/profile"
                     onClick={() => setIsOpen(false)}
                   >
-                    <FiUser />
+                    <User />
                     <span>Profile</span>
                   </Link>
                   <Link
@@ -150,7 +149,7 @@ const UserMenu = () => {
                     href="#"
                     onClick={() => setIsOpen(false)}
                   >
-                    <FiRepeat />
+                    <Repeat />
                     <span>Swap</span>
                   </Link>
                   <Link
@@ -158,11 +157,11 @@ const UserMenu = () => {
                     href="/dashboard/collection"
                     onClick={() => setIsOpen(false)}
                   >
-                    <FiFolder />
+                    <Folder />
                     <span>My Collections</span>
                   </Link>
                   <div className="flex items-center gap-3 text-gray-400 mt-8">
-                    <FaWallet />
+                    <Wallet />
                     <span>Balance:</span>
                     <span className="font-medium text-[#666C6C]">11000 ABT</span>
                   </div>
@@ -177,7 +176,7 @@ const UserMenu = () => {
             ) : (
               <div className="flex flex-col items-center justify-center flex-1 gap-6">
                 <div className="w-16 h-16 rounded-full bg-[#1A1A1A] flex items-center justify-center">
-                  <FiUser className="text-[#A3A3A3]" size={28} />
+                  <User className="text-[#A3A3A3]" size={28} />
                 </div>
                 <div className="text-center">
                   <p className="text-white font-semibold mb-1">Welcome</p>
@@ -190,7 +189,7 @@ const UserMenu = () => {
                   href="/"
                   onClick={() => setIsOpen(false)}
                 >
-                  <FiLogIn />
+                  <LogIn />
                   <span>Connect Wallet</span>
                 </Link>
               </div>

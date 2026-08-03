@@ -3,8 +3,7 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ListFilter, Music, UsersRound } from 'lucide-react';
-import { FiSearch } from 'react-icons/fi';
+import { ListFilter, Music, Search, UsersRound } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
@@ -89,7 +88,7 @@ const CollectionsPage = () => {
         <h2 className="text-2xl text-on-subtle font-semibold">My NFT Songs</h2>
         <div className="flex gap-3 items-center w-full md:w-auto">
           <div className="relative w-full md:w-80">
-            <FiSearch aria-hidden="true" className="absolute left-3 top-3 text-on-muted" />
+            <Search aria-hidden="true" className="absolute left-3 top-3 text-on-muted" />
             <input
               aria-label="Search NFT songs"
               className="w-full pl-10 pr-4 py-2 rounded-full bg-surface-input outline-none border border-border-dark text-sm text-gray-200 placeholder:text-gray-500"

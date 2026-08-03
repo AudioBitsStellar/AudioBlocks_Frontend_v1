@@ -1,6 +1,22 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { FaFacebookF, FaTwitter, FaInstagram, FaYoutube, FaEnvelope } from 'react-icons/fa';
+import { Facebook, Twitter, Youtube, Mail } from 'lucide-react';
+
+const Instagram = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    viewBox="0 0 24 24"
+  >
+    <rect height="20" rx="5" ry="5" width="20" x="2" y="2" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
 
 const Footer = () => {
   return (
@@ -64,19 +80,19 @@ const Footer = () => {
               </p>
               <div className="flex space-x-4 text-xl">
                 <Link className="hover:text-white" href="#">
-                  <FaYoutube />
+                  <Youtube />
                 </Link>
                 <Link className="hover:text-white" href="#">
-                  <FaInstagram />
+                  <Instagram />
                 </Link>
                 <Link className="hover:text-white" href="#">
-                  <FaFacebookF />
+                  <Facebook />
                 </Link>
                 <Link className="hover:text-white" href="#">
-                  <FaTwitter />
+                  <Twitter />
                 </Link>
                 <Link className="hover:text-white" href="#">
-                  <FaEnvelope />
+                  <Mail />
                 </Link>
               </div>
             </div>
