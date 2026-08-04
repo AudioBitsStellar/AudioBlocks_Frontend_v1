@@ -1,6 +1,6 @@
 'use client';
-import { ArrowRight, Star } from 'lucide-react';
 import Image from 'next/image';
+import { ArrowRight, Star } from 'lucide-react';
 import Slider from 'react-slick';
 import { NextArrow, PrevArrow } from './Members/navigation';
 
@@ -86,19 +86,18 @@ const Events = () => {
                   <div className="bg-[#1E1E1E3D] rounded-2xl">
                     <div className="w-full h-64 rounded-lg overflow-hidden mx-auto">
                       <Image
-                        src={event.image}
                         alt={event.name}
-                        width={256}
-                        height={256}
                         className="w-full h-full object-cover"
+                        height={256}
+                        src={event.image}
+                        width={256}
                       />
                     </div>
 
                     <div className="p-4 space-y-2">
-                     
-                        <p className="text-base font-bold">{event.name}</p>
-                        <p className="text-xs text-white/70">{event.date}</p>
-                      
+                      <p className="text-base font-bold">{event.name}</p>
+                      <p className="text-xs text-white/70">{event.date}</p>
+
                       <div className="flex justify-between items-center mt-2">
                         <div className="flex items-center text-xs gap-2 text-white/70">
                           <Star className="w-4 h-4 text-white" />

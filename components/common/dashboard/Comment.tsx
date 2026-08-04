@@ -1,9 +1,9 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { SendHorizonal, X } from 'lucide-react';
-import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface CommentPanelProps {
@@ -91,40 +91,40 @@ const Comment = ({ onClose }: CommentPanelProps) => {
   };
 
   return (
-      <motion.div
-        initial={{ y: 300, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 300, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-        ref={menuRef}
-        onKeyDown={handleKeyDown}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Comments"
-        className="fixed bottom-0 pb-20 right-0 bg-[#1e1e1e] w-80 max-w-sm h-[90vh] p-4 z-50 flex flex-col"
-      >
-        <div className="flex items-center border-b pb-3 justify-between mb-4">
-          <h2 className="text-[#A3A3A3] text-lg font-bold">Comments</h2>
-          <button
-            ref={closeButtonRef}
-            onClick={onClose}
-            aria-label="Close comments"
-            className="text-[#A3A3A3] cursor-pointer hover:text-red-400"
-          >
-            <X size={15} />
-          </button>
-        </div>
+    <motion.div
+      ref={menuRef}
+      animate={{ y: 0, opacity: 1 }}
+      aria-label="Comments"
+      aria-modal="true"
+      className="fixed bottom-0 pb-20 right-0 bg-[#1e1e1e] w-80 max-w-sm h-[90vh] p-4 z-50 flex flex-col"
+      exit={{ y: 300, opacity: 0 }}
+      initial={{ y: 300, opacity: 0 }}
+      role="dialog"
+      transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="flex items-center border-b pb-3 justify-between mb-4">
+        <h2 className="text-[#A3A3A3] text-lg font-bold">Comments</h2>
+        <button
+          ref={closeButtonRef}
+          aria-label="Close comments"
+          className="text-[#A3A3A3] cursor-pointer hover:text-red-400"
+          onClick={onClose}
+        >
+          <X size={15} />
+        </button>
+      </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
         {dummyComments.map((comment) => (
           <div key={comment.id} className="flex flex-col border-b pb-2 items-start gap-3">
             <div className="flex items-center gap-2">
               <Image
-                src={comment.avatar}
                 alt={comment.name}
-                width={32}
-                height={32}
                 className="rounded-full object-cover"
+                height={32}
+                src={comment.avatar}
+                width={32}
               />
               <h3 className="text-sm font-semibold text-white">{comment.name}</h3>
               <span className="text-xs font-normal text-[#AFB6B2]">{comment.time}</span>
@@ -139,15 +139,19 @@ const Comment = ({ onClose }: CommentPanelProps) => {
 
       <div className="flex items-center bg-[#2a2a2a] border rounded-md px-4 py-2 mt-4">
         <textarea
+          className="w-full resize-none custom-scrollbar bg-transparent text-white outline-none"
+          cols={2}
+          id="comment"
           name="comment"
           placeholder="Type here"
-          cols={2}
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
-          className="w-full resize-none custom-scrollbar bg-transparent text-white outline-none"
-          id="comment"
         ></textarea>
-        <button onClick={handleSendComment} aria-label="Send comment" className="cursor-pointer hover:text-[#D2045B] transition">
+        <button
+          aria-label="Send comment"
+          className="cursor-pointer hover:text-[#D2045B] transition"
+          onClick={handleSendComment}
+        >
           <SendHorizonal />
         </button>
       </div>

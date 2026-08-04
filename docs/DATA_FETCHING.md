@@ -20,25 +20,31 @@ This guide documents the data fetching architecture and conventions used in Audi
 
 ## React Query Configuration
 
-React Query is configured in `context/provider.tsx` with optimized defaults:
+React Query is configured in `lib/queryClient.ts` and provided via `context/provider.tsx`:
 
 ```typescript
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,        // Data fresh for 5 minutes
-      gcTime: 10 * 60 * 1000,          // Keep in cache for 10 minutes
-      retry: 1,                        // Retry failed queries once
-      retryDelay: 1000,                // Wait 1s before retry
-      refetchOnWindowFocus: false,     // Don't refetch on window focus
-      refetchOnReconnect: true,        // Refetch when back online
+// lib/queryClient.ts
+export function createQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 30 * 1000,            // Data fresh for 30 seconds
+        gcTime: 5 * 60 * 1000,           // Keep in cache for 5 minutes
+        retry: 3,                        // Retry failed queries 3 times
+        retryDelay: (attemptIndex) =>
+          Math.min(1000 * 2 ** attemptIndex, 30_000), // Exponential backoff
+        refetchOnWindowFocus: false,     // Don't refetch on window focus
+        refetchOnReconnect: true,        // Refetch when back online
+      },
+      mutations: {
+        retry: 0,                        // Don't retry mutations
+      },
     },
-    mutations: {
-      retry: 0,                        // Don't retry mutations
-    },
-  },
-});
+  });
+}
 ```
+
+Devtools are mounted in development only inside `context/provider.tsx`.
 
 ## Custom Hooks Pattern
 

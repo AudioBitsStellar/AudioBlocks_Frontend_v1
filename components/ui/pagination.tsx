@@ -1,9 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface PaginationProps {
   currentPage?: number;
@@ -39,9 +39,9 @@ export function Pagination({
   if (children) {
     return (
       <nav
+        aria-label="Pagination"
         className={cn('flex items-center justify-center gap-1', className)}
         role="navigation"
-        aria-label="Pagination"
       >
         {children}
       </nav>
@@ -64,17 +64,17 @@ export function Pagination({
 
   return (
     <nav
+      aria-label="Pagination Navigation"
       className={cn('flex items-center justify-center gap-1', className)}
       role="navigation"
-      aria-label="Pagination Navigation"
     >
       <Button
-        variant="outline"
-        size="icon"
-        onClick={handlePrev}
-        disabled={currentPage <= 1}
         aria-label="Go to previous page"
         className="border-border-dark bg-surface-input text-on-muted hover:bg-surface-hover hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled={currentPage <= 1}
+        size="icon"
+        variant="outline"
+        onClick={handlePrev}
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -83,25 +83,25 @@ export function Pagination({
         typeof page === 'string' ? (
           <span
             key={`ellipsis-${index}`}
-            className="px-2 py-1 text-sm font-medium text-on-muted select-none"
             aria-hidden="true"
+            className="px-2 py-1 text-sm font-medium text-on-muted select-none"
           >
             {page}
           </span>
         ) : (
           <Button
             key={page}
-            variant={currentPage === page ? 'default' : 'outline'}
-            size="icon"
-            onClick={() => onPageChange?.(page)}
-            aria-label={`Page ${page}`}
             aria-current={currentPage === page ? 'page' : undefined}
+            aria-label={`Page ${page}`}
             className={cn(
               'border-border-dark font-medium transition-colors',
               currentPage === page
                 ? 'bg-[#885FA8] text-white hover:bg-[#7a53a0] border-[#885FA8]'
                 : 'bg-surface-input text-on-muted hover:bg-surface-hover hover:text-white'
             )}
+            size="icon"
+            variant={currentPage === page ? 'default' : 'outline'}
+            onClick={() => onPageChange?.(page)}
           >
             {page}
           </Button>
@@ -109,12 +109,12 @@ export function Pagination({
       )}
 
       <Button
-        variant="outline"
-        size="icon"
-        onClick={handleNext}
-        disabled={currentPage >= totalPages}
         aria-label="Go to next page"
         className="border-border-dark bg-surface-input text-on-muted hover:bg-surface-hover hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled={currentPage >= totalPages}
+        size="icon"
+        variant="outline"
+        onClick={handleNext}
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

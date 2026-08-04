@@ -1,10 +1,10 @@
+import Cookies from 'js-cookie';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import apiClient, { NetworkError, AuthError, NotFoundError, ApiError } from '../../lib/apiClient';
-import Cookies from 'js-cookie';
 
 vi.mock('js-cookie');
 vi.mock('../../lib/env', () => ({
-  getValidatedEnv: () => ({ NEXT_PUBLIC_API_URL: 'http://localhost:3000' })
+  getValidatedEnv: () => ({ NEXT_PUBLIC_API_URL: 'http://localhost:3000' }),
 }));
 
 describe('apiClient', () => {
@@ -23,7 +23,7 @@ describe('apiClient', () => {
       ok: false,
       status: 401,
       headers: new Headers(),
-    } as any);
+    } as unknown as Response);
 
     await expect(apiClient.get('/test')).rejects.toThrow(AuthError);
     expect(Cookies.remove).toHaveBeenCalledWith('audioblocks_jwt');
@@ -34,7 +34,7 @@ describe('apiClient', () => {
       ok: false,
       status: 404,
       headers: new Headers(),
-    } as any);
+    } as unknown as Response);
 
     await expect(apiClient.get('/test')).rejects.toThrow(NotFoundError);
   });
@@ -45,12 +45,12 @@ describe('apiClient', () => {
     const promise = apiClient.get('/test');
     promise.catch(() => {});
     promise.catch(() => {});
-    
+
     // Fast-forward through retries
     for (let i = 0; i < 4; i++) {
       await vi.runAllTimersAsync();
     }
-    
+
     await expect(promise).rejects.toThrow(NetworkError);
     expect(fetch).toHaveBeenCalledTimes(4); // 1 initial + 3 retries
   });
@@ -60,16 +60,16 @@ describe('apiClient', () => {
       ok: false,
       status: 500,
       headers: new Headers(),
-    } as any);
+    } as unknown as Response);
 
     const promise = apiClient.get('/test');
     promise.catch(() => {});
     promise.catch(() => {});
-    
+
     for (let i = 0; i < 4; i++) {
       await vi.runAllTimersAsync();
     }
-    
+
     await expect(promise).rejects.toThrow(ApiError);
     expect(fetch).toHaveBeenCalledTimes(4);
   });
@@ -77,59 +77,73 @@ describe('apiClient', () => {
   it('retries on 429 respecting Retry-After', async () => {
     const headers = new Headers();
     headers.set('Retry-After', '2');
-    
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 429,
-      headers,
-    } as any).mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      headers: new Headers(),
-      json: async () => ({ success: true })
-    } as any);
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        headers,
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({ success: true }),
+      } as unknown as Response);
 
     const promise = apiClient.get('/test');
     promise.catch(() => {});
-    
+
     await vi.advanceTimersByTimeAsync(2000);
-    
+
     const response = await promise;
     expect(response.data).toEqual({ success: true });
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it('respects abort controller', async () => {
-    vi.mocked(fetch).mockImplementation((url, options: any) => new Promise((resolve, reject) => {
-      if (options?.signal) {
-        options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
-        if (options.signal.aborted) {
-          reject(new DOMException('Aborted', 'AbortError'));
-        }
-      }
-    }));
-    
+    vi.mocked(fetch).mockImplementation(
+      (url, options?: RequestInit) =>
+        new Promise((resolve, reject) => {
+          if (options?.signal) {
+            options.signal.addEventListener('abort', () =>
+              reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }))
+            );
+            if (options.signal.aborted) {
+              reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+            }
+          }
+        })
+    );
+
     const controller = new AbortController();
     const promise = apiClient.get('/test', { signal: controller.signal });
     promise.catch(() => {});
-    
+
     controller.abort();
-    
+
     await expect(promise).rejects.toThrow();
   });
 
   it('timeouts after 15 seconds', async () => {
-    vi.mocked(fetch).mockImplementation((url, options: any) => new Promise((resolve, reject) => {
-      if (options?.signal) {
-        options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
-      }
-    }));
-    
+    vi.mocked(fetch).mockImplementation(
+      (url, options?: RequestInit) =>
+        new Promise((resolve, reject) => {
+          if (options?.signal) {
+            options.signal.addEventListener('abort', () => {
+              const err = new Error('Aborted');
+              err.name = 'AbortError';
+              reject(err);
+            });
+          }
+        })
+    );
+
     const promise = apiClient.get('/test');
     promise.catch(() => {});
-    
+
     await vi.advanceTimersByTimeAsync(15000);
-    
+
     await expect(promise).rejects.toThrow('Timeout');
   });
 });

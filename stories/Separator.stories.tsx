@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Separator } from '@/components/ui/separator';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'UI/Separator',
@@ -8,7 +8,8 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A horizontal or vertical separator line component for dividing content sections.',
+        component:
+          'A horizontal or vertical separator line component for dividing content sections.',
       },
     },
   },

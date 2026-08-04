@@ -125,9 +125,7 @@ export default function AvatarCrop({
         <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50" />
         <Dialog.Content className="fixed z-50 top-1/2 left-1/2 w-[90%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-[#1E1E1E] p-6 shadow-xl text-white focus:outline-none">
           <div className="flex justify-between items-center mb-4">
-            <Dialog.Title className="text-lg font-semibold">
-              Crop Avatar
-            </Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold">Crop Avatar</Dialog.Title>
             <Dialog.Close asChild>
               <button className="text-gray-400 hover:text-white transition cursor-pointer">
                 <X size={20} />
@@ -145,18 +143,18 @@ export default function AvatarCrop({
           >
             <canvas
               ref={canvasRef}
-              width={OUTPUT_SIZE}
-              height={OUTPUT_SIZE}
               className="w-full h-full"
+              height={OUTPUT_SIZE}
+              width={OUTPUT_SIZE}
             />
           </div>
 
           <div className="flex items-center justify-center gap-4 mb-4">
             <button
-              onClick={handleZoomOut}
-              disabled={zoom <= MIN_ZOOM}
               aria-label="Zoom out"
               className="p-2 rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] transition disabled:opacity-40 cursor-pointer"
+              disabled={zoom <= MIN_ZOOM}
+              onClick={handleZoomOut}
             >
               <ZoomOut size={18} />
             </button>
@@ -164,10 +162,10 @@ export default function AvatarCrop({
               {Math.round(zoom * 100)}%
             </span>
             <button
-              onClick={handleZoomIn}
-              disabled={zoom >= MAX_ZOOM}
               aria-label="Zoom in"
               className="p-2 rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] transition disabled:opacity-40 cursor-pointer"
+              disabled={zoom >= MAX_ZOOM}
+              onClick={handleZoomIn}
             >
               <ZoomIn size={18} />
             </button>
@@ -184,8 +182,8 @@ export default function AvatarCrop({
               </button>
             </Dialog.Close>
             <button
-              onClick={handleSave}
               className="flex-1 px-4 py-2 rounded-md bg-[#D2045B] text-white font-semibold hover:bg-[#b80348] transition cursor-pointer"
+              onClick={handleSave}
             >
               Apply
             </button>

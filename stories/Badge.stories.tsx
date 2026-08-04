@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Badge } from '@/components/ui/badge';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'UI/Badge',
@@ -8,7 +8,8 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A small badge component for displaying status, labels, or tags. Supports multiple variants.',
+        component:
+          'A small badge component for displaying status, labels, or tags. Supports multiple variants.',
       },
     },
   },

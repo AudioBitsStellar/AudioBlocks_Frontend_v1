@@ -1,9 +1,9 @@
 'use client';
-import Image from 'next/image';
-import Slider from 'react-slick';
-import { ArrowUpRight } from 'lucide-react';
-import Link from 'next/link';
 import { useMemo } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowUpRight } from 'lucide-react';
+import Slider from 'react-slick';
 import { useSectionData } from '@/hooks/useSectionData';
 import { getCarouselSettings } from './carouselSettings';
 import { collectionsData } from './data';
@@ -39,12 +39,17 @@ const Collections = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
     fetchFn: fetchCollections,
   });
 
-  const filtered = useMemo(() => data.filter((item) => {
-    const matchesSearch = !searchQuery ||
-      item.song.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.artist.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  }), [data, searchQuery]);
+  const filtered = useMemo(
+    () =>
+      data.filter((item) => {
+        const matchesSearch =
+          !searchQuery ||
+          item.song.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.artist.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
+      }),
+    [data, searchQuery]
+  );
 
   return (
     <section>
@@ -53,8 +58,8 @@ const Collections = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
           Collections
         </h1>
         <Link
-          href="/dashboard/all-collections"
           className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
+          href="/dashboard/all-collections"
         >
           <ArrowUpRight className="w-5 h-5" />
         </Link>
@@ -72,17 +77,23 @@ const Collections = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
         </p>
       ) : (
         <div className="relative py-4 overflow-hidden">
-          <Slider {...getCarouselSettings()} aria-roledescription="carousel" aria-label="Collections carousel">
+          <Slider
+            {...getCarouselSettings()}
+            aria-label="Collections carousel"
+            aria-roledescription="carousel"
+          >
             {filtered.map((item, index) => (
               <div key={index} className="px-4">
                 <div className="w-full h-40 rounded-lg overflow-hidden mx-auto">
                   <Image
-                    src={item.image}
                     alt={item.song}
-                    width={150}
-                    height={150}
                     className="w-full h-full object-cover"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/tech.jpg'; }}
+                    height={150}
+                    src={item.image}
+                    width={150}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/tech.jpg';
+                    }}
                   />
                 </div>
                 <div className="py-2 text-center md:text-left text-white min-w-0">

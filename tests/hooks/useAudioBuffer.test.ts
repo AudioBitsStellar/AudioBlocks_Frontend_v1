@@ -1,9 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { audioBufferCache } from '@/lib/audioCache';
 
 function makeFakeAudioBuffer(length = 1000, numberOfChannels = 2): AudioBuffer {
-  return { length, numberOfChannels, sampleRate: 44100, duration: length / 44100 } as unknown as AudioBuffer;
+  return {
+    length,
+    numberOfChannels,
+    sampleRate: 44100,
+    duration: length / 44100,
+  } as unknown as AudioBuffer;
 }
 
 // The hook keeps a module-level AudioContext singleton (mirrors real usage:
@@ -23,15 +28,15 @@ beforeEach(() => {
     vi.fn(() =>
       Promise.resolve({
         arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
-      } as Response),
-    ),
+      } as Response)
+    )
   );
 
   vi.stubGlobal(
     'AudioContext',
     class {
       decodeAudioData = vi.fn(() => Promise.resolve(makeFakeAudioBuffer()));
-    },
+    }
   );
 });
 
@@ -78,7 +83,7 @@ describe('useAudioBuffer', () => {
       'AudioContext',
       class {
         decodeAudioData = vi.fn(() => Promise.reject(new Error('bad data')));
-      },
+      }
     );
 
     const useAudioBuffer = await importUseAudioBuffer();

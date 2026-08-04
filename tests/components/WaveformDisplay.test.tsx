@@ -4,6 +4,11 @@ import { describe, it, expect, vi } from 'vitest';
 import WaveformDisplay from '@/components/ui/WaveformDisplay';
 
 describe('WaveformDisplay Component', () => {
+  global.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
   it('renders canvas element with proper accessibility attributes', () => {
     render(<WaveformDisplay currentTime={30} duration={120} height={100} />);
 

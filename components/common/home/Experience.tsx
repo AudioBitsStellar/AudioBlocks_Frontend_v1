@@ -1,12 +1,12 @@
 'use client';
 
-import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAccount } from 'wagmi';
-import Cookies from 'js-cookie';
-import { Auth } from '@/hooks/useAuth';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import Cookies from 'js-cookie';
+import { ArrowRight } from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { Auth } from '@/hooks/useAuth';
 
 const Experience = () => {
   const { setShowAuthFlow } = useDynamicContext();
@@ -44,8 +44,8 @@ const Experience = () => {
       </div>
       <div className="flex flex-col justify-center mt-6 md:flex-row gap-4">
         <button
-          onClick={handleStream}
           className="bg-[#D2045B] cursor-pointer flex items-center hover:bg-[#6C022F] hover:text-black justify-between text-white font-medium px-5 py-2 rounded-full text-sm transition"
+          onClick={handleStream}
         >
           Stream Now
           <div className="bg-black rounded-full p-1 ml-2">
@@ -53,8 +53,8 @@ const Experience = () => {
           </div>
         </button>
         <Link
-          href="#"
           className="border flex items-center hover:bg-[#885FA8] hover:text-black justify-between border-[#F2AFC9] text-white font-medium px-5 py-2 rounded-full text-sm transition"
+          href="#"
         >
           Join Waitlist
           <div className="bg-[#D2045B] rounded-full p-1 ml-2">

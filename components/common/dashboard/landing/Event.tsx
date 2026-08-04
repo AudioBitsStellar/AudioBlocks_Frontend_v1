@@ -1,6 +1,6 @@
 'use client';
-import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
 import Slider from 'react-slick';
 import { NextArrow, PrevArrow } from './NavigationArrow';
 
@@ -78,11 +78,11 @@ const Event = () => {
                   <div className="bg-[#1E1E1E3D] rounded-2xl  p-4">
                     <div className="w-full h-50 rounded-lg overflow-hidden mx-auto">
                       <Image
-                        src={event.image}
                         alt={event.name}
-                        width={384}
-                        height={256}
                         className="w-full h-full object-cover"
+                        height={256}
+                        src={event.image}
+                        width={384}
                       />
                     </div>
 

@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { usePrefetchCollection, usePrefetchArtist } from '@/hooks/usePrefetch';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { collectionKeys } from '@/hooks/queries/collections';
 import { userKeys } from '@/hooks/queries/users';
+import { usePrefetchCollection, usePrefetchArtist } from '@/hooks/usePrefetch';
 
 function createWrapper(queryClient: QueryClient) {
   function Wrapper({ children }: { children: ReactNode }) {
@@ -40,7 +40,7 @@ describe('usePrefetchCollection', () => {
     });
 
     expect(prefetchSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ queryKey: collectionKeys.detail('col-1') }),
+      expect.objectContaining({ queryKey: collectionKeys.detail('col-1') })
     );
   });
 
@@ -116,7 +116,7 @@ describe('usePrefetchArtist', () => {
     });
 
     expect(prefetchSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ queryKey: userKeys.profile('user-1') }),
+      expect.objectContaining({ queryKey: userKeys.profile('user-1') })
     );
   });
 

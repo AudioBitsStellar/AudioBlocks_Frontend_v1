@@ -38,12 +38,12 @@ const Collective = () => {
           <div key={id} className={`rounded-2xl border ${collective.border}`}>
             <div className=" h-3/5 rounded-t-2xl w-full">
               <Image
-                width={900}
-                height={900}
+                alt="image"
                 className="object-cover w-full h-full rounded-t-2xl"
+                height={900}
                 loading="lazy"
                 src={collective.image}
-                alt="image"
+                width={900}
               />
             </div>
             <div className="px-6 py-8">
