@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'UI/Card',
@@ -9,7 +9,8 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A flexible card container component for grouping related content. Provides consistent styling and spacing.',
+        component:
+          'A flexible card container component for grouping related content. Provides consistent styling and spacing.',
       },
     },
   },

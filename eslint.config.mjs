@@ -19,6 +19,22 @@ const eslintConfig = [
       "jsx-a11y/no-noninteractive-element-interactions": "warn",
       "jsx-a11y/click-events-have-key-events": "warn",
       "jsx-a11y/no-static-element-interactions": "warn",
+      "react-hooks/exhaustive-deps": "error",
+      "react/hook-use-state": "error",
+      "react/jsx-sort-props": ["error", { "callbacksLast": true, "shorthandFirst": true, "reservedFirst": true }],
+      "import/order": [
+        "error",
+        {
+          "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object", "type"],
+          "pathGroups": [
+            { "pattern": "react", "group": "external", "position": "before" },
+            { "pattern": "next/**", "group": "external", "position": "before" }
+          ],
+          "pathGroupsExcludedImportTypes": ["react"],
+          "newlines-between": "never",
+          "alphabetize": { "order": "asc", "caseInsensitive": true }
+        }
+      ]
     },
   },
 ];

@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMerchListings, getEventListings } from '@/lib/exploreService';
 import { useReadContract, useReadContracts } from 'wagmi';
 import { abi, contractAddress } from '@/config/abi';
 import { QUERY_KEYS, CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
+import { getMerchListings, getEventListings } from '@/lib/exploreService';
 
 export function useGetMerch() {
   return useQuery({
@@ -42,8 +42,18 @@ export function useGetChainArtists() {
   });
 
   const artists = (artistResults ?? [])
-    .map((r) => r.result as { artistId: bigint; artistAddress: string; artistCid: string; balance: bigint } | undefined)
-    .filter(Boolean) as { artistId: bigint; artistAddress: string; artistCid: string; balance: bigint }[];
+    .map(
+      (r) =>
+        r.result as
+          | { artistId: bigint; artistAddress: string; artistCid: string; balance: bigint }
+          | undefined
+    )
+    .filter(Boolean) as {
+    artistId: bigint;
+    artistAddress: string;
+    artistCid: string;
+    balance: bigint;
+  }[];
 
   return { artists, isLoading: idsLoading || artistsLoading };
 }
@@ -68,8 +78,29 @@ export function useGetChainCollections() {
   });
 
   const albums = (albumResults ?? [])
-    .map((r) => r.result as { albumId: bigint; albumCID: string; artistAddress: string; songIds: bigint[]; published: boolean; createdAt: bigint; publishedAt: bigint } | undefined)
-    .filter(Boolean) as { albumId: bigint; albumCID: string; artistAddress: string; songIds: bigint[]; published: boolean; createdAt: bigint; publishedAt: bigint }[];
+    .map(
+      (r) =>
+        r.result as
+          | {
+              albumId: bigint;
+              albumCID: string;
+              artistAddress: string;
+              songIds: bigint[];
+              published: boolean;
+              createdAt: bigint;
+              publishedAt: bigint;
+            }
+          | undefined
+    )
+    .filter(Boolean) as {
+    albumId: bigint;
+    albumCID: string;
+    artistAddress: string;
+    songIds: bigint[];
+    published: boolean;
+    createdAt: bigint;
+    publishedAt: bigint;
+  }[];
 
   return { albums, isLoading: idsLoading || albumsLoading };
 }

@@ -1,9 +1,9 @@
 import { memo } from 'react';
 import Image from 'next/image';
 // #155: static imports so next/image can auto-generate a real blurDataURL.
-import container2 from '@/public/home/Container2.png';
 import container from '@/public/home/Container.png';
 import container1 from '@/public/home/Container1.png';
+import container2 from '@/public/home/Container2.png';
 
 const features = [
   {
@@ -40,22 +40,25 @@ const Featured = memo(function Featured() {
         </p>
       </div>
       <div className="w-4/5 relative  m-auto grid md:grid-cols-3 grid-cols-1 py-7 md:py-15  gap-5">
-       <div className='absolute md:right-70 -z-10 -left-10 md:left-70 top-2 bg-[#490D3E80] rounded-full w-70 md:w-100 h-100 blur-[150px]' aria-hidden="true"/>
+        <div
+          aria-hidden="true"
+          className="absolute md:right-70 -z-10 -left-10 md:left-70 top-2 bg-[#490D3E80] rounded-full w-70 md:w-100 h-100 blur-[150px]"
+        />
         {features.map((feature, id) => (
           <article key={id} className={`rounded-2xl border ${feature.border}`}>
             <div className=" h-3/5 rounded-t-2xl w-full">
               <Image
+                alt={feature.title}
                 className="object-cover w-full h-full rounded-t-2xl"
                 loading="lazy"
                 placeholder="blur"
                 sizes="(min-width: 768px) 33vw, 100vw"
                 src={feature.image}
-                alt={feature.title}
               />
             </div>
             <div className="px-6 py-8">
-              <h2 className='font-semibold text-base mb-2'>{feature.title}</h2>
-              <p className='font-normal text-sm text-[#A3A3A3]'>{feature.description}</p>
+              <h2 className="font-semibold text-base mb-2">{feature.title}</h2>
+              <p className="font-normal text-sm text-[#A3A3A3]">{feature.description}</p>
             </div>
           </article>
         ))}

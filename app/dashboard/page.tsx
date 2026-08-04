@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { FiSearch } from 'react-icons/fi';
-import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { Search } from 'lucide-react';
 import Artists from '@/components/common/dashboard/Artists';
 import CategorySection from '@/components/common/dashboard/CategorySection';
 import Collections from '@/components/common/dashboard/Collections';
 import EventSection from '@/components/common/dashboard/EventSection';
 import Merch from '@/components/common/dashboard/Merch';
 import RecentlyPlayed from '@/components/common/dashboard/RecentlyPlayed';
+import { ProfileCompletion } from '@/components/dashboard/ProfileCompletion';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
 const genreFilters = ['All', 'Pop', 'Contemporary', 'Rock', 'Afro', 'Jazz'];
 
@@ -19,19 +20,21 @@ const ExplorePage = () => {
 
   return (
     <div>
+      <ProfileCompletion />
+
       <div className="flex flex-col gap-4 mb-6">
         <p className="text-xs font-medium text-left text-white mb-1">Explore</p>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex items-center bg-transparent border border-border-dark rounded-full px-4 py-2 w-full sm:max-w-xs">
-            <FiSearch className="text-on-muted text-lg shrink-0" aria-hidden="true" />
+            <Search aria-hidden="true" className="text-on-muted text-lg shrink-0" />
             <input
+              aria-label="Search explore page"
+              className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-on-muted"
+              placeholder="Search collections, artists..."
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search collections, artists..."
-              aria-label="Search explore page"
-              className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-on-muted"
             />
           </div>
 
@@ -41,7 +44,9 @@ const ExplorePage = () => {
                 key={genre}
                 aria-pressed={activeGenre === genre}
                 className={`px-4 py-1 font-medium cursor-pointer text-sm rounded-2xl border ${
-                  activeGenre === genre ? 'bg-brand text-white border-brand' : 'bg-surface-input text-on-muted border-border-dark'
+                  activeGenre === genre
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-surface-input text-on-muted border-border-dark'
                 }`}
                 onClick={() => setActiveGenre(genre)}
               >
@@ -56,11 +61,11 @@ const ExplorePage = () => {
 
       <CategorySection />
 
-      <Collections searchQuery={searchQuery} activeGenre={activeGenre} />
+      <Collections activeGenre={activeGenre} searchQuery={searchQuery} />
 
       <EventSection />
 
-      <Artists searchQuery={searchQuery} activeGenre={activeGenre} />
+      <Artists activeGenre={activeGenre} searchQuery={searchQuery} />
 
       <Merch />
     </div>

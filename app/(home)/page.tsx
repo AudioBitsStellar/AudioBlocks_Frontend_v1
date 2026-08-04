@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
 import Hero from '../../components/common/home/Hero';
 import HomeSections from './HomeSections';
+import type { Metadata } from 'next';
 
 const TITLE = 'AudioBlocks — Stream, Earn & Collect Music NFTs';
 const DESCRIPTION =

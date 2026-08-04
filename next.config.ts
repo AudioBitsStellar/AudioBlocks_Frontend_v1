@@ -1,5 +1,5 @@
-import type { NextConfig } from "next";
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
     // never used on web, so stub it out instead of bundling/resolving it.
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@react-native-async-storage/async-storage": false,
+      '@react-native-async-storage/async-storage': false,
     };
 
     // Web Worker support (#111): output workers as separate static assets

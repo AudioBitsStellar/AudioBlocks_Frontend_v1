@@ -1,13 +1,13 @@
 'use client';
 
-import { notFound } from 'next/navigation';
-import { useScrollRestoration } from '@/hooks/useScrollRestoration';
-import { useNFTCollection } from '@/hooks/useNFTCollection';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { useMemo } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useNFTCollection } from '@/hooks/useNFTCollection';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 
@@ -39,13 +39,16 @@ export default function CollectionDetailPage({ params }: { params: { id: string 
 
   return (
     <div className="p-6">
-      <Link href="/dashboard/collection" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors">
+      <Link
+        className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors"
+        href="/dashboard/collection"
+      >
         <ArrowLeft size={16} />
         Back to Collections
       </Link>
       <div className="flex flex-col md:flex-row gap-8">
         <div className="relative w-full md:w-80 h-80 rounded-xl overflow-hidden shrink-0">
-          <Image src={ipfsImage(song.songCID)} alt={song.songCID} fill className="object-cover" />
+          <Image fill alt={song.songCID} className="object-cover" src={ipfsImage(song.songCID)} />
         </div>
         <div className="flex-1 space-y-4">
           <h1 className="text-2xl font-bold text-white">Collection Detail</h1>
