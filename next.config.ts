@@ -25,6 +25,15 @@ const nextConfig: NextConfig = {
       ...config.resolve.alias,
       '@react-native-async-storage/async-storage': false,
     };
+
+    // Web Worker support (#111): output workers as separate static assets
+    // Workers are loaded via `new Worker(new URL('./worker', import.meta.url))`
+    // which webpack 5 handles natively. This config ensures they are placed
+    // in the output static directory for long-term caching.
+    if (config.output && !config.output.webassemblyModuleFilename) {
+      config.output.webassemblyModuleFilename = 'static/chunks/[id].[hash:8].wasm';
+    }
+
     return config;
   },
 };
