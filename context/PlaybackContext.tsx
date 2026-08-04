@@ -24,6 +24,12 @@ export interface PlaybackEvent {
 
 // ── State ─────────────────────────────────────────────────────────────────
 
+/** Clamp crossfade duration to the supported 0–5 second range. */
+export function clampCrossfadeDuration(seconds: number): number {
+  if (!Number.isFinite(seconds)) return 0;
+  return Math.min(5, Math.max(0, seconds));
+}
+
 type PlaybackState = {
   playlist: Track[];
   currentIndex: number;
@@ -39,6 +45,13 @@ type PlaybackState = {
   queue: Track[];
   /** Ordered playback history with timestamps. */
   history: PlaybackEvent[];
+  /**
+   * Crossfade overlap between tracks in seconds (0–5).
+   * 0 disables crossfade (hard cut).
+   */
+  crossfadeDuration: number;
+  /** True while two audio elements are overlapping during a crossfade. */
+  isCrossfading: boolean;
 };
 
 type PlaybackAction =
@@ -67,7 +80,10 @@ type PlaybackAction =
   | { type: 'ADVANCE_QUEUE' }
   // History actions (#117)
   | { type: 'RECORD_PLAY'; event: PlaybackEvent }
-  | { type: 'CLEAR_HISTORY' };
+  | { type: 'CLEAR_HISTORY' }
+  // Crossfade (#115)
+  | { type: 'SET_CROSSFADE_DURATION'; duration: number }
+  | { type: 'SET_CROSSFADING'; isCrossfading: boolean };
 
 export type PlaybackContextValue = PlaybackState & {
   playTrack: (track: Track) => void;
@@ -100,6 +116,10 @@ export type PlaybackContextValue = PlaybackState & {
   clearHistory: () => void;
   /** Return the last `n` unique tracks from history. */
   getRecentlyPlayed: (n?: number) => PlaybackEvent[];
+  // Crossfade (#115)
+  /** Set crossfade duration in seconds (clamped to 0–5). 0 disables. */
+  setCrossfadeDuration: (duration: number) => void;
+  setCrossfading: (isCrossfading: boolean) => void;
 };
 
 const defaultPlaylist: Track[] = [
@@ -129,6 +149,9 @@ const HISTORY_MAX = 200;
 
 const QUEUE_STORAGE_KEY = 'audioblocks_queue';
 const HISTORY_STORAGE_KEY = 'audioblocks_history';
+const VOLUME_STORAGE_KEY = 'audioblocks_volume';
+const MUTED_STORAGE_KEY = 'audioblocks_muted';
+const RECENTLY_PLAYED_STORAGE_KEY = 'audioblocks_recently_played';
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -164,6 +187,8 @@ const initialState: PlaybackState = {
   autoplayBlocked: false,
   queue: [],
   history: [],
+  crossfadeDuration: 0,
+  isCrossfading: false,
 };
 
 // ── Reducer ───────────────────────────────────────────────────────────────
@@ -236,7 +261,7 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
       if (existingIndex >= 0) {
         updated = [action.track, ...state.recentlyPlayed.filter((_, i) => i !== existingIndex)];
       } else {
-        updated = [action.track, ...state.recentlyPlayed].slice(0, 10);
+        updated = [action.track, ...state.recentlyPlayed].slice(0, 20);
       }
       return { ...state, recentlyPlayed: updated };
     }
@@ -310,6 +335,13 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
     case 'CLEAR_HISTORY':
       return { ...state, history: [] };
 
+    // ── Crossfade (#115) ────────────────────────────────────────────────
+
+    case 'SET_CROSSFADE_DURATION':
+      return { ...state, crossfadeDuration: clampCrossfadeDuration(action.duration) };
+    case 'SET_CROSSFADING':
+      return { ...state, isCrossfading: action.isCrossfading };
+
     default:
       return state;
   }
@@ -320,16 +352,21 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
 const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
-  // Hydrate queue and history from localStorage on mount.
+  // Hydrate queue, history, and volume from localStorage on mount (#121).
   const hydratedState: PlaybackState = {
     ...initialState,
     queue: loadFromStorage<Track[]>(QUEUE_STORAGE_KEY, []),
     history: loadFromStorage<PlaybackEvent[]>(HISTORY_STORAGE_KEY, []),
+    recentlyPlayed: loadFromStorage<Track[]>(RECENTLY_PLAYED_STORAGE_KEY, []),
+    // #121: restore volume and muted state from the device so the user's
+    // preferred level survives page reloads and browser restarts.
+    volume: loadFromStorage<number>(VOLUME_STORAGE_KEY, initialState.volume),
+    isMuted: loadFromStorage<boolean>(MUTED_STORAGE_KEY, initialState.isMuted),
   };
 
   const [state, dispatch] = useReducer(reducer, hydratedState);
 
-  // Persist queue and history to localStorage on change.
+  // Persist queue, history, volume, and mute state to localStorage on change.
   useEffect(() => {
     saveToStorage(QUEUE_STORAGE_KEY, state.queue);
   }, [state.queue]);
@@ -337,6 +374,18 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveToStorage(HISTORY_STORAGE_KEY, state.history);
   }, [state.history]);
+
+  useEffect(() => {
+    saveToStorage(VOLUME_STORAGE_KEY, state.volume);
+  }, [state.volume]);
+
+  useEffect(() => {
+    saveToStorage(MUTED_STORAGE_KEY, state.isMuted);
+  }, [state.isMuted]);
+
+  useEffect(() => {
+    saveToStorage(RECENTLY_PLAYED_STORAGE_KEY, state.recentlyPlayed);
+  }, [state.recentlyPlayed]);
 
   const setAutoplayBlocked = useCallback((blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }), []);
   const resumeAudio = useCallback(() => dispatch({ type: 'RESUME_AUDIO' }), []);
@@ -374,6 +423,14 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     [state.history],
   );
 
+  // Crossfade (#115)
+  const setCrossfadeDuration = useCallback((duration: number) => {
+    dispatch({ type: 'SET_CROSSFADE_DURATION', duration });
+  }, []);
+  const setCrossfading = useCallback((isCrossfading: boolean) => {
+    dispatch({ type: 'SET_CROSSFADING', isCrossfading });
+  }, []);
+
   const value = useMemo<PlaybackContextValue>(() => ({
     ...state,
     play: () => dispatch({ type: 'PLAY' }),
@@ -404,7 +461,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     recordPlay,
     clearHistory,
     getRecentlyPlayed,
-  }), [state, setAutoplayBlocked, resumeAudio, addToQueue, removeFromQueue, reorderQueue, clearQueue, advanceQueue, recordPlay, clearHistory, getRecentlyPlayed]);
+    // Crossfade
+    setCrossfadeDuration,
+    setCrossfading,
+  }), [state, setAutoplayBlocked, resumeAudio, addToQueue, removeFromQueue, reorderQueue, clearQueue, advanceQueue, recordPlay, clearHistory, getRecentlyPlayed, setCrossfadeDuration, setCrossfading]);
 
   return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
 }

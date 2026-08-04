@@ -19,7 +19,9 @@ function savePosition(path: string, scrollY: number) {
   positions[path] = scrollY;
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
-  } catch { /* quota exceeded — silently ignore */ }
+  } catch {
+    // Quota exceeded — silently ignore.
+  }
 }
 
 function clearPosition(path: string) {
@@ -27,25 +29,54 @@ function clearPosition(path: string) {
   delete positions[path];
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
-  } catch { /* quota exceeded — silently ignore */ }
+  } catch {
+    // Quota exceeded — silently ignore.
+  }
 }
 
 export function useScrollRestoration(key?: string) {
   const pathname = usePathname();
   const storageKey = key ?? pathname;
-  const restoredRef = useRef(false);
+  const restoredKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (restoredRef.current) return;
-    restoredRef.current = true;
+    if (typeof window === 'undefined') return;
+
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+
+    return () => {
+      window.history.scrollRestoration = previous;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (restoredKeyRef.current === storageKey) return;
+    restoredKeyRef.current = storageKey;
 
     const saved = getPositions()[storageKey];
-    if (typeof saved === 'number' && saved > 0) {
-      // Use requestAnimationFrame to wait for the DOM to render
-      requestAnimationFrame(() => {
+    if (typeof saved !== 'number' || saved <= 0) return;
+
+    let frame = 0;
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    const restore = () => {
+      if (typeof window === 'undefined') return;
+
+      const pageCanReachSavedPosition = document.documentElement.scrollHeight >= saved + window.innerHeight;
+      if (pageCanReachSavedPosition || attempts >= maxAttempts) {
         window.scrollTo(0, saved);
-      });
-    }
+        return;
+      }
+
+      attempts += 1;
+      frame = window.requestAnimationFrame(restore);
+    };
+
+    frame = window.requestAnimationFrame(restore);
+
+    return () => window.cancelAnimationFrame(frame);
   }, [storageKey]);
 
   useEffect(() => {
@@ -62,13 +93,13 @@ export function useScrollRestoration(key?: string) {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [storageKey]);
 
-  // Debounced scroll save during browsing
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const handleScroll = () => {
       clearTimeout(timer);
       timer = setTimeout(() => savePosition(storageKey, window.scrollY), 300);
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);

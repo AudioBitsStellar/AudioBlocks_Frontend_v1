@@ -7,16 +7,27 @@ const responsiveSettings = [
   { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1 } },
 ];
 
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
 export function getCarouselSettings(overrides: Partial<Settings> = {}): Settings {
+  const reducedMotion = prefersReducedMotion();
+
   return {
     dots: false,
     infinite: true,
-    speed: 500,
+    speed: reducedMotion ? 0 : 500,
     slidesToShow: 4,
     slidesToScroll: 1,
     nextArrow: <NextArrow />,
     prevArrow: <PrevArrow />,
     responsive: responsiveSettings,
     ...overrides,
+    ...(reducedMotion ? { autoplay: false, speed: 0 } : {}),
   };
 }

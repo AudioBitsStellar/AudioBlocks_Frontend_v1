@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Input } from '@/components/ui/input';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'UI/Input',
@@ -8,7 +8,8 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A text input component for capturing user text input. Supports various input types and states.',
+        component:
+          'A text input component for capturing user text input. Supports various input types and states.',
       },
     },
   },
@@ -87,10 +88,10 @@ export const Number: Story = {
 export const Multiple: Story = {
   render: () => (
     <div className="space-y-3 w-full max-w-sm">
-      <Input type="text" placeholder="Username" />
-      <Input type="email" placeholder="Email" />
-      <Input type="password" placeholder="Password" />
-      <Input type="text" placeholder="Confirm password" />
+      <Input placeholder="Username" type="text" />
+      <Input placeholder="Email" type="email" />
+      <Input placeholder="Password" type="password" />
+      <Input placeholder="Confirm password" type="text" />
     </div>
   ),
 };

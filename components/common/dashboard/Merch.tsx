@@ -1,10 +1,10 @@
 'use client';
 import Image from 'next/image';
-import Slider from 'react-slick';
-import { ArrowUpRight } from 'lucide-react';
-import { NextArrow, PrevArrow } from './landing/NavigationArrow';
 import Link from 'next/link';
+import { ArrowUpRight } from 'lucide-react';
+import Slider from 'react-slick';
 import { useGetMerch } from '@/hooks/useExplore';
+import { NextArrow, PrevArrow } from './landing/NavigationArrow';
 
 const collectiveSettings = {
   dots: false,
@@ -46,8 +46,8 @@ const Merch = () => {
           Merch
         </h1>
         <Link
-          href="#"
           className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
+          href="#"
         >
           <ArrowUpRight className="w-5 h-5" />
         </Link>
@@ -60,21 +60,23 @@ const Merch = () => {
           Failed to load merch. Please try again later.
         </p>
       ) : !items || items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[#A3A3A3]">
-          No merch available yet.
-        </p>
+        <p className="py-8 text-center text-sm text-[#A3A3A3]">No merch available yet.</p>
       ) : (
         <div className="relative py-4 overflow-hidden">
-          <Slider {...collectiveSettings} aria-roledescription="carousel" aria-label="Merch carousel">
+          <Slider
+            {...collectiveSettings}
+            aria-label="Merch carousel"
+            aria-roledescription="carousel"
+          >
             {items.map((item) => (
               <div key={item.id} className="px-4">
                 <div className="w-full h-40 rounded-lg overflow-hidden mx-auto">
                   <Image
-                    src={item.image}
                     alt={item.artist}
-                    width={150}
-                    height={150}
                     className="w-full h-full object-cover"
+                    height={150}
+                    src={item.image}
+                    width={150}
                   />
                 </div>
                 <div className="py-2 text-center md:text-left text-white min-w-0">

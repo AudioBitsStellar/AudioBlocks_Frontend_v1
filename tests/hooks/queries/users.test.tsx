@@ -1,12 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import {
-  useUserProfile,
-  getInitials,
-  getVersionedAvatarUrl,
-} from '@/hooks/queries/users';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { useUserProfile, getInitials, getVersionedAvatarUrl } from '@/hooks/queries/users';
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -35,13 +31,13 @@ describe('getInitials', () => {
 describe('getVersionedAvatarUrl', () => {
   it('appends a version query param', () => {
     expect(getVersionedAvatarUrl('/avatar.jpg', '2024-03-15T10:30:00Z')).toBe(
-      '/avatar.jpg?v=2024-03-15T10%3A30%3A00Z',
+      '/avatar.jpg?v=2024-03-15T10%3A30%3A00Z'
     );
   });
 
   it('uses & when the avatar URL already has a query string', () => {
     expect(getVersionedAvatarUrl('/avatar.jpg?w=200', '2024-01-01T00:00:00Z')).toBe(
-      '/avatar.jpg?w=200&v=2024-01-01T00%3A00%3A00Z',
+      '/avatar.jpg?w=200&v=2024-01-01T00%3A00%3A00Z'
     );
   });
 });
@@ -58,21 +54,27 @@ describe('useUserProfile', () => {
   });
 
   it('sets isCurrentUser when currentUserId matches the requested profile', async () => {
-    const { result } = renderHook(() => useUserProfile('user-1', 'user-1'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useUserProfile('user-1', 'user-1'), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.isCurrentUser).toBe(true);
   });
 
   it('sets isCurrentUser to false for another viewer', async () => {
-    const { result } = renderHook(() => useUserProfile('user-1', 'user-2'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useUserProfile('user-1', 'user-2'), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.isCurrentUser).toBe(false);
   });
 
   it('surfaces an error for an unknown user id', async () => {
-    const { result } = renderHook(() => useUserProfile('unknown-user'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useUserProfile('unknown-user'), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 2000 });
     expect(result.current.avatarUrl).toBeUndefined();

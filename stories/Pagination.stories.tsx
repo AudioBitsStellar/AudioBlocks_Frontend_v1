@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Pagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/ui/pagination';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'UI/Pagination',
@@ -9,7 +9,8 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A pagination component for navigating between pages. Includes previous/next buttons and page number indicators.',
+        component:
+          'A pagination component for navigating between pages. Includes previous/next buttons and page number indicators.',
       },
     },
   },
@@ -23,15 +24,19 @@ export const Default: Story = {
   render: () => (
     <Pagination>
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm">Previous</Button>
+        <Button size="sm" variant="outline">
+          Previous
+        </Button>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((page) => (
-            <Button key={page} variant={page === 1 ? 'default' : 'outline'} size="sm">
+            <Button key={page} size="sm" variant={page === 1 ? 'default' : 'outline'}>
               {page}
             </Button>
           ))}
         </div>
-        <Button variant="outline" size="sm">Next</Button>
+        <Button size="sm" variant="outline">
+          Next
+        </Button>
       </div>
     </Pagination>
   ),
@@ -41,14 +46,28 @@ export const WithEllipsis: Story = {
   render: () => (
     <Pagination>
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm">Previous</Button>
-        <Button variant="default" size="sm">1</Button>
-        <Button variant="outline" size="sm">2</Button>
+        <Button size="sm" variant="outline">
+          Previous
+        </Button>
+        <Button size="sm" variant="default">
+          1
+        </Button>
+        <Button size="sm" variant="outline">
+          2
+        </Button>
         <span className="px-2">...</span>
-        <Button variant="outline" size="sm">98</Button>
-        <Button variant="outline" size="sm">99</Button>
-        <Button variant="outline" size="sm">100</Button>
-        <Button variant="outline" size="sm">Next</Button>
+        <Button size="sm" variant="outline">
+          98
+        </Button>
+        <Button size="sm" variant="outline">
+          99
+        </Button>
+        <Button size="sm" variant="outline">
+          100
+        </Button>
+        <Button size="sm" variant="outline">
+          Next
+        </Button>
       </div>
     </Pagination>
   ),
@@ -58,11 +77,21 @@ export const FirstPage: Story = {
   render: () => (
     <Pagination>
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" disabled>Previous</Button>
-        <Button variant="default" size="sm">1</Button>
-        <Button variant="outline" size="sm">2</Button>
-        <Button variant="outline" size="sm">3</Button>
-        <Button variant="outline" size="sm">Next</Button>
+        <Button disabled size="sm" variant="outline">
+          Previous
+        </Button>
+        <Button size="sm" variant="default">
+          1
+        </Button>
+        <Button size="sm" variant="outline">
+          2
+        </Button>
+        <Button size="sm" variant="outline">
+          3
+        </Button>
+        <Button size="sm" variant="outline">
+          Next
+        </Button>
       </div>
     </Pagination>
   ),
@@ -72,11 +101,21 @@ export const LastPage: Story = {
   render: () => (
     <Pagination>
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm">Previous</Button>
-        <Button variant="outline" size="sm">98</Button>
-        <Button variant="outline" size="sm">99</Button>
-        <Button variant="default" size="sm">100</Button>
-        <Button variant="outline" size="sm" disabled>Next</Button>
+        <Button size="sm" variant="outline">
+          Previous
+        </Button>
+        <Button size="sm" variant="outline">
+          98
+        </Button>
+        <Button size="sm" variant="outline">
+          99
+        </Button>
+        <Button size="sm" variant="default">
+          100
+        </Button>
+        <Button disabled size="sm" variant="outline">
+          Next
+        </Button>
       </div>
     </Pagination>
   ),
