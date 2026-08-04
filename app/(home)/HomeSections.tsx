@@ -1,8 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import LazySection from '../../components/common/LazySection';
+import { RecentlyPlayed } from '@/components/common/home/RecentlyPlayed';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import LazySection from '../../components/common/LazySection';
 
 // #154: below-the-fold home sections are dynamically imported (their JS
 // chunks are only requested once LazySection's IntersectionObserver fires,
@@ -39,6 +40,7 @@ export default function HomeSections() {
   useScrollRestoration('home');
   return (
     <>
+      <RecentlyPlayed />
 
       <LazySection minHeight={360}>
         <Featured />

@@ -32,3 +32,4 @@
 export * from './collections';
 export * from './tracks';
 export * from './users';
+export * from './useCollectionMetadata';

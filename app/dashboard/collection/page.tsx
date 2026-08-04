@@ -1,13 +1,12 @@
 'use client';
 
-import { ListFilter, Music, UsersRound } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FiSearch } from 'react-icons/fi';
-import { useState, useMemo } from 'react';
-import { useNFTCollection } from '@/hooks/useNFTCollection';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ListFilter, Music, Search, UsersRound } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useNFTCollection } from '@/hooks/useNFTCollection';
 
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 const ITEMS_PER_PAGE = 10;
@@ -23,16 +22,17 @@ const CollectionsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const filtered = useMemo(() => {
-    return songs.filter((s) =>
-      s.songCID.toLowerCase().includes(search.toLowerCase()) ||
-      s.artistAddress.toLowerCase().includes(search.toLowerCase()),
+    return songs.filter(
+      (s) =>
+        s.songCID.toLowerCase().includes(search.toLowerCase()) ||
+        s.artistAddress.toLowerCase().includes(search.toLowerCase())
     );
   }, [songs, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginatedSongs = filtered.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
 
   const handlePageChange = (page: number) => {
@@ -74,7 +74,7 @@ const CollectionsPage = () => {
             className="bg-surface rounded-xl hover:border hover:border-border-muted p-5 flex items-center"
           >
             <div className={`rounded-full p-3 mr-5 ${bg}`}>
-              <UsersRound size={15} className={accent} aria-hidden="true" />
+              <UsersRound aria-hidden="true" className={accent} size={15} />
             </div>
             <div className="font-semibold">
               <p className="text-sm text-on-muted">{label}</p>
@@ -88,17 +88,17 @@ const CollectionsPage = () => {
         <h2 className="text-2xl text-on-subtle font-semibold">My NFT Songs</h2>
         <div className="flex gap-3 items-center w-full md:w-auto">
           <div className="relative w-full md:w-80">
-            <FiSearch className="absolute left-3 top-3 text-on-muted" aria-hidden="true" />
+            <Search aria-hidden="true" className="absolute left-3 top-3 text-on-muted" />
             <input
+              aria-label="Search NFT songs"
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-surface-input outline-none border border-border-dark text-sm text-gray-200 placeholder:text-gray-500"
+              placeholder="Search by CID or address"
               type="search"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Search by CID or address"
-              aria-label="Search NFT songs"
-              className="w-full pl-10 pr-4 py-2 rounded-full bg-surface-input outline-none border border-border-dark text-sm text-gray-200 placeholder:text-gray-500"
             />
           </div>
           <button
@@ -106,14 +106,14 @@ const CollectionsPage = () => {
             className="flex items-center font-bold gap-1 px-4 py-2 rounded-full border border-border-dark bg-surface-input text-sm text-on-muted"
           >
             Filter
-            <ListFilter size={15} className="ml-2" aria-hidden="true" />
+            <ListFilter aria-hidden="true" className="ml-2" size={15} />
           </button>
         </div>
       </div>
 
       {!isConnected && (
         <div className="flex flex-col items-center justify-center py-20 text-on-muted">
-          <Music size={48} className="mb-4 opacity-40" aria-hidden="true" />
+          <Music aria-hidden="true" className="mb-4 opacity-40" size={48} />
           <p className="text-lg font-medium">Connect your wallet to view your NFT collection</p>
         </div>
       )}
@@ -132,14 +132,15 @@ const CollectionsPage = () => {
 
       {isConnected && !isLoading && songs.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center text-on-muted">
-          <Music size={64} className="mb-4 opacity-40" aria-hidden="true" />
+          <Music aria-hidden="true" className="mb-4 opacity-40" size={64} />
           <h3 className="text-white text-lg font-semibold mb-2">No NFTs yet</h3>
           <p className="text-sm max-w-sm mb-6">
-            You don&apos;t own any music NFTs yet. Explore the marketplace to discover and collect tracks from your favorite artists.
+            You don&apos;t own any music NFTs yet. Explore the marketplace to discover and collect
+            tracks from your favorite artists.
           </p>
           <Link
-            href="/marketPlace"
             className="px-6 py-2 rounded-full bg-brand hover:bg-pink-700 text-white text-sm font-semibold transition-colors"
+            href="/marketPlace"
           >
             Browse Marketplace
           </Link>
@@ -148,7 +149,7 @@ const CollectionsPage = () => {
 
       {isConnected && !isLoading && songs.length > 0 && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-on-muted">
-          <Music size={48} className="mb-4 opacity-40" aria-hidden="true" />
+          <Music aria-hidden="true" className="mb-4 opacity-40" size={48} />
           <p className="text-lg font-medium">No NFT songs match your search</p>
         </div>
       )}
@@ -160,12 +161,14 @@ const CollectionsPage = () => {
               <div key={song.songId.toString()} className="hover:bg-surface-hover p-3 rounded-lg">
                 <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
                   <Image
-                    src={ipfsImage(song.songCID)}
                     alt={`Song #${song.songId}`}
-                    width={300}
-                    height={300}
                     className="w-full h-full object-cover"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/audio.jpg'; }}
+                    height={300}
+                    src={ipfsImage(song.songCID)}
+                    width={300}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/audio.jpg';
+                    }}
                   />
                 </div>
                 <p className="text-sm font-semibold">Song #{song.songId.toString()}</p>
@@ -173,7 +176,9 @@ const CollectionsPage = () => {
                   {song.artistAddress.slice(0, 6)}…{song.artistAddress.slice(-4)}
                 </p>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{song.totalStreams.toString()} streams</span>
+                  <span className="text-xs text-gray-400">
+                    {song.totalStreams.toString()} streams
+                  </span>
                   <button className="px-3 py-1 text-xs bg-surface border border-border-dark rounded-full hover:bg-[#333]">
                     Sell Now
                   </button>

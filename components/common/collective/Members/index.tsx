@@ -1,17 +1,15 @@
 'use client';
 import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
 import Slider from 'react-slick';
-import {  ArrowRight } from 'lucide-react';
 import { NextArrow, PrevArrow } from './navigation';
-
-
 
 const Members = () => {
   const collectiveArtists = [
     {
       name: 'Misty Brown',
       role: 'Artist',
-      image: '/tech.jpg', 
+      image: '/tech.jpg',
     },
     {
       name: 'Misty Brown',
@@ -21,7 +19,7 @@ const Members = () => {
     {
       name: 'Misty Brown',
       role: 'Artist',
-      image: '/image2.jpg', 
+      image: '/image2.jpg',
     },
     {
       name: 'Misty Brown',
@@ -68,7 +66,7 @@ const Members = () => {
       <section className="w-4/5 mx-auto py-10">
         <div className="flex justify-between border-b border-[#151515] pb-7 items-center">
           <h1 className="font-semibold text-[#A3A3A3] text-2xl md:text-4xl leading-[100%] tracking-[0%] capitalize font-poppins">
-            <span className='text-white'>Meet</span>  The Collective
+            <span className="text-white">Meet</span> The Collective
           </h1>
           <button className="bg-[#1E181D] cursor-pointer rounded-full p-5">
             <ArrowRight className="text-7xl -rotate-45 text-[#F2AFC9]" />
@@ -81,11 +79,11 @@ const Members = () => {
               <div key={index} className="px-4">
                 <div className="w-full h-55 rounded-lg overflow-hidden mx-auto">
                   <Image
-                    src={artist.image}
                     alt={artist.name}
-                    width={150}
-                    height={150}
                     className="w-full h-full object-cover"
+                    height={150}
+                    src={artist.image}
+                    width={150}
                   />
                 </div>
                 <div className="py-2 text-center md:text-left text-white">

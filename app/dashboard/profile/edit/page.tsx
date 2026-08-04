@@ -1,22 +1,17 @@
 'use client';
 
-import Image from 'next/image';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
-import AvatarCrop from '@/components/common/dashboard/AvatarCrop';
 import { toast } from 'sonner';
+import AvatarCrop from '@/components/common/dashboard/AvatarCrop';
+import { useFormState } from '@/hooks/useFormState';
+import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_SIZE_MB = 5;
-
-const MAX_SIZE_MB = 5;
 const MAX_DISPLAY_NAME = 50;
 const MAX_BIO = 500;
-
-import { useFormState } from '@/hooks/useFormState';
-
-
 
 const EditProfile = () => {
   const router = useRouter();
@@ -31,12 +26,12 @@ const EditProfile = () => {
     errors,
     isFormValid,
     fieldError,
-    setAllTouched
+    setAllTouched,
   } = useFormState({
     displayName: '',
     bio: '',
     website: '',
-    twitter: ''
+    twitter: '',
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -54,7 +49,7 @@ const EditProfile = () => {
         twitter: profile.twitter || '',
       });
     }
-  }, [profile]);
+  }, [profile, setValues]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,15 +81,18 @@ const EditProfile = () => {
     setAvatarPreview(croppedDataUrl);
   };
 
-
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Mark all fields as touched so errors show on submit attempt
     setAllTouched();
     if (!isFormValid) return;
     update(
-      { name: values.displayName, bio: values.bio, website: values.website, twitter: values.twitter },
+      {
+        name: values.displayName,
+        bio: values.bio,
+        website: values.website,
+        twitter: values.twitter,
+      },
       {
         onSuccess: () => {
           setIsDirty(false);
@@ -108,14 +106,12 @@ const EditProfile = () => {
     router.push('/dashboard/profile');
   };
 
-
-
   return (
     <div className="min-h-screen">
       <div className="mb-4">
         <button
-          onClick={handleBack}
           className="bg-pink-600 cursor-pointer font-semibold text-xs px-4 py-3 rounded-lg"
+          onClick={handleBack}
         >
           Profile
         </button>
@@ -129,28 +125,28 @@ const EditProfile = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-30">
-          <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6" noValidate>
+          <form noValidate className="lg:col-span-2 space-y-6" onSubmit={handleSubmit}>
             {/* Display Name */}
             <div>
               <label className="block mb-2 text-base font-medium">
                 Display name <span className="text-pink-500">*</span>
               </label>
               <input
-                type="text"
-                placeholder="Add Display name"
-                maxLength={MAX_DISPLAY_NAME + 1}
+                aria-describedby={fieldError('displayName') ? 'displayName-error' : undefined}
+                aria-invalid={!!fieldError('displayName')}
                 className={`w-full bg-[#1A1A1A] text-white rounded-lg px-4 py-2 placeholder:text-sm placeholder:text-[#4B4B4B] focus:outline-none ${
                   fieldError('displayName') ? 'ring-1 ring-red-500' : ''
                 }`}
+                maxLength={MAX_DISPLAY_NAME + 1}
+                placeholder="Add Display name"
+                type="text"
                 value={values.displayName}
-                onChange={(e) => handleChange('displayName', e.target.value)}
                 onBlur={() => handleBlur('displayName')}
-                aria-invalid={!!fieldError('displayName')}
-                aria-describedby={fieldError('displayName') ? 'displayName-error' : undefined}
+                onChange={(e) => handleChange('displayName', e.target.value)}
               />
               <div className="flex justify-between mt-1">
                 {fieldError('displayName') ? (
-                  <p id="displayName-error" className="text-red-400 text-xs">
+                  <p className="text-red-400 text-xs" id="displayName-error">
                     {fieldError('displayName')}
                   </p>
                 ) : (
@@ -166,21 +162,21 @@ const EditProfile = () => {
             <div>
               <label className="block mb-2 text-base font-medium">Short bio</label>
               <input
-                type="text"
-                placeholder="Tell about yourself in a few words"
-                maxLength={MAX_BIO + 1}
+                aria-describedby={fieldError('bio') ? 'bio-error' : undefined}
+                aria-invalid={!!fieldError('bio')}
                 className={`w-full bg-[#1A1A1A] text-white rounded-lg px-4 py-2 placeholder:text-sm placeholder:text-[#4B4B4B] focus:outline-none ${
                   fieldError('bio') ? 'ring-1 ring-red-500' : ''
                 }`}
+                maxLength={MAX_BIO + 1}
+                placeholder="Tell about yourself in a few words"
+                type="text"
                 value={values.bio}
-                onChange={(e) => handleChange('bio', e.target.value)}
                 onBlur={() => handleBlur('bio')}
-                aria-invalid={!!fieldError('bio')}
-                aria-describedby={fieldError('bio') ? 'bio-error' : undefined}
+                onChange={(e) => handleChange('bio', e.target.value)}
               />
               <div className="flex justify-between mt-1">
                 {fieldError('bio') ? (
-                  <p id="bio-error" className="text-red-400 text-xs">
+                  <p className="text-red-400 text-xs" id="bio-error">
                     {fieldError('bio')}
                   </p>
                 ) : (
@@ -196,19 +192,19 @@ const EditProfile = () => {
             <div>
               <label className="block mb-2 text-base font-medium">Website URL</label>
               <input
-                type="url"
-                placeholder="https://"
+                aria-describedby={fieldError('website') ? 'website-error' : undefined}
+                aria-invalid={!!fieldError('website')}
                 className={`w-full bg-[#1A1A1A] text-white rounded-lg px-4 py-2 placeholder:text-sm placeholder:text-[#4B4B4B] focus:outline-none ${
                   fieldError('website') ? 'ring-1 ring-red-500' : ''
                 }`}
+                placeholder="https://"
+                type="url"
                 value={values.website}
-                onChange={(e) => handleChange('website', e.target.value)}
                 onBlur={() => handleBlur('website')}
-                aria-invalid={!!fieldError('website')}
-                aria-describedby={fieldError('website') ? 'website-error' : undefined}
+                onChange={(e) => handleChange('website', e.target.value)}
               />
               {fieldError('website') && (
-                <p id="website-error" className="text-red-400 text-xs mt-1">
+                <p className="text-red-400 text-xs mt-1" id="website-error">
                   {fieldError('website')}
                 </p>
               )}
@@ -218,28 +214,28 @@ const EditProfile = () => {
             <div>
               <label className="block mb-2 text-base font-medium">X (Twitter)</label>
               <input
-                type="text"
-                placeholder="Enter your X username"
+                aria-describedby={fieldError('twitter') ? 'twitter-error' : undefined}
+                aria-invalid={!!fieldError('twitter')}
                 className={`w-full bg-[#1A1A1A] text-white rounded-lg px-4 py-2 placeholder:text-sm placeholder:text-[#4B4B4B] focus:outline-none ${
                   fieldError('twitter') ? 'ring-1 ring-red-500' : ''
                 }`}
+                placeholder="Enter your X username"
+                type="text"
                 value={values.twitter}
-                onChange={(e) => handleChange('twitter', e.target.value)}
                 onBlur={() => handleBlur('twitter')}
-                aria-invalid={!!fieldError('twitter')}
-                aria-describedby={fieldError('twitter') ? 'twitter-error' : undefined}
+                onChange={(e) => handleChange('twitter', e.target.value)}
               />
               {fieldError('twitter') && (
-                <p id="twitter-error" className="text-red-400 text-xs mt-1">
+                <p className="text-red-400 text-xs mt-1" id="twitter-error">
                   {fieldError('twitter')}
                 </p>
               )}
             </div>
 
             <button
-              type="submit"
-              disabled={isPending || !isFormValid}
               className="bg-pink-600 text-white px-6 py-2 rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isPending || !isFormValid}
+              type="submit"
             >
               {isPending ? 'Saving…' : 'Save'}
             </button>
@@ -247,23 +243,21 @@ const EditProfile = () => {
 
           <div className="bg-[#1A1A1A] h-85 rounded-xl shadow-md p-3 flex flex-col max-w-xs">
             <Image
-              src={avatarPreview || profile?.profileImage || '/dashboard/profiledefault.png'}
               alt="User Profile"
-              width={300}
-              height={200}
               className="rounded-lg mb-4 object-cover w-full h-40"
+              height={200}
+              src={avatarPreview || profile?.profileImage || '/dashboard/profiledefault.png'}
+              width={300}
             />
             <h3 className="font-semibold text-lg mb-1">Profile</h3>
             <p className="text-sm font-medium text-gray-400 text-left mb-4">
               Make your profile stand out with a striking avatar
             </p>
-            {errors.coverImage && (
-              <p className="text-red-400 text-xs mb-2">{errors.coverImage}</p>
-            )}
+            {errors.coverImage && <p className="text-red-400 text-xs mb-2">{errors.coverImage}</p>}
             <button
+              className="border cursor-pointer font-semibold border-white w-full rounded-md px-4 py-2 text-sm hover:bg-white hover:text-black transition"
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="border cursor-pointer font-semibold border-white w-full rounded-md px-4 py-2 text-sm hover:bg-white hover:text-black transition"
             >
               Change Avatar
             </button>
@@ -272,9 +266,9 @@ const EditProfile = () => {
             </p>
             <input
               ref={fileInputRef}
-              type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               className="hidden"
+              type="file"
               onChange={handleImageSelect}
             />
           </div>
@@ -282,10 +276,10 @@ const EditProfile = () => {
       )}
 
       <AvatarCrop
-        open={cropOpen}
-        onOpenChange={setCropOpen}
         imageSrc={rawImageSrc}
+        open={cropOpen}
         onCropComplete={handleCropComplete}
+        onOpenChange={setCropOpen}
       />
     </div>
   );

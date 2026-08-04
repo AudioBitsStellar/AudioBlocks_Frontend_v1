@@ -1,5 +1,5 @@
-import { MoveLeft, MoveRight } from "lucide-react"
-import { useCallback } from "react"
+import { useCallback } from 'react';
+import { MoveLeft, MoveRight } from 'lucide-react';
 
 interface ArrowProps {
   onClick?: () => void;
@@ -7,45 +7,51 @@ interface ArrowProps {
 }
 
 export const NextArrow = ({ onClick, label = 'Next slide' }: ArrowProps) => {
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onClick?.();
-    }
-  }, [onClick]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick?.();
+      }
+    },
+    [onClick]
+  );
 
   return (
     <div
-      role="button"
-      tabIndex={0}
       aria-label={label}
       className="absolute -right-1 md:-right-2 top-1/2 transform -translate-y-1/2 z-10 bg-[#0C090A99] p-3 md:p-6 rounded-full cursor-pointer"
+      role="button"
+      tabIndex={0}
       onClick={onClick}
       onKeyDown={handleKeyDown}
     >
       <MoveRight className="text-white size-4 md:size-5" />
     </div>
-  )
-}
+  );
+};
 
 export const PrevArrow = ({ onClick, label = 'Previous slide' }: ArrowProps) => {
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onClick?.();
-    }
-  }, [onClick]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick?.();
+      }
+    },
+    [onClick]
+  );
 
   return (
     <div
-      role="button"
-      tabIndex={0}
       aria-label={label}
       className="absolute -left-1 md:-left-2 top-1/2 transform -translate-y-1/2 z-10 bg-[#0C090A99] p-3 md:p-6 rounded-full cursor-pointer"
+      role="button"
+      tabIndex={0}
       onClick={onClick}
       onKeyDown={handleKeyDown}
     >
       <MoveLeft className="text-white size-4 md:size-5" />
     </div>
-  )
-}
+  );
+};

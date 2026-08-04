@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'UI/Skeleton',
@@ -8,7 +8,8 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A skeleton loading component for displaying placeholder content while data is loading.',
+        component:
+          'A skeleton loading component for displaying placeholder content while data is loading.',
       },
     },
   },

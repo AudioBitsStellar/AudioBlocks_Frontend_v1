@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'UI/Tooltip',
@@ -9,7 +9,8 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'A tooltip component for displaying additional information on hover. Includes configurable positioning.',
+        component:
+          'A tooltip component for displaying additional information on hover. Includes configurable positioning.',
       },
     },
   },
@@ -66,7 +67,7 @@ export const WithIcon: Story = {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon">
+          <Button size="icon" variant="ghost">
             ℹ️
           </Button>
         </TooltipTrigger>
