@@ -12,7 +12,8 @@ import { createConfig, WagmiProvider } from 'wagmi';
 import WrongNetworkBanner from '@/components/common/WrongNetworkBanner';
 import { TransactionProvider } from '@/context/TransactionContext';
 import { LoadingProvider } from '@/context/LoadingContext';
-import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
+import { UserPreferencesProvider } from "@/context/UserPreferencesContext";
+import { ThemeProvider } from "@/context/ThemeProvider";
 import { WalletProvider } from '@/context/WalletContext';
 import { queryClient } from '@/lib/queryClient';
 
@@ -60,10 +61,10 @@ const Provider = ({ children }: { children: ReactNode }) => {
             <WalletProvider>
               <TransactionProvider>
                 <LoadingProvider>
-                  <UserPreferencesProvider>
+                  <ThemeProvider><UserPreferencesProvider>
                     <WrongNetworkBanner />
                     {children}
-                  </UserPreferencesProvider>
+                  </UserPreferencesProvider></ThemeProvider>
                 </LoadingProvider>
               </TransactionProvider>
             </WalletProvider>

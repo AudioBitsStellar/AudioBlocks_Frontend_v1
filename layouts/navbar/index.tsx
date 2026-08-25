@@ -135,8 +135,9 @@ const Navbar = () => {
     >
       <div className="flex h-[51px] items-center justify-between py-4 max-w-11/12 mx-auto">
         {/* Logo */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <Image alt="AudioBlocks Logo" height={100} src="/logo2.png" width={100} />
+          <ThemeToggle />
         </div>
 
         {/* Desktop Nav */}
@@ -257,6 +258,7 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <SearchOverlay />
     </nav>
   );
 };

@@ -11,8 +11,10 @@ import LazySection from '../../components/common/LazySection';
 // `ssr: false` requires a Client Component boundary, which is why this
 // lives in its own file rather than app/(home)/page.tsx (a Server
 // Component, so it can keep exporting `metadata`).
+import { Skeleton, CardSkeleton } from "@/components/ui/Skeleton";
+
 const SectionSkeleton = ({ height }: { height: number }) => (
-  <div className="animate-pulse bg-white/5" style={{ height }} />
+  <Skeleton className="w-full" style={{ height }} />
 );
 
 const Featured = dynamic(() => import('../../components/common/home/Featured'), {
