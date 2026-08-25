@@ -102,10 +102,10 @@ export const API_ENDPOINTS = {
   COMMUNITY_LEADERBOARD: '/api/community/leaderboard',
   COMMUNITY_VOTE: '/api/community/vote',
   COMMUNITY_MY_VOTES: '/api/community/votes/me',
-  
+
   // Profile
   USER_PROFILE: '/api/user/profile',
-  
+
   // Explore
   MERCH: '/api/merch',
   EVENTS: '/api/events',
