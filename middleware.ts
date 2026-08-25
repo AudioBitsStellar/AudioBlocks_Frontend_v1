@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PROTECTED_PREFIXES = ['/dashboard', '/profile'];
-const LOGIN_PATH = '/login';
+const LOGIN_PATH = '/';
 
 function isExpiredJwt(tokenValue: string): boolean {
   try {

@@ -149,8 +149,7 @@ export function useInfiniteQuery<TData>({
     return () => {
       cancelInFlight();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run on key/enabled
-  }, [keyStr, enabled]);
+  }, [keyStr, enabled, initialCursor, initialData, loadPage, cancelInFlight]);
 
   const fetchNextPage = useCallback(async () => {
     if (!enabled || !hasNextPage || isLoading || isLoadingMore || inFlightRef.current) {
