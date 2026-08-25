@@ -1,3 +1,6 @@
+import { FullScreenPlayer } from "./FullScreenPlayer";
+import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
 'use client';
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -179,6 +182,7 @@ const Player = () => {
   const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [duration, setDuration] = useState(0);
   const [showComments, setShowComments] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [trackAnnouncement, setTrackAnnouncement] = useState('');
@@ -641,7 +645,7 @@ const Player = () => {
 
         {/* Scrubber + track info */}
         <div className="flex items-center gap-4 w-2/5">
-          <div className="flex-1">
+          <div className="flex-1 cursor-pointer" onClick={() => setIsFullScreen(true)}>
             <div className="flex items-center justify-center mb-3">
               <div className="text-white font-medium mr-4 text-sm truncate">
                 {currentTrack?.title}
@@ -752,7 +756,8 @@ const Player = () => {
         <span className="sr-only" data-crossfading={isCrossfading ? 'true' : 'false'} />
       </div>
 
-      {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}
+      {showComments {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}{showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />} <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}
+      <AnimatePresence>{isFullScreen {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}{showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />} <FullScreenPlayer onClose={() => setIsFullScreen(false)} />}</AnimatePresence>
     </div>
   );
 };
