@@ -20,7 +20,7 @@ export interface ValidatedEnv {
  */
 export function validateEnv(): ValidatedEnv {
   const missing = requiredEnvVars.filter(
-    (key) => !process.env[key] || process.env[key]!.trim() === '',
+    (key) => !process.env[key] || process.env[key]!.trim() === ''
   );
 
   if (missing.length > 0) {
