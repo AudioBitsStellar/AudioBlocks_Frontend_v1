@@ -510,7 +510,7 @@ npx lint-staged  # Run linting and formatting on staged files
 npx tsc --noEmit # Run TypeScript type checking
 ```
 
-### Skipping Hooks (Not Recommended)
+### Skipping Hooks (Not Recommended) .
 
 If you absolutely need to skip the hooks (not recommended):
 
