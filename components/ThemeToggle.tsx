@@ -1,7 +1,7 @@
 'use client';
-import { useTheme } from '@/context/ThemeProvider';
-import { Sun, Moon, Monitor } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Sun, Moon, Monitor } from 'lucide-react';
+import { useTheme } from '@/context/ThemeProvider';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -23,9 +23,10 @@ export function ThemeToggle() {
 
   return (
     <button
-      onClick={cycleTheme}
-      className="p-2 rounded-full hover:bg-gray-800 transition-colors"
       aria-label="Toggle theme"
+      className="p-2 rounded-full hover:bg-gray-800 transition-colors"
+      type="button"
+      onClick={cycleTheme}
     >
       {theme === 'system' && <Monitor className="w-4 h-4 text-white" />}
       {theme === 'light' && <Sun className="w-4 h-4 text-white" />}

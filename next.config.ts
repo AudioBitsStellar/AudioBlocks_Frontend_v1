@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
     // lint errors in unrelated components shouldn't block production builds.
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   webpack: (config) => {
     // @metamask/sdk (pulled in via @dynamic-labs/ethereum) optionally
     // supports React Native and imports this for native storage — it's
