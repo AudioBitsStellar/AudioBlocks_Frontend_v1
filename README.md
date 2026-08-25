@@ -40,7 +40,7 @@ API.
 - A built-in NFT marketplace for collecting tokenized music
 - A community space with artist voting and listening-time leaderboards
 - A personal collection view of owned music NFTs
-- Persistent play-queue with shuffle, repeat, and seek controls
+- Persistent play-queue with shuffle, repeat, and seek controls .
 
 **For Artists** (via the companion `AudioBlocks_For_Artist` app)
 

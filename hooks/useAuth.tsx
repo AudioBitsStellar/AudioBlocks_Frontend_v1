@@ -99,7 +99,6 @@ export const Auth = () => {
         await authenticateUser('listener', user.email!, address, signature as string, message);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
-        console.log(err);
         if (isUserRejectionError(err)) {
           toast.error('Signature request was cancelled. Please sign the message to continue.');
         } else {
