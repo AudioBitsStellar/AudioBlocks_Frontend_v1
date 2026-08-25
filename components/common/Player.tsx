@@ -1,11 +1,9 @@
-import { FullScreenPlayer } from "./FullScreenPlayer";
-import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
 'use client';
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { AnimatePresence } from 'framer-motion';
 import {
   AlertCircle,
   Dot,
@@ -25,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
+import { FullScreenPlayer } from './FullScreenPlayer';
 
 // Lazy-load CommentPanel to reduce initial bundle size
 const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
@@ -411,8 +410,7 @@ const Player = () => {
       audio.pause();
       incomingAudioRef.current?.pause();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, currentIndex]);
+  }, [isPlaying, currentIndex, currentTrack?.title, setAutoplayBlocked, setError]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -756,8 +754,10 @@ const Player = () => {
         <span className="sr-only" data-crossfading={isCrossfading ? 'true' : 'false'} />
       </div>
 
-      {showComments {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}{showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />} <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}
-      <AnimatePresence>{isFullScreen {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}{showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />} <FullScreenPlayer onClose={() => setIsFullScreen(false)} />}</AnimatePresence>
+      {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}
+      <AnimatePresence>
+        {isFullScreen && <FullScreenPlayer onClose={() => setIsFullScreen(false)} />}
+      </AnimatePresence>
     </div>
   );
 };

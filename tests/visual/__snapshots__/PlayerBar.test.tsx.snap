@@ -186,7 +186,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         class="flex items-center gap-4 w-2/5"
       >
         <div
-          class="flex-1"
+          class="flex-1 cursor-pointer"
         >
           <div
             class="flex items-center justify-center mb-3"
@@ -605,7 +605,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         class="flex items-center gap-4 w-2/5"
       >
         <div
-          class="flex-1"
+          class="flex-1 cursor-pointer"
         >
           <div
             class="flex items-center justify-center mb-3"
@@ -1035,7 +1035,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         class="flex items-center gap-4 w-2/5"
       >
         <div
-          class="flex-1"
+          class="flex-1 cursor-pointer"
         >
           <div
             class="flex items-center justify-center mb-3"
@@ -1465,7 +1465,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         class="flex items-center gap-4 w-2/5"
       >
         <div
-          class="flex-1"
+          class="flex-1 cursor-pointer"
         >
           <div
             class="flex items-center justify-center mb-3"
@@ -1884,7 +1884,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         class="flex items-center gap-4 w-2/5"
       >
         <div
-          class="flex-1"
+          class="flex-1 cursor-pointer"
         >
           <div
             class="flex items-center justify-center mb-3"
@@ -2314,7 +2314,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         class="flex items-center gap-4 w-2/5"
       >
         <div
-          class="flex-1"
+          class="flex-1 cursor-pointer"
         >
           <div
             class="flex items-center justify-center mb-3"
@@ -2744,7 +2744,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         class="flex items-center gap-4 w-2/5"
       >
         <div
-          class="flex-1"
+          class="flex-1 cursor-pointer"
         >
           <div
             class="flex items-center justify-center mb-3"
@@ -3163,7 +3163,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         class="flex items-center gap-4 w-2/5"
       >
         <div
-          class="flex-1"
+          class="flex-1 cursor-pointer"
         >
           <div
             class="flex items-center justify-center mb-3"
@@ -3593,7 +3593,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         class="flex items-center gap-4 w-2/5"
       >
         <div
-          class="flex-1"
+          class="flex-1 cursor-pointer"
         >
           <div
             class="flex items-center justify-center mb-3"
