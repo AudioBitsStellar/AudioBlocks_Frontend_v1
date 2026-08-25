@@ -2,16 +2,9 @@
 
 import dynamic from 'next/dynamic';
 import { RecentlyPlayed } from '@/components/common/home/RecentlyPlayed';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import LazySection from '../../components/common/LazySection';
-
-// #154: below-the-fold home sections are dynamically imported (their JS
-// chunks are only requested once LazySection's IntersectionObserver fires,
-// not on initial page load) and rendered client-only. `next/dynamic` with
-// `ssr: false` requires a Client Component boundary, which is why this
-// lives in its own file rather than app/(home)/page.tsx (a Server
-// Component, so it can keep exporting `metadata`).
-import { Skeleton, CardSkeleton } from "@/components/ui/Skeleton";
 
 const SectionSkeleton = ({ height }: { height: number }) => (
   <Skeleton className="w-full" style={{ height }} />

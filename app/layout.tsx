@@ -6,9 +6,9 @@ import './globals.css';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import AccessibilityAnnouncer from '@/components/AccessibilityAnnouncer';
-import { ThemeScript } from "@/components/ThemeScript";
 import EnvCheck from '@/components/EnvCheck';
 import SWRegister from '@/components/SWRegister';
+import { ThemeScript } from '@/components/ThemeScript';
 import RouteProgress from '@/components/ui/RouteProgress';
 import Provider from '@/context/provider';
 import { ToastProvider } from '@/context/ToastContext';
@@ -41,7 +41,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head><ThemeScript /></head>
+      <head>
+        <ThemeScript />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >

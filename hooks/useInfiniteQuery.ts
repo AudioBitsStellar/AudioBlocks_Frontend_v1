@@ -11,7 +11,7 @@ export interface InfinitePage<TData> {
 
 export type InfiniteFetcher<TData> = (
   cursor: PageParam,
-  signal: AbortSignal,
+  signal: AbortSignal
 ) => Promise<InfinitePage<TData>>;
 
 export interface UseInfiniteQueryOptions<TData> {
@@ -55,9 +55,11 @@ export function useInfiniteQuery<TData>({
   const keyStr = serializeKey(key);
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
+  const initialDataRef = useRef(initialData);
+  initialDataRef.current = initialData;
 
   const [pages, setPages] = useState<TData[][]>(() =>
-    initialData && initialData.length > 0 ? [initialData] : [],
+    initialData && initialData.length > 0 ? [initialData] : []
   );
   const [cursor, setCursor] = useState<PageParam>(initialCursor);
   const [hasNextPage, setHasNextPage] = useState(true);
@@ -122,7 +124,7 @@ export function useInfiniteQuery<TData>({
         }
       }
     },
-    [cancelInFlight],
+    [cancelInFlight]
   );
 
   // Initial load / key change
@@ -134,12 +136,15 @@ export function useInfiniteQuery<TData>({
       return;
     }
 
-    setPages(initialData && initialData.length > 0 ? [initialData] : []);
+    const currentInitialData = initialDataRef.current;
+    const hasInitial = Boolean(currentInitialData && currentInitialData.length > 0);
+
+    setPages(hasInitial && currentInitialData ? [currentInitialData] : []);
     setCursor(initialCursor);
     setHasNextPage(true);
     setError(null);
 
-    if (initialData && initialData.length > 0) {
+    if (hasInitial) {
       setIsLoading(false);
       return;
     }
@@ -149,7 +154,7 @@ export function useInfiniteQuery<TData>({
     return () => {
       cancelInFlight();
     };
-  }, [keyStr, enabled, initialCursor, initialData, loadPage, cancelInFlight]);
+  }, [keyStr, enabled, initialCursor, loadPage, cancelInFlight]);
 
   const fetchNextPage = useCallback(async () => {
     if (!enabled || !hasNextPage || isLoading || isLoadingMore || inFlightRef.current) {

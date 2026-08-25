@@ -4,6 +4,7 @@ import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { useAccount } from 'wagmi';
 import apiClient from '@/lib/apiClient';
+import { AUTH } from '@/lib/constants';
 
 /**
  * Distinguishes a user declining/cancelling a wallet signature prompt from a
@@ -49,7 +50,7 @@ export const Auth = () => {
         });
 
         const token = response.data.user.token;
-        Cookies.set('audioblocks_jwt', token);
+        Cookies.set(AUTH.COOKIE_NAME, token, AUTH.COOKIE_OPTIONS);
         toast.success(response.data?.message);
         return response.data;
 
@@ -68,7 +69,7 @@ export const Auth = () => {
             });
 
             const registerToken = registerResponse.data?.user?.token;
-            Cookies.set('audioblocks_jwt', registerToken);
+            Cookies.set(AUTH.COOKIE_NAME, registerToken, AUTH.COOKIE_OPTIONS);
             toast.success(registerResponse.data?.message);
             return registerResponse.data;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
