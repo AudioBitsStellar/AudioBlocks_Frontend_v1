@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Collective from '@/components/common/collective/Collective';
 import Events from '@/components/common/collective/Events';
