@@ -40,7 +40,7 @@ API.
 - A built-in NFT marketplace for collecting tokenized music
 - A community space with artist voting and listening-time leaderboards
 - A personal collection view of owned music NFTs
-- Persistent play-queue with shuffle, repeat, and seek controls
+- Persistent play-queue with shuffle, repeat, and seek controls .
 
 **For Artists** (via the companion `AudioBlocks_For_Artist` app)
 
@@ -510,7 +510,7 @@ npx lint-staged  # Run linting and formatting on staged files
 npx tsc --noEmit # Run TypeScript type checking
 ```
 
-### Skipping Hooks (Not Recommended)
+### Skipping Hooks (Not Recommended) .
 
 If you absolutely need to skip the hooks (not recommended):
 
@@ -520,5 +520,7 @@ git commit --no-verify -m "your message"
 
 **Note:** Commits that bypass hooks may fail CI checks and be rejected during code review.
 
-Fixing issue 73
+Fixing issue 72
+
+Fixing issue 72
 .

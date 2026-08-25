@@ -33,7 +33,7 @@ export default function LazySection({ children, minHeight, className }: LazySect
           observer.disconnect();
         }
       },
-      { rootMargin: '200px' },
+      { rootMargin: '200px' }
     );
     observer.observe(el);
     return () => observer.disconnect();

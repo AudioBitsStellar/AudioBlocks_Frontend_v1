@@ -12,8 +12,7 @@ export function createQueryClient(): QueryClient {
         staleTime: DEFAULT_STALE_TIME,
         gcTime: DEFAULT_GC_TIME,
         retry: DEFAULT_RETRY_COUNT,
-        retryDelay: (attemptIndex) =>
-          Math.min(RETRY_BASE_DELAY_MS * 2 ** attemptIndex, 30_000),
+        retryDelay: (attemptIndex) => Math.min(RETRY_BASE_DELAY_MS * 2 ** attemptIndex, 30_000),
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
       },

@@ -19,7 +19,9 @@ export async function getLeaderboard(): Promise<CommunityArtist[]> {
   return res.data?.data ?? res.data ?? [];
 }
 
-export async function castVote(artistId: string | number): Promise<{ artistId: string | number; votes: number }> {
+export async function castVote(
+  artistId: string | number
+): Promise<{ artistId: string | number; votes: number }> {
   const res = await apiClient.post(API_ENDPOINTS.COMMUNITY_VOTE, { artistId });
   return res.data?.data ?? res.data;
 }

@@ -1,6 +1,6 @@
 /**
  * Environment Variable Validation
- * 
+ *
  * This module validates all required environment variables at startup.
  * If any required variables are missing or invalid, it will display
  * a clear error message and prevent the app from rendering.
@@ -12,14 +12,14 @@ interface EnvConfig {
   rpcUrl: string;
   contractAddress: string;
   usdcAddress: string;
-  
+
   // API
   apiBaseUrl: string;
   apiTimeout: number;
-  
+
   // Authentication
   dynamicEnvId: string;
-  
+
   // Optional
   segmentWriteKey?: string;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
@@ -138,7 +138,7 @@ export function validateEnv(): ValidationResult {
  */
 export function getEnvConfig(): EnvConfig {
   const validation = validateEnv();
-  
+
   if (!validation.isValid) {
     throw new Error(
       `Environment configuration is invalid:\n${validation.errors
@@ -202,7 +202,8 @@ export function EnvConfigErrorBoundary({ children }: { children: React.ReactNode
           </pre>
           <p className="mt-4 text-sm text-gray-600">
             See <code className="bg-gray-100 px-1">.env.example</code> and{' '}
-            <code className="bg-gray-100 px-1">docs/ENVIRONMENT_VARIABLES.md</code> for setup instructions.
+            <code className="bg-gray-100 px-1">docs/ENVIRONMENT_VARIABLES.md</code> for setup
+            instructions.
           </p>
         </div>
       </div>
