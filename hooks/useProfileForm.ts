@@ -51,9 +51,7 @@ export function useProfileForm(): UseProfileFormReturn {
         form.setValues(serverValues);
       }
     }
-    // Only run when the profile first arrives.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, profile]);
+  }, [isLoading, profile, draft, form, serverValues]);
 
   // Auto-save draft to localStorage whenever values change.
   useEffect(() => {
@@ -64,7 +62,7 @@ export function useProfileForm(): UseProfileFormReturn {
       form.values.twitter !== serverValues.twitter;
 
     setDraft(hasMeaningfulChange ? form.values : null);
-  }, [form.values]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [form.values, serverValues, setDraft]);
 
   const isDirty =
     form.values.displayName !== serverValues.displayName ||
