@@ -66,7 +66,7 @@ export function Icon({
   const isKnownIcon = ICON_NAMES.has(name);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production' && !isKnownIcon) {
+    if (process.env.NODE_ENV === 'development' && !isKnownIcon) {
       console.warn(`[Icon] Missing icon name: ${String(name)}`);
     }
   }, [isKnownIcon, name]);
