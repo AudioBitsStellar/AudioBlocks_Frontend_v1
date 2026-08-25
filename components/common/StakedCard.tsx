@@ -1,59 +1,59 @@
-"use client"
+'use client';
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from 'react';
 
 interface Card {
-  id: number
-  title: string
-  subtitle: string
-  color: string
-  gradient: string
+  id: number;
+  title: string;
+  subtitle: string;
+  color: string;
+  gradient: string;
 }
 
 interface AutoStackedCardsProps {
-  cards?: Card[]
-  interval?: number
-  pauseOnHover?: boolean
-  showProgress?: boolean
+  cards?: Card[];
+  interval?: number;
+  pauseOnHover?: boolean;
+  showProgress?: boolean;
 }
 
 const defaultCards: Card[] = [
   {
     id: 1,
-    title: "Mountain Adventure",
-    subtitle: "Explore breathtaking peaks",
-    color: "bg-blue-500",
-    gradient: "from-blue-400 to-blue-600",
+    title: 'Mountain Adventure',
+    subtitle: 'Explore breathtaking peaks',
+    color: 'bg-blue-500',
+    gradient: 'from-blue-400 to-blue-600',
   },
   {
     id: 2,
-    title: "Ocean Depths",
-    subtitle: "Dive into crystal waters",
-    color: "bg-teal-500",
-    gradient: "from-teal-400 to-teal-600",
+    title: 'Ocean Depths',
+    subtitle: 'Dive into crystal waters',
+    color: 'bg-teal-500',
+    gradient: 'from-teal-400 to-teal-600',
   },
   {
     id: 3,
-    title: "Forest Trails",
-    subtitle: "Walk through ancient woods",
-    color: "bg-green-500",
-    gradient: "from-green-400 to-green-600",
+    title: 'Forest Trails',
+    subtitle: 'Walk through ancient woods',
+    color: 'bg-green-500',
+    gradient: 'from-green-400 to-green-600',
   },
   {
     id: 4,
-    title: "Desert Sunset",
-    subtitle: "Watch the golden horizon",
-    color: "bg-orange-500",
-    gradient: "from-orange-400 to-orange-600",
+    title: 'Desert Sunset',
+    subtitle: 'Watch the golden horizon',
+    color: 'bg-orange-500',
+    gradient: 'from-orange-400 to-orange-600',
   },
   {
     id: 5,
-    title: "City Lights",
-    subtitle: "Experience urban energy",
-    color: "bg-purple-500",
-    gradient: "from-purple-400 to-purple-600",
+    title: 'City Lights',
+    subtitle: 'Experience urban energy',
+    color: 'bg-purple-500',
+    gradient: 'from-purple-400 to-purple-600',
   },
-]
+];
 
 export default function AutoStackedCards({
   cards = defaultCards,
@@ -61,70 +61,70 @@ export default function AutoStackedCards({
   pauseOnHover = true,
   showProgress = true,
 }: AutoStackedCardsProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isHovered, setIsHovered] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const progressRef = useRef<NodeJS.Timeout | null>(null)
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-advance cards
   useEffect(() => {
-    if (isHovered && pauseOnHover) return
+    if (isHovered && pauseOnHover) return;
 
     intervalRef.current = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % cards.length)
-      setProgress(0) // Reset progress when card changes
-    }, interval)
+      setCurrentIndex((prev) => (prev + 1) % cards.length);
+      setProgress(0); // Reset progress when card changes
+    }, interval);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [cards.length, interval, isHovered, pauseOnHover])
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [cards.length, interval, isHovered, pauseOnHover]);
 
   // Progress bar animation
   useEffect(() => {
-    if (isHovered && pauseOnHover) return
+    if (isHovered && pauseOnHover) return;
 
-    setProgress(0)
-    const startTime = Date.now()
+    setProgress(0);
+    const startTime = Date.now();
 
     const updateProgress = () => {
-      const elapsed = Date.now() - startTime
-      const newProgress = Math.min((elapsed / interval) * 100, 100)
-      setProgress(newProgress)
+      const elapsed = Date.now() - startTime;
+      const newProgress = Math.min((elapsed / interval) * 100, 100);
+      setProgress(newProgress);
 
       if (newProgress < 100) {
-        progressRef.current = setTimeout(updateProgress, 16) // ~60fps
+        progressRef.current = setTimeout(updateProgress, 16); // ~60fps
       }
-    }
+    };
 
-    updateProgress()
+    updateProgress();
 
     return () => {
-      if (progressRef.current) clearTimeout(progressRef.current)
-    }
-  }, [currentIndex, interval, isHovered, pauseOnHover])
+      if (progressRef.current) clearTimeout(progressRef.current);
+    };
+  }, [currentIndex, interval, isHovered, pauseOnHover]);
 
   const handleMouseEnter = () => {
     if (pauseOnHover) {
-      setIsHovered(true)
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      if (progressRef.current) clearTimeout(progressRef.current)
+      setIsHovered(true);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (progressRef.current) clearTimeout(progressRef.current);
     }
-  }
+  };
 
   const handleMouseLeave = () => {
     if (pauseOnHover) {
-      setIsHovered(false)
+      setIsHovered(false);
     }
-  }
+  };
 
   const handleCardClick = (index: number) => {
     if (index !== currentIndex) {
-      setCurrentIndex(index)
-      setProgress(0)
+      setCurrentIndex(index);
+      setProgress(0);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col items-center space-y-6">
@@ -135,63 +135,63 @@ export default function AutoStackedCards({
         onMouseLeave={handleMouseLeave}
       >
         {cards.map((card, index) => {
-          const position = (index - currentIndex + cards.length) % cards.length
-          const isActive = position === 0
-          const isNext = position === 1
-          const isPrev = position === cards.length - 1
-          const isSecondNext = position === 2
-          const isSecondPrev = position === cards.length - 2
+          const position = (index - currentIndex + cards.length) % cards.length;
+          const isActive = position === 0;
+          const isNext = position === 1;
+          const isPrev = position === cards.length - 1;
+          const isSecondNext = position === 2;
+          const isSecondPrev = position === cards.length - 2;
 
           // Calculate transform values for smooth stacking
-          let translateX = 0
-          let translateY = 0
-          let scale = 1
-          let opacity = 1
-          let zIndex = 0
-          let rotateZ = 0
-          let blur = 0
+          let translateX = 0;
+          let translateY = 0;
+          let scale = 1;
+          let opacity = 1;
+          let zIndex = 0;
+          let rotateZ = 0;
+          let blur = 0;
 
           if (isActive) {
-            zIndex = 50
-            scale = 1
-            opacity = 1
+            zIndex = 50;
+            scale = 1;
+            opacity = 1;
           } else if (isNext) {
-            translateX = 12
-            translateY = 8
-            scale = 0.96
-            opacity = 0.85
-            zIndex = 40
-            rotateZ = 2
+            translateX = 12;
+            translateY = 8;
+            scale = 0.96;
+            opacity = 0.85;
+            zIndex = 40;
+            rotateZ = 2;
           } else if (isPrev) {
-            translateX = -12
-            translateY = 8
-            scale = 0.96
-            opacity = 0.85
-            zIndex = 40
-            rotateZ = -2
+            translateX = -12;
+            translateY = 8;
+            scale = 0.96;
+            opacity = 0.85;
+            zIndex = 40;
+            rotateZ = -2;
           } else if (isSecondNext) {
-            translateX = 24
-            translateY = 16
-            scale = 0.92
-            opacity = 0.7
-            zIndex = 30
-            rotateZ = 4
-            blur = 1
+            translateX = 24;
+            translateY = 16;
+            scale = 0.92;
+            opacity = 0.7;
+            zIndex = 30;
+            rotateZ = 4;
+            blur = 1;
           } else if (isSecondPrev) {
-            translateX = -24
-            translateY = 16
-            scale = 0.92
-            opacity = 0.7
-            zIndex = 30
-            rotateZ = -4
-            blur = 1
+            translateX = -24;
+            translateY = 16;
+            scale = 0.92;
+            opacity = 0.7;
+            zIndex = 30;
+            rotateZ = -4;
+            blur = 1;
           } else {
-            translateX = 0
-            translateY = 24
-            scale = 0.88
-            opacity = 0.5
-            zIndex = 20
-            blur = 2
+            translateX = 0;
+            translateY = 24;
+            scale = 0.88;
+            opacity = 0.5;
+            zIndex = 20;
+            blur = 2;
           }
 
           return (
@@ -207,8 +207,8 @@ export default function AutoStackedCards({
                 `,
                 opacity,
                 zIndex,
-                filter: blur > 0 ? `blur(${blur}px)` : "none",
-                transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+                filter: blur > 0 ? `blur(${blur}px)` : 'none',
+                transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
               }}
               onClick={() => handleCardClick(index)}
             >
@@ -216,8 +216,8 @@ export default function AutoStackedCards({
                 className={`w-full h-full bg-gradient-to-br ${card.gradient} rounded-2xl shadow-2xl overflow-hidden relative group`}
                 style={{
                   boxShadow: isActive
-                    ? "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)"
-                    : "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05)",
+                    ? '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)'
+                    : '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05)',
                 }}
               >
                 {/* Card Content */}
@@ -240,11 +240,13 @@ export default function AutoStackedCards({
                         <div
                           className="h-full bg-white transition-all duration-300"
                           style={{
-                            width: isActive ? `${progress}%` : "0%",
+                            width: isActive ? `${progress}%` : '0%',
                           }}
                         />
                       </div>
-                      <span className="text-xs text-white/60 font-medium">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="text-xs text-white/60 font-medium">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -262,7 +264,7 @@ export default function AutoStackedCards({
                 />
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -273,7 +275,7 @@ export default function AutoStackedCards({
             <button
               key={index}
               className={`relative w-12 h-2 rounded-full overflow-hidden transition-all duration-300 ${
-                index === currentIndex ? "bg-gray-300" : "bg-gray-200 hover:bg-gray-250"
+                index === currentIndex ? 'bg-gray-300' : 'bg-gray-200 hover:bg-gray-250'
               }`}
               onClick={() => handleCardClick(index)}
             >
@@ -291,10 +293,12 @@ export default function AutoStackedCards({
       {/* Card Counter */}
       <div className="text-center space-y-1">
         <div className="text-2xl font-bold text-gray-800">
-          {String(currentIndex + 1).padStart(2, "0")} / {String(cards.length).padStart(2, "0")}
+          {String(currentIndex + 1).padStart(2, '0')} / {String(cards.length).padStart(2, '0')}
         </div>
-        <div className="text-sm text-gray-500">{isHovered && pauseOnHover ? "Paused" : "Auto-playing"}</div>
+        <div className="text-sm text-gray-500">
+          {isHovered && pauseOnHover ? 'Paused' : 'Auto-playing'}
+        </div>
       </div>
     </div>
-  )
+  );
 }
