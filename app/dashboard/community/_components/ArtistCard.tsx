@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { SquareCheck, UserRound } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { formatCount } from '@/lib/utils';
 import type { CommunityArtist } from '@/lib/communityService';
 
 const ShareModal = dynamic(() => import('@/components/common/dashboard/Share'), {
@@ -45,7 +46,9 @@ const ArtistCard = ({ artist, hasVoted, isVoting, onVote }: ArtistCardProps) => 
           </div>
           <div className="flex items-center">
             <UserRound size={15} />
-            <span className="text-[10px] ml-1 font-bold">1.2k</span>
+            <span className="text-[10px] ml-1 font-bold">
+              {artist.followerCount !== undefined ? formatCount(artist.followerCount) : '—'}
+            </span>
           </div>
           <ShareModal link={`https://audioblocks.com/vote/${slugify(artist.name)}`} />
         </div>

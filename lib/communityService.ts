@@ -8,6 +8,7 @@ export interface CommunityArtist {
   genre: string;
   description: string;
   votes: number;
+  followerCount?: number;
 }
 
 export interface LeaderboardResponse {

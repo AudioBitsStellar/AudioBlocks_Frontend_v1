@@ -18,8 +18,11 @@ interface VoteTabProps {
 
 const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: VoteTabProps) => {
   const [filter, setFilter] = useState('All');
-  const filteredArtists =
-    filter === 'All' ? artists : artists.filter((a) => a.genre.includes(filter));
+  const [query, setQuery] = useState('');
+
+  const filteredArtists = artists
+    .filter((a) => (filter === 'All' ? true : a.genre.includes(filter)))
+    .filter((a) => query === '' || a.name.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <>
@@ -36,7 +39,18 @@ const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: Vot
             className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-on-muted"
             placeholder="Search by artists"
             type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
+          {query && (
+            <button
+              aria-label="Clear search"
+              className="ml-2 text-gray-400 hover:text-gray-200 shrink-0"
+              onClick={() => setQuery('')}
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         <div className="flex gap-2 flex-wrap">
@@ -81,9 +95,11 @@ const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: Vot
           <Music className="text-on-muted mb-4" size={48} />
           <h3 className="text-white text-lg font-semibold mb-2">No artists found</h3>
           <p className="text-on-muted text-sm max-w-sm">
-            {filter === 'All'
-              ? 'There are no artists on the leaderboard yet. Check back soon!'
-              : `No artists found in the "${filter}" genre. Try a different filter.`}
+            {query
+              ? `No artists match "${query}". Try a different search.`
+              : filter === 'All'
+                ? 'There are no artists on the leaderboard yet. Check back soon!'
+                : `No artists found in the "${filter}" genre. Try a different filter.`}
           </p>
         </div>
       ) : (
