@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, useMemo, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useMemo,
+  useCallback,
+  ReactNode,
+} from 'react';
 
 export type Track = {
   id: string;
@@ -205,7 +213,13 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
         const [next, ...rest] = state.queue;
         const existing = state.playlist.findIndex((t) => t.id === next.id);
         if (existing >= 0) {
-          return { ...state, queue: rest, currentIndex: existing, isPlaying: true, trackError: null };
+          return {
+            ...state,
+            queue: rest,
+            currentIndex: existing,
+            isPlaying: true,
+            trackError: null,
+          };
         }
         return {
           ...state,
@@ -298,7 +312,13 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
         const [next, ...rest] = state.queue;
         const existing = state.playlist.findIndex((t) => t.id === next.id);
         if (existing >= 0) {
-          return { ...state, queue: rest, currentIndex: existing, isPlaying: true, trackError: null };
+          return {
+            ...state,
+            queue: rest,
+            currentIndex: existing,
+            isPlaying: true,
+            trackError: null,
+          };
         }
         return {
           ...state,
@@ -349,7 +369,7 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
 
 // ── Context ───────────────────────────────────────────────────────────────
 
-const PlaybackContext = createContext<PlaybackContextValue | null>(null);
+export const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
   // Hydrate queue, history, and volume from localStorage on mount (#121).
@@ -387,7 +407,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     saveToStorage(RECENTLY_PLAYED_STORAGE_KEY, state.recentlyPlayed);
   }, [state.recentlyPlayed]);
 
-  const setAutoplayBlocked = useCallback((blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }), []);
+  const setAutoplayBlocked = useCallback(
+    (blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }),
+    []
+  );
   const resumeAudio = useCallback(() => dispatch({ type: 'RESUME_AUDIO' }), []);
 
   // Queue actions (#116)
@@ -420,7 +443,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       }
       return result;
     },
-    [state.history],
+    [state.history]
   );
 
   // Crossfade (#115)
@@ -431,40 +454,57 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_CROSSFADING', isCrossfading });
   }, []);
 
-  const value = useMemo<PlaybackContextValue>(() => ({
-    ...state,
-    play: () => dispatch({ type: 'PLAY' }),
-    pause: () => dispatch({ type: 'PAUSE' }),
-    next: () => dispatch({ type: 'NEXT' }),
-    prev: () => dispatch({ type: 'PREV' }),
-    setCurrentIndex: (index) => dispatch({ type: 'SET_INDEX', index }),
-    setVolume: (volume) => dispatch({ type: 'SET_VOLUME', volume }),
-    toggleMute: () => dispatch({ type: 'TOGGLE_MUTE' }),
-    toggleShuffle: () => dispatch({ type: 'TOGGLE_SHUFFLE' }),
-    toggleRepeat: () => dispatch({ type: 'TOGGLE_REPEAT' }),
-    playTrack: (track) => dispatch({ type: 'PLAY_TRACK', track }),
-    enqueueTrack: (track) => dispatch({ type: 'ENQUEUE_TRACK', track }),
-    setError: (error) => dispatch({ type: 'SET_ERROR', error }),
-    dismissError: () => dispatch({ type: 'DISMISS_ERROR' }),
-    addToRecentlyPlayed: (track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
-    clearRecentlyPlayed: () => dispatch({ type: 'CLEAR_RECENTLY_PLAYED' }),
-    autoplayBlocked: state.autoplayBlocked,
-    setAutoplayBlocked,
-    resumeAudio,
-    // Queue
-    addToQueue,
-    removeFromQueue,
-    reorderQueue,
-    clearQueue,
-    advanceQueue,
-    // History
-    recordPlay,
-    clearHistory,
-    getRecentlyPlayed,
-    // Crossfade
-    setCrossfadeDuration,
-    setCrossfading,
-  }), [state, setAutoplayBlocked, resumeAudio, addToQueue, removeFromQueue, reorderQueue, clearQueue, advanceQueue, recordPlay, clearHistory, getRecentlyPlayed, setCrossfadeDuration, setCrossfading]);
+  const value = useMemo<PlaybackContextValue>(
+    () => ({
+      ...state,
+      play: () => dispatch({ type: 'PLAY' }),
+      pause: () => dispatch({ type: 'PAUSE' }),
+      next: () => dispatch({ type: 'NEXT' }),
+      prev: () => dispatch({ type: 'PREV' }),
+      setCurrentIndex: (index) => dispatch({ type: 'SET_INDEX', index }),
+      setVolume: (volume) => dispatch({ type: 'SET_VOLUME', volume }),
+      toggleMute: () => dispatch({ type: 'TOGGLE_MUTE' }),
+      toggleShuffle: () => dispatch({ type: 'TOGGLE_SHUFFLE' }),
+      toggleRepeat: () => dispatch({ type: 'TOGGLE_REPEAT' }),
+      playTrack: (track) => dispatch({ type: 'PLAY_TRACK', track }),
+      enqueueTrack: (track) => dispatch({ type: 'ENQUEUE_TRACK', track }),
+      setError: (error) => dispatch({ type: 'SET_ERROR', error }),
+      dismissError: () => dispatch({ type: 'DISMISS_ERROR' }),
+      addToRecentlyPlayed: (track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
+      clearRecentlyPlayed: () => dispatch({ type: 'CLEAR_RECENTLY_PLAYED' }),
+      autoplayBlocked: state.autoplayBlocked,
+      setAutoplayBlocked,
+      resumeAudio,
+      // Queue
+      addToQueue,
+      removeFromQueue,
+      reorderQueue,
+      clearQueue,
+      advanceQueue,
+      // History
+      recordPlay,
+      clearHistory,
+      getRecentlyPlayed,
+      // Crossfade
+      setCrossfadeDuration,
+      setCrossfading,
+    }),
+    [
+      state,
+      setAutoplayBlocked,
+      resumeAudio,
+      addToQueue,
+      removeFromQueue,
+      reorderQueue,
+      clearQueue,
+      advanceQueue,
+      recordPlay,
+      clearHistory,
+      getRecentlyPlayed,
+      setCrossfadeDuration,
+      setCrossfading,
+    ]
+  );
 
   return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
 }

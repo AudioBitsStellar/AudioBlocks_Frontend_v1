@@ -119,4 +119,64 @@ describe('SectionErrorBoundary Component', () => {
     expect(screen.getByText('Player Error')).toBeInTheDocument();
     expect(screen.getByText('42')).toBeInTheDocument();
   });
+
+  it('does not log to console in production mode', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      render(
+        <SectionErrorBoundary sectionName="ProductionSection">
+          <ProblemChild shouldThrow={true} />
+        </SectionErrorBoundary>
+      );
+
+      const sectionWarns = warnSpy.mock.calls.filter((call) =>
+        String(call[0]).includes('[SectionErrorBoundary')
+      );
+      const sectionErrors = errorSpy.mock.calls.filter((call) =>
+        String(call[0]).includes('[SectionErrorBoundary')
+      );
+
+      expect(sectionWarns).toHaveLength(0);
+      expect(sectionErrors).toHaveLength(0);
+      expect(screen.getByText('ProductionSection Error')).toBeInTheDocument();
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
+  it('logs warnings and errors to console in development mode', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      render(
+        <SectionErrorBoundary sectionName="DevSection">
+          <ThrowValue value="dev string error" />
+        </SectionErrorBoundary>
+      );
+
+      const sectionWarns = warnSpy.mock.calls.filter((call) =>
+        String(call[0]).includes('[SectionErrorBoundary')
+      );
+      const sectionErrors = errorSpy.mock.calls.filter((call) =>
+        String(call[0]).includes('[SectionErrorBoundary')
+      );
+
+      expect(sectionWarns.length).toBeGreaterThan(0);
+      expect(sectionErrors.length).toBeGreaterThan(0);
+      expect(screen.getByText('DevSection Error')).toBeInTheDocument();
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
 });

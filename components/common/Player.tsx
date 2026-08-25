@@ -410,8 +410,7 @@ const Player = () => {
       audio.pause();
       incomingAudioRef.current?.pause();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, currentIndex]);
+  }, [isPlaying, currentIndex, currentTrack?.title, setAutoplayBlocked, setError]);
 
   useEffect(() => {
     const audio = audioRef.current;
