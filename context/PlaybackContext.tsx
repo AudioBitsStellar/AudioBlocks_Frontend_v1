@@ -183,11 +183,35 @@ const RECENTLY_PLAYED_STORAGE_KEY = 'audioblocks_recently_played';
 const NORMALIZE_AUDIO_STORAGE_KEY = 'audioblocks_normalize_audio';
 const GAPPLESS_STORAGE_KEY = 'audioblocks_gapless';
 
+/**
+ * JSON from localStorage is untrusted: it can be modified by browser tools,
+ * extensions, or scripts running on this origin. Reject dangerous property
+ * names before the parsed value is used by application state.
+ */
+function containsUnsafeObjectKeys(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(containsUnsafeObjectKeys);
+
+  if (value && typeof value === 'object') {
+    return Object.entries(value).some(
+      ([key, nestedValue]) =>
+        key === '__proto__' ||
+        key === 'prototype' ||
+        key === 'constructor' ||
+        containsUnsafeObjectKeys(nestedValue),
+    );
+  }
+
+  return false;
+}
+
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   try {
     const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
+    if (!raw) return fallback;
+
+    const parsed: unknown = JSON.parse(raw);
+    return containsUnsafeObjectKeys(parsed) ? fallback : (parsed as T);
   } catch {
     return fallback;
   }

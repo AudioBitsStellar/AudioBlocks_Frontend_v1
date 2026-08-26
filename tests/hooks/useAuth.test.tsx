@@ -232,6 +232,32 @@ describe('Auth', () => {
     expect(mockApiClient.post).not.toHaveBeenCalled();
   });
 
+  it('rejects an invalid wallet address before signing or calling the API', async () => {
+    const mockWallet = { signMessage: vi.fn() };
+
+    mockUseDynamicContext.mockReturnValue({
+      user: mockUser,
+      primaryWallet: mockWallet,
+      handleLogOut: vi.fn(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    mockUseAccount.mockReturnValue({ address: 'not-an-address', isConnected: true } as any);
+
+    const { result } = renderHook(() => Auth());
+
+    act(() => {
+      result.current.setShouldTriggerSignature(true);
+    });
+
+    await waitFor(() =>
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'Connected wallet address is invalid. Please reconnect your wallet.'
+      ),
+    );
+    expect(mockWallet.signMessage).not.toHaveBeenCalled();
+    expect(mockApiClient.post).not.toHaveBeenCalled();
+  });
+
   it('sets JWT cookie with Secure and SameSite flags', async () => {
     const mockWallet = { signMessage: vi.fn() };
     const mockHandleLogOut = vi.fn();

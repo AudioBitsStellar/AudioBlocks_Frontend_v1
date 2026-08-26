@@ -3,6 +3,7 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { useAccount } from 'wagmi';
+import { isAddress } from 'viem';
 import apiClient from '@/lib/apiClient';
 import { AUTH } from '@/lib/constants';
 
@@ -36,10 +37,15 @@ export const Auth = () => {
     async (
       role: string,
       email: string,
-      walletAddress: unknown,
+      walletAddress: string,
       signature: string,
       message: string
     ) => {
+      if (!isAddress(walletAddress)) {
+        toast.error('Connected wallet address is invalid. Please reconnect your wallet.');
+        return;
+      }
+
       try {
         const response = await apiClient.post('/api/auth/login', {
           role,
@@ -89,6 +95,12 @@ export const Auth = () => {
   useEffect(() => {
     const runSignatureFlow = async () => {
       if (!user?.userId || !primaryWallet || !address || !shouldTriggerSignature) return;
+
+      if (!isAddress(address)) {
+        toast.error('Connected wallet address is invalid. Please reconnect your wallet.');
+        setShouldTriggerSignature(false);
+        return;
+      }
 
       const message = `Welcome to AudioBlocks! Sign this message to authenticate: ${new Date().toISOString()}`;
 

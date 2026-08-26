@@ -44,6 +44,18 @@ describe('PlaybackContext', () => {
     expect(result.current.currentIndex).toBe(0);
   });
 
+  it.each([
+    '{"__proto__":{"polluted":true}}',
+    '{"constructor":{"prototype":{"polluted":true}}}',
+  ])('ignores localStorage values with unsafe object keys', (unsafeValue) => {
+    localStorage.setItem('audioblocks_volume', unsafeValue);
+
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    expect(result.current.volume).toBe(1);
+    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
+  });
+
   it('should throw error if usePlayback is used outside of provider', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => renderHook(() => usePlayback())).toThrow(

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
+import { isValidProfileUrl } from '@/lib/profileService';
 
 const MAX_DISPLAY_NAME = 50;
-const URL_REGEX = /^https?:\/\/.+\..+/;
 const TWITTER_REGEX = /^@?[A-Za-z0-9_]{1,15}$/;
 
 export interface FormValues {
@@ -32,7 +32,7 @@ export function validate(values: FormValues): FormErrors {
     errors.bio = `Bio must be 500 characters or fewer.`;
   }
 
-  if (values.website && !URL_REGEX.test(values.website)) {
+  if (values.website && !isValidProfileUrl(values.website)) {
     errors.website = 'Enter a valid URL starting with http:// or https://';
   }
 
