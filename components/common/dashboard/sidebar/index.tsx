@@ -3,13 +3,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { House, ListMusic, BarChart2, Users } from 'lucide-react';
+import { House, ListMusic, BarChart2, Users, Receipt } from 'lucide-react';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const navItems = [
   { name: 'Explore', href: '/dashboard', icon: House },
   { name: 'My Playlist', href: '/dashboard/playlist', icon: ListMusic },
+  { name: 'Transaction History', href: '/dashboard/transactions', icon: Receipt },
   { name: 'Metrics', href: '#', icon: BarChart2 },
   { name: 'Community', href: '/dashboard/community', icon: Users },
 ];
