@@ -16,21 +16,17 @@ export function useRecentlyPlayed() {
 
   useEffect(() => {
     if (!currentTrack) return;
-    setRecentlyPlayed((prev: Track[]) => {
-      const filtered = prev.filter((t) => t.id !== currentTrack.id);
-      return [currentTrack, ...filtered].slice(0, MAX_RECENT);
-    });
-  }, [currentTrack, setRecentlyPlayed]);
+    const filtered = recentlyPlayed.filter((t) => t.id !== currentTrack.id);
+    setRecentlyPlayed([currentTrack, ...filtered].slice(0, MAX_RECENT));
+  }, [currentTrack, recentlyPlayed, setRecentlyPlayed]);
 
   const addTrack = useCallback(
     (track: Track) => {
       addToRecentlyPlayed(track);
-      setRecentlyPlayed((prev: Track[]) => {
-        const filtered = prev.filter((t) => t.id !== track.id);
-        return [track, ...filtered].slice(0, MAX_RECENT);
-      });
+      const filtered = recentlyPlayed.filter((t) => t.id !== track.id);
+      setRecentlyPlayed([track, ...filtered].slice(0, MAX_RECENT));
     },
-    [addToRecentlyPlayed, setRecentlyPlayed]
+    [addToRecentlyPlayed, recentlyPlayed, setRecentlyPlayed]
   );
 
   const clearAll = useCallback(() => {

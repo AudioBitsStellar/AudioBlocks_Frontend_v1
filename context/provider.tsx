@@ -40,25 +40,29 @@ function WalletAnalyticsTracker() {
 
 const Provider = ({ children }: { children: ReactNode }) => {
   return (
-    <DynamicContextProvider
-      settings={{
-        environmentId: 'c686da1e-ac86-4bd4-a2f4-5fe6ff42ed85',
-        walletConnectors: [EthereumWalletConnectors],
-        overrides: {
-          views: [
-            {
-              type: SdkViewType.Login,
-              sections: [
+    <ToastProvider>
+      <PlaybackProvider>
+        <DynamicContextProvider
+          settings={{
+            environmentId: 'c686da1e-ac86-4bd4-a2f4-5fe6ff42ed85',
+            walletConnectors: [EthereumWalletConnectors],
+            overrides: {
+              views: [
                 {
-                  type: SdkViewSectionType.Email,
-                },
-                {
-                  type: SdkViewSectionType.Separator,
-                  label: 'Or',
-                },
-                {
-                  type: SdkViewSectionType.Social,
-                  defaultItem: 'google',
+                  type: SdkViewType.Login,
+                  sections: [
+                    {
+                      type: SdkViewSectionType.Email,
+                    },
+                    {
+                      type: SdkViewSectionType.Separator,
+                      label: 'Or',
+                    },
+                    {
+                      type: SdkViewSectionType.Social,
+                      defaultItem: 'google',
+                    },
+                  ],
                 },
               ],
             },

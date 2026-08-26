@@ -2,14 +2,14 @@
 
 import { useState, useEffect, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Transition } from 'framer-motion';
 
 const variants = {
   enter: { opacity: 1 },
   exit: { opacity: 0 },
 };
 
-const transition = { duration: 0.2, ease: 'easeInOut' };
+const transition: Transition = { duration: 0.2, ease: 'easeInOut' };
 
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();

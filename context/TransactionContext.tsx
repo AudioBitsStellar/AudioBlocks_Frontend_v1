@@ -49,13 +49,10 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     (id: string, hash: string) => {
       const interval = setInterval(async () => {
         try {
-          const response = await fetch(
-            `/api/transactions/${hash}/status`,
-            {
-              method: 'GET',
-              headers: { Accept: 'application/json' },
-            }
-          );
+          const response = await fetch(`/api/transactions/${hash}/status`, {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+          });
 
           if (!response.ok) return;
 
@@ -65,15 +62,9 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
           };
 
           const status: TransactionStatus =
-            data.confirmed === true
-              ? 'confirmed'
-              : data.status === 'failed'
-                ? 'failed'
-                : 'pending';
+            data.confirmed === true ? 'confirmed' : data.status === 'failed' ? 'failed' : 'pending';
 
-          setTransactions((prev) =>
-            prev.map((tx) => (tx.id === id ? { ...tx, status } : tx))
-          );
+          setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, status } : tx)));
 
           if (status === 'confirmed') {
             toast({
@@ -126,7 +117,6 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
         type: 'info',
         title: 'Transaction pending',
         message: `${type.charAt(0).toUpperCase() + type.slice(1)} transaction submitted`,
-        loading: true,
       });
 
       pollTransaction(id, hash);
@@ -136,14 +126,9 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     [toast, pollTransaction]
   );
 
-  const updateTransactionStatus = useCallback(
-    (id: string, status: TransactionStatus) => {
-      setTransactions((prev) =>
-        prev.map((tx) => (tx.id === id ? { ...tx, status } : tx))
-      );
-    },
-    []
-  );
+  const updateTransactionStatus = useCallback((id: string, status: TransactionStatus) => {
+    setTransactions((prev) => prev.map((tx) => (tx.id === id ? { ...tx, status } : tx)));
+  }, []);
 
   const clearTransaction = useCallback((id: string) => {
     const interval = pollingRef.current.get(id);
@@ -161,9 +146,10 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const pollers = pollingRef.current;
     return () => {
-      pollingRef.current.forEach((interval) => clearInterval(interval));
-      pollingRef.current.clear();
+      pollers.forEach((interval) => clearInterval(interval));
+      pollers.clear();
     };
   }, []);
 

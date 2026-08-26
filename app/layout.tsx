@@ -11,7 +11,6 @@ import SWRegister from '@/components/SWRegister';
 import { ThemeScript } from '@/components/ThemeScript';
 import RouteProgress from '@/components/ui/RouteProgress';
 import Provider from '@/context/provider';
-import { ToastProvider } from '@/context/ToastContext';
 import type { Metadata } from 'next';
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -61,7 +60,7 @@ export default function RootLayout({
             Skip to main content
           </a>
           <Toaster closeButton position="bottom-right" />
-          <ToastProvider>{children}</ToastProvider>
+          {children}
           {/* Analytics script loaded after user interaction to reduce main thread blocking */}
           <Script
             id="analytics-script"

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ListFilter, Music, Search, UsersRound } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';

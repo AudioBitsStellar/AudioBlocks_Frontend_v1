@@ -6,7 +6,6 @@ import Sidebar from '@/components/common/dashboard/sidebar';
 import TopNavbar from '@/components/common/dashboard/topnavbar';
 import { QueueDrawer } from '@/components/common/QueueDrawer';
 import { PageTransition } from '@/components/ui/PageTransition';
-import { PlaybackProvider } from '@/context/PlaybackContext';
 import { useEdgeSwipe } from '@/hooks/useEdgeSwipe';
 
 // Player reads/writes browser-only audio APIs (HTMLAudioElement, localStorage-backed
@@ -21,23 +20,21 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   useEdgeSwipe({ onSwipeFromRightEdge: openQueue });
 
   return (
-    <PlaybackProvider>
-      <div className="w-full overflow-x-hidden touch-pan-y">
-        <Sidebar openMobile={mobileOpen} onOpenMobileChange={setMobileOpen} />
+    <div className="w-full overflow-x-hidden touch-pan-y">
+      <Sidebar openMobile={mobileOpen} onOpenMobileChange={setMobileOpen} />
 
-        <div className="flex-1 md:ml-45 flex flex-col pb-28 min-w-0">
-          <TopNavbar onMenuClick={() => setMobileOpen(true)} />
+      <div className="flex-1 md:ml-45 flex flex-col pb-28 min-w-0">
+        <TopNavbar onMenuClick={() => setMobileOpen(true)} />
 
-          <main className="flex-1 px-4 md:px-6 py-4">
-            <PageTransition>{children}</PageTransition>
-          </main>
+        <main className="flex-1 px-4 md:px-6 py-4">
+          <PageTransition>{children}</PageTransition>
+        </main>
 
-          <Player />
-        </div>
-
-        <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
+        <Player />
       </div>
-    </PlaybackProvider>
+
+      <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
+    </div>
   );
 };
 
