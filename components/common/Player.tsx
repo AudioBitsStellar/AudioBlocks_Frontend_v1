@@ -25,6 +25,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
+import { useMediaSession } from '@/hooks/useMediaSession';
 import { FullScreenPlayer } from './FullScreenPlayer';
 
 // Lazy-load CommentPanel to reduce initial bundle size
@@ -300,6 +301,29 @@ const Player = () => {
     if (shuffle) return Math.floor(Math.random() * playlist.length);
     return (currentIndex + 1) % playlist.length;
   }, [playlist.length, shuffle, currentIndex]);
+
+  // #331 — Media Session API integration
+  useMediaSession({
+    track: currentTrack
+      ? { title: currentTrack.title, artist: currentTrack.artist, cover: currentTrack.cover }
+      : null,
+    isPlaying: isPlaying && !isBuffering,
+    duration,
+    currentTime: audioRef.current?.currentTime ?? 0,
+    onPlay: play,
+    onPause: pause,
+    onSeekBackward: (offset) => {
+      if (audioRef.current) audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - offset);
+    },
+    onSeekForward: (offset) => {
+      if (audioRef.current) audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + offset);
+    },
+    onPrevTrack: prev,
+    onNextTrack: next,
+    onSeekTo: (seekTime) => {
+      if (audioRef.current) audioRef.current.currentTime = seekTime;
+    },
+  });
 
   const ensureAudioGraph = useCallback(() => {
     if (typeof window === 'undefined') return null;
@@ -958,6 +982,37 @@ const Player = () => {
           >
             <Ellipsis size={16} />
           </button>
+          {/* #336 — Playback speed control */}
+          <div className="relative">
+            <button
+              aria-label={`Playback speed: ${playbackSpeed}x`}
+              className="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+              onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+            >
+              {playbackSpeed}x
+            </button>
+            {showSpeedMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowSpeedMenu(false)} />
+                <div className="absolute bottom-full right-0 mb-2 py-1 rounded-lg bg-[#161616] border border-gray-700 shadow-xl z-50 min-w-[5rem]">
+                  {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
+                    <button
+                      key={speed}
+                      className={`block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 ${
+                        playbackSpeed === speed ? 'text-[#D2045B] font-bold' : 'text-white'
+                      }`}
+                      onClick={() => {
+                        setPlaybackSpeed(speed);
+                        setShowSpeedMenu(false);
+                      }}
+                    >
+                      {speed}x
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <div className="relative group flex items-center justify-center">
             <button
               aria-label={isMuted ? 'Unmute' : 'Mute'}
