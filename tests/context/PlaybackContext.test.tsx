@@ -480,4 +480,50 @@ describe('PlaybackContext', () => {
     act(() => result.current.setCrossfading(false));
     expect(result.current.isCrossfading).toBe(false);
   });
+
+  // ── Audio normalization (#328) ───────────────────────────────────────
+
+  it('should default normalizeAudio to true', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    expect(result.current.normalizeAudio).toBe(true);
+  });
+
+  it('should set normalizeAudio on/off', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.setNormalizeAudio(false));
+    expect(result.current.normalizeAudio).toBe(false);
+
+    act(() => result.current.setNormalizeAudio(true));
+    expect(result.current.normalizeAudio).toBe(true);
+  });
+
+  it('should persist normalizeAudio preference to localStorage', () => {
+    localStorage.setItem('audioblocks_normalize_audio', 'false');
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    expect(result.current.normalizeAudio).toBe(false);
+  });
+
+  // ── Gapless playback (#329) ──────────────────────────────────────────
+
+  it('should default gapless to true', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    expect(result.current.gapless).toBe(true);
+  });
+
+  it('should set gapless on/off', () => {
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+
+    act(() => result.current.setGapless(false));
+    expect(result.current.gapless).toBe(false);
+
+    act(() => result.current.setGapless(true));
+    expect(result.current.gapless).toBe(true);
+  });
+
+  it('should persist gapless preference to localStorage', () => {
+    localStorage.setItem('audioblocks_gapless', 'false');
+    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    expect(result.current.gapless).toBe(false);
+  });
 });

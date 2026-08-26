@@ -60,6 +60,16 @@ type PlaybackState = {
   crossfadeDuration: number;
   /** True while two audio elements are overlapping during a crossfade. */
   isCrossfading: boolean;
+  /**
+   * Loudness normalization across tracks (#328). When enabled, playback is
+   * routed through a compressor so quiet and loud tracks sound consistent.
+   */
+  normalizeAudio: boolean;
+  /**
+   * Gapless playback (#329). When enabled, the next track is preloaded while
+   * the current one plays so track changes have no audible gap.
+   */
+  gapless: boolean;
 };
 
 type PlaybackAction =
@@ -91,7 +101,11 @@ type PlaybackAction =
   | { type: 'CLEAR_HISTORY' }
   // Crossfade (#115)
   | { type: 'SET_CROSSFADE_DURATION'; duration: number }
-  | { type: 'SET_CROSSFADING'; isCrossfading: boolean };
+  | { type: 'SET_CROSSFADING'; isCrossfading: boolean }
+  // Audio normalization (#328)
+  | { type: 'SET_NORMALIZE_AUDIO'; enabled: boolean }
+  // Gapless playback (#329)
+  | { type: 'SET_GAPPLESS'; enabled: boolean };
 
 export type PlaybackContextValue = PlaybackState & {
   playTrack: (track: Track) => void;
@@ -128,6 +142,12 @@ export type PlaybackContextValue = PlaybackState & {
   /** Set crossfade duration in seconds (clamped to 0–5). 0 disables. */
   setCrossfadeDuration: (duration: number) => void;
   setCrossfading: (isCrossfading: boolean) => void;
+  // Audio normalization (#328)
+  /** Toggle loudness normalization across tracks. */
+  setNormalizeAudio: (enabled: boolean) => void;
+  // Gapless playback (#329)
+  /** Toggle seamless (gapless) transitions between tracks. */
+  setGapless: (enabled: boolean) => void;
 };
 
 const defaultPlaylist: Track[] = [
@@ -160,6 +180,8 @@ const HISTORY_STORAGE_KEY = 'audioblocks_history';
 const VOLUME_STORAGE_KEY = 'audioblocks_volume';
 const MUTED_STORAGE_KEY = 'audioblocks_muted';
 const RECENTLY_PLAYED_STORAGE_KEY = 'audioblocks_recently_played';
+const NORMALIZE_AUDIO_STORAGE_KEY = 'audioblocks_normalize_audio';
+const GAPPLESS_STORAGE_KEY = 'audioblocks_gapless';
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -197,6 +219,8 @@ const initialState: PlaybackState = {
   history: [],
   crossfadeDuration: 0,
   isCrossfading: false,
+  normalizeAudio: true,
+  gapless: true,
 };
 
 // ── Reducer ───────────────────────────────────────────────────────────────
@@ -362,6 +386,16 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
     case 'SET_CROSSFADING':
       return { ...state, isCrossfading: action.isCrossfading };
 
+    // ── Audio normalization (#328) ──────────────────────────────────────
+
+    case 'SET_NORMALIZE_AUDIO':
+      return { ...state, normalizeAudio: action.enabled };
+
+    // ── Gapless playback (#329) ─────────────────────────────────────────
+
+    case 'SET_GAPPLESS':
+      return { ...state, gapless: action.enabled };
+
     default:
       return state;
   }
@@ -382,6 +416,11 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     // preferred level survives page reloads and browser restarts.
     volume: loadFromStorage<number>(VOLUME_STORAGE_KEY, initialState.volume),
     isMuted: loadFromStorage<boolean>(MUTED_STORAGE_KEY, initialState.isMuted),
+    normalizeAudio: loadFromStorage<boolean>(
+      NORMALIZE_AUDIO_STORAGE_KEY,
+      initialState.normalizeAudio
+    ),
+    gapless: loadFromStorage<boolean>(GAPPLESS_STORAGE_KEY, initialState.gapless),
   };
 
   const [state, dispatch] = useReducer(reducer, hydratedState);
@@ -406,6 +445,14 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveToStorage(RECENTLY_PLAYED_STORAGE_KEY, state.recentlyPlayed);
   }, [state.recentlyPlayed]);
+
+  useEffect(() => {
+    saveToStorage(NORMALIZE_AUDIO_STORAGE_KEY, state.normalizeAudio);
+  }, [state.normalizeAudio]);
+
+  useEffect(() => {
+    saveToStorage(GAPPLESS_STORAGE_KEY, state.gapless);
+  }, [state.gapless]);
 
   const setAutoplayBlocked = useCallback(
     (blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }),
@@ -454,6 +501,16 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_CROSSFADING', isCrossfading });
   }, []);
 
+  // Audio normalization (#328)
+  const setNormalizeAudio = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_NORMALIZE_AUDIO', enabled });
+  }, []);
+
+  // Gapless playback (#329)
+  const setGapless = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_GAPPLESS', enabled });
+  }, []);
+
   const value = useMemo<PlaybackContextValue>(
     () => ({
       ...state,
@@ -488,6 +545,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       // Crossfade
       setCrossfadeDuration,
       setCrossfading,
+      // Audio normalization (#328)
+      setNormalizeAudio,
+      // Gapless playback (#329)
+      setGapless,
     }),
     [
       state,
@@ -503,6 +564,8 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       getRecentlyPlayed,
       setCrossfadeDuration,
       setCrossfading,
+      setNormalizeAudio,
+      setGapless,
     ]
   );
 
