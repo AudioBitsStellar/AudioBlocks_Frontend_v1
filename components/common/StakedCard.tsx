@@ -197,7 +197,9 @@ export default function AutoStackedCards({
           return (
             <div
               key={card.id}
+              aria-label={`Select ${card.title}`}
               className={`absolute inset-0 transition-all duration-700 ease-out cursor-pointer`}
+              role="button"
               style={{
                 transform: `
                   translateX(${translateX}px) 
@@ -210,7 +212,14 @@ export default function AutoStackedCards({
                 filter: blur > 0 ? `blur(${blur}px)` : 'none',
                 transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
               }}
+              tabIndex={0}
               onClick={() => handleCardClick(index)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleCardClick(index);
+                }
+              }}
             >
               <div
                 className={`w-full h-full bg-gradient-to-br ${card.gradient} rounded-2xl shadow-2xl overflow-hidden relative group`}

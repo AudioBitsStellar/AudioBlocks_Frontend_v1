@@ -4,13 +4,19 @@
  */
 
 import React from 'react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { useGasEstimate } from '@/hooks/useGasEstimate';
-import { Loader2, AlertCircle } from 'lucide-react';
+
+interface ContractLike {
+  [method: string]: {
+    estimateGas?: (...args: unknown[]) => Promise<bigint>;
+  };
+}
 
 interface GasEstimateDisplayProps {
-  contract: any;
+  contract: ContractLike;
   method: string;
-  args?: any[];
+  args?: unknown[];
   value?: bigint;
   gasPrice?: bigint;
   className?: string;
