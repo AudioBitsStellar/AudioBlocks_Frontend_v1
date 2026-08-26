@@ -40,7 +40,8 @@ API.
 - A built-in NFT marketplace for collecting tokenized music
 - A community space with artist voting and listening-time leaderboards
 - A personal collection view of owned music NFTs
-- Persistent play-queue with shuffle, repeat, and seek controls .
+- Persistent play-queue with shuffle, repeat, seek-with-preview, crossfade,
+  gapless playback, and loudness-normalization controls .
 
 **For Artists** (via the companion `AudioBlocks_For_Artist` app)
 
@@ -411,6 +412,7 @@ The following accessibility features are implemented across the app:
 | ARIA labels on buttons          | ✅ Player controls, nav buttons, modals                   |
 | `role="slider"` on seek/volume  | ✅ `components/common/Player.tsx`                         |
 | `aria-live` track announcements | ✅ Player announces "Now playing: Title by Artist"        |
+| Seek preview tooltip            | ✅ Player scrubber shows target time while hovering/seeking |
 | Focus trapping in modals        | ✅ Comment panel, UserMenu, mobile nav, Share, AvatarCrop |
 | Keyboard-accessible lists       | ✅ Recently Played cards                                  |
 | `eslint-plugin-jsx-a11y`        | ✅ Recommended ruleset                                    |

@@ -229,21 +229,25 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
             >
               0:00
             </span>
-            <input
-              aria-label="Track position"
-              aria-valuemax="0"
-              aria-valuemin="0"
-              aria-valuenow="0"
-              aria-valuetext="0:00 of 0:00"
-              class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-              max="0"
-              min="0"
-              role="slider"
-              step="1"
-              style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
-              type="range"
-              value="0"
-            />
+            <div
+              class="relative flex-1"
+            >
+              <input
+                aria-label="Track position"
+                aria-valuemax="0"
+                aria-valuemin="0"
+                aria-valuenow="0"
+                aria-valuetext="0:00 of 0:00"
+                class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max="0"
+                min="0"
+                role="slider"
+                step="1"
+                style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
+                type="range"
+                value="0"
+              />
+            </div>
             <span
               class="text-xs text-white w-8 text-right"
             >
@@ -330,6 +334,54 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           >
             <path
               d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable audio normalization"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Audio normalization on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-audio-waveform"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable gapless playback"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Gapless playback on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-zap"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
             />
           </svg>
         </button>
@@ -648,21 +700,25 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
             >
               0:00
             </span>
-            <input
-              aria-label="Track position"
-              aria-valuemax="0"
-              aria-valuemin="0"
-              aria-valuenow="0"
-              aria-valuetext="0:00 of 0:00"
-              class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-              max="0"
-              min="0"
-              role="slider"
-              step="1"
-              style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
-              type="range"
-              value="0"
-            />
+            <div
+              class="relative flex-1"
+            >
+              <input
+                aria-label="Track position"
+                aria-valuemax="0"
+                aria-valuemin="0"
+                aria-valuenow="0"
+                aria-valuetext="0:00 of 0:00"
+                class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max="0"
+                min="0"
+                role="slider"
+                step="1"
+                style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
+                type="range"
+                value="0"
+              />
+            </div>
             <span
               class="text-xs text-white w-8 text-right"
             >
@@ -749,6 +805,54 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           >
             <path
               d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable audio normalization"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Audio normalization on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-audio-waveform"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable gapless playback"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Gapless playback on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-zap"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
             />
           </svg>
         </button>
@@ -1078,21 +1182,25 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
             >
               0:00
             </span>
-            <input
-              aria-label="Track position"
-              aria-valuemax="0"
-              aria-valuemin="0"
-              aria-valuenow="0"
-              aria-valuetext="0:00 of 0:00"
-              class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-              max="0"
-              min="0"
-              role="slider"
-              step="1"
-              style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
-              type="range"
-              value="0"
-            />
+            <div
+              class="relative flex-1"
+            >
+              <input
+                aria-label="Track position"
+                aria-valuemax="0"
+                aria-valuemin="0"
+                aria-valuenow="0"
+                aria-valuetext="0:00 of 0:00"
+                class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max="0"
+                min="0"
+                role="slider"
+                step="1"
+                style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
+                type="range"
+                value="0"
+              />
+            </div>
             <span
               class="text-xs text-white w-8 text-right"
             >
@@ -1179,6 +1287,54 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           >
             <path
               d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable audio normalization"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Audio normalization on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-audio-waveform"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable gapless playback"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Gapless playback on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-zap"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
             />
           </svg>
         </button>
@@ -1508,21 +1664,25 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
             >
               0:00
             </span>
-            <input
-              aria-label="Track position"
-              aria-valuemax="0"
-              aria-valuemin="0"
-              aria-valuenow="0"
-              aria-valuetext="0:00 of 0:00"
-              class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-              max="0"
-              min="0"
-              role="slider"
-              step="1"
-              style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
-              type="range"
-              value="0"
-            />
+            <div
+              class="relative flex-1"
+            >
+              <input
+                aria-label="Track position"
+                aria-valuemax="0"
+                aria-valuemin="0"
+                aria-valuenow="0"
+                aria-valuetext="0:00 of 0:00"
+                class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max="0"
+                min="0"
+                role="slider"
+                step="1"
+                style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
+                type="range"
+                value="0"
+              />
+            </div>
             <span
               class="text-xs text-white w-8 text-right"
             >
@@ -1609,6 +1769,54 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           >
             <path
               d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable audio normalization"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Audio normalization on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-audio-waveform"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable gapless playback"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Gapless playback on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-zap"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
             />
           </svg>
         </button>
@@ -1927,21 +2135,25 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
             >
               0:00
             </span>
-            <input
-              aria-label="Track position"
-              aria-valuemax="0"
-              aria-valuemin="0"
-              aria-valuenow="0"
-              aria-valuetext="0:00 of 0:00"
-              class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-              max="0"
-              min="0"
-              role="slider"
-              step="1"
-              style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
-              type="range"
-              value="0"
-            />
+            <div
+              class="relative flex-1"
+            >
+              <input
+                aria-label="Track position"
+                aria-valuemax="0"
+                aria-valuemin="0"
+                aria-valuenow="0"
+                aria-valuetext="0:00 of 0:00"
+                class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max="0"
+                min="0"
+                role="slider"
+                step="1"
+                style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
+                type="range"
+                value="0"
+              />
+            </div>
             <span
               class="text-xs text-white w-8 text-right"
             >
@@ -2028,6 +2240,54 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           >
             <path
               d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable audio normalization"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Audio normalization on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-audio-waveform"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable gapless playback"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Gapless playback on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-zap"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
             />
           </svg>
         </button>
@@ -2357,21 +2617,25 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
             >
               0:00
             </span>
-            <input
-              aria-label="Track position"
-              aria-valuemax="0"
-              aria-valuemin="0"
-              aria-valuenow="0"
-              aria-valuetext="0:00 of 0:00"
-              class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-              max="0"
-              min="0"
-              role="slider"
-              step="1"
-              style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
-              type="range"
-              value="0"
-            />
+            <div
+              class="relative flex-1"
+            >
+              <input
+                aria-label="Track position"
+                aria-valuemax="0"
+                aria-valuemin="0"
+                aria-valuenow="0"
+                aria-valuetext="0:00 of 0:00"
+                class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max="0"
+                min="0"
+                role="slider"
+                step="1"
+                style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
+                type="range"
+                value="0"
+              />
+            </div>
             <span
               class="text-xs text-white w-8 text-right"
             >
@@ -2458,6 +2722,54 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           >
             <path
               d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable audio normalization"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Audio normalization on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-audio-waveform"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable gapless playback"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Gapless playback on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-zap"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
             />
           </svg>
         </button>
@@ -2787,21 +3099,25 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
             >
               0:00
             </span>
-            <input
-              aria-label="Track position"
-              aria-valuemax="0"
-              aria-valuemin="0"
-              aria-valuenow="0"
-              aria-valuetext="0:00 of 0:00"
-              class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-              max="0"
-              min="0"
-              role="slider"
-              step="1"
-              style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
-              type="range"
-              value="0"
-            />
+            <div
+              class="relative flex-1"
+            >
+              <input
+                aria-label="Track position"
+                aria-valuemax="0"
+                aria-valuemin="0"
+                aria-valuenow="0"
+                aria-valuetext="0:00 of 0:00"
+                class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max="0"
+                min="0"
+                role="slider"
+                step="1"
+                style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
+                type="range"
+                value="0"
+              />
+            </div>
             <span
               class="text-xs text-white w-8 text-right"
             >
@@ -2888,6 +3204,54 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           >
             <path
               d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable audio normalization"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Audio normalization on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-audio-waveform"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable gapless playback"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Gapless playback on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-zap"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
             />
           </svg>
         </button>
@@ -3206,21 +3570,25 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
             >
               0:00
             </span>
-            <input
-              aria-label="Track position"
-              aria-valuemax="0"
-              aria-valuemin="0"
-              aria-valuenow="0"
-              aria-valuetext="0:00 of 0:00"
-              class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-              max="0"
-              min="0"
-              role="slider"
-              step="1"
-              style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
-              type="range"
-              value="0"
-            />
+            <div
+              class="relative flex-1"
+            >
+              <input
+                aria-label="Track position"
+                aria-valuemax="0"
+                aria-valuemin="0"
+                aria-valuenow="0"
+                aria-valuetext="0:00 of 0:00"
+                class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max="0"
+                min="0"
+                role="slider"
+                step="1"
+                style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
+                type="range"
+                value="0"
+              />
+            </div>
             <span
               class="text-xs text-white w-8 text-right"
             >
@@ -3307,6 +3675,54 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           >
             <path
               d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable audio normalization"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Audio normalization on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-audio-waveform"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable gapless playback"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Gapless playback on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-zap"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
             />
           </svg>
         </button>
@@ -3636,21 +4052,25 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
             >
               0:00
             </span>
-            <input
-              aria-label="Track position"
-              aria-valuemax="0"
-              aria-valuemin="0"
-              aria-valuenow="0"
-              aria-valuetext="0:00 of 0:00"
-              class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-              max="0"
-              min="0"
-              role="slider"
-              step="1"
-              style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
-              type="range"
-              value="0"
-            />
+            <div
+              class="relative flex-1"
+            >
+              <input
+                aria-label="Track position"
+                aria-valuemax="0"
+                aria-valuemin="0"
+                aria-valuenow="0"
+                aria-valuetext="0:00 of 0:00"
+                class="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+                max="0"
+                min="0"
+                role="slider"
+                step="1"
+                style="background: linear-gradient(to right, rgb(182, 25, 91) 0%, rgb(182, 25, 91) 0%, rgb(82, 82, 82) 0%, rgb(82, 82, 82) 100%);"
+                type="range"
+                value="0"
+              />
+            </div>
             <span
               class="text-xs text-white w-8 text-right"
             >
@@ -3737,6 +4157,54 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           >
             <path
               d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable audio normalization"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Audio normalization on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-audio-waveform"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
+            />
+          </svg>
+        </button>
+        <button
+          aria-label="Disable gapless playback"
+          aria-pressed="true"
+          class="hover:text-gray-300 cursor-pointer text-white text-pink-500"
+          title="Gapless playback on"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-zap"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
             />
           </svg>
         </button>

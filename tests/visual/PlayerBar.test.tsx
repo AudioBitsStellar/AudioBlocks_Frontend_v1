@@ -55,6 +55,8 @@ describe('PlayerBar Visual Regression (DOM Snapshots)', () => {
     history: [],
     crossfadeDuration: 0,
     isCrossfading: false,
+    normalizeAudio: true,
+    gapless: true,
     play: vi.fn(),
     pause: vi.fn(),
     next: vi.fn(),
@@ -82,6 +84,8 @@ describe('PlayerBar Visual Regression (DOM Snapshots)', () => {
     getRecentlyPlayed: vi.fn(() => []),
     setCrossfadeDuration: vi.fn(),
     setCrossfading: vi.fn(),
+    setNormalizeAudio: vi.fn(),
+    setGapless: vi.fn(),
   };
 
   const setViewport = (width: number) => {
