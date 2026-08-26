@@ -1,0 +1,64 @@
+# Security scanning (#300).
+#
+# Two layers of scanning:
+#   1. Dependency vulnerabilities — `npm audit` fails the check on any high or
+#      critical vulnerability in the production dependency tree (warnings only
+#      for moderate/low). Raise fixes with `npm audit` / Dependabot.
+#   2. Source code scanning — GitHub CodeQL analyzes the JavaScript/TypeScript
+#      codebase and reports security defects as code-scanning alerts (does not
+#      gate the build).
+name: security
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Weekly re-scan of the default branch to catch newly published advisories.
+    - cron: '0 6 * * 1'
+
+jobs:
+  dependency-audit:
+    name: Dependency audit (npm)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      # Fails the job when the tree contains high or critical vulnerabilities.
+      # Moderate and low only produce warnings, so this gates on the meaningful
+      # issues while the weeklies drive them down over time.
+      - name: Audit production vulnerabilities
+        run: npm audit --audit-level=high
+
+  codeql:
+    name: CodeQL (code scanning)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript-typescript']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - uses: github/codeql-action/autobuild@v3
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{matrix.language}}'

@@ -1,14 +1,16 @@
 'use client';
 
+import { use } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Play } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
 
-export default function PlaylistDetailPage({ params }: { params: { id: string } }) {
+export default function PlaylistDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { playlist, playTrack } = usePlayback();
 
-  const track = playlist.find((t) => t.id === params.id);
+  const track = playlist.find((t) => t.id === id);
 
   if (!track) notFound();
 

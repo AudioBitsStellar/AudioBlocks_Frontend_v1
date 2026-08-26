@@ -1,20 +1,21 @@
 'use client';
 
-import { useMemo } from 'react';
+import { use, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 
-export default function ArtistDetailPage({ params }: { params: { id: string } }) {
+export default function ArtistDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { songs, isLoading } = useNFTCollection();
 
   const artistSongs = useMemo(() => {
     if (isLoading) return undefined;
-    return songs.filter((s) => s.artistAddress === params.id);
-  }, [songs, params.id, isLoading]);
+    return songs.filter((s) => s.artistAddress === id);
+  }, [songs, id, isLoading]);
 
   if (isLoading) {
     return (
@@ -36,7 +37,7 @@ export default function ArtistDetailPage({ params }: { params: { id: string } })
         <ArrowLeft size={16} />
         Back to Artists
       </Link>
-      <h1 className="text-2xl font-bold text-white mb-6 break-all">Artist: {params.id}</h1>
+      <h1 className="text-2xl font-bold text-white mb-6 break-all">Artist: {id}</h1>
       <p className="text-sm text-gray-400 mb-4">{artistSongs.length} track(s)</p>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {artistSongs.map((song, i) => (

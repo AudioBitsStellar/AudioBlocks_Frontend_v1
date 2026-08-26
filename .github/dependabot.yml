@@ -1,0 +1,38 @@
+# Dependency update automation (#299).
+# Dependabot scans the manifest/lockfile and the Actions workflows in this repo,
+# opening automated PRs for out-of-date and vulnerable dependencies.
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'ci'
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+    versioning-strategy: 'increase-if-necessary'
+    # Keep Dependabot focused: ignore major bumps that may need manual migration.
+    ignore:
+      - dependency-type: 'development'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
+    open-pull-requests-limit: 5
+    labels:
+      - 'dependencies'
+      - 'ci'
+    commit-message:
+      prefix: 'ci(deps)'

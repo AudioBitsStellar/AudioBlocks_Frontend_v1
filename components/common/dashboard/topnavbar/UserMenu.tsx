@@ -125,7 +125,7 @@ const UserMenu = () => {
                   />
                   <div>
                     <p className="font-semibold text-white text-sm">
-                      {(user as Record<string, string>)?.name ||
+                      {(user as unknown as Record<string, string>)?.name ||
                         user?.email?.split('@')[0] ||
                         'User'}
                     </p>

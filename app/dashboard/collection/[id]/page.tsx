@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { use, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
@@ -16,14 +16,15 @@ function ipfsImage(cid: string): string {
   return '/audio.jpg';
 }
 
-export default function CollectionDetailPage({ params }: { params: { id: string } }) {
-  useScrollRestoration(`collection-${params.id}`);
+export default function CollectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  useScrollRestoration(`collection-${id}`);
   const { songs, isLoading } = useNFTCollection();
 
   const song = useMemo(() => {
     if (isLoading) return undefined;
-    return songs.find((s) => s.songCID === params.id || s.id === params.id);
-  }, [songs, params.id, isLoading]);
+    return songs.find((s) => s.songCID === id || s.songId.toString() === id);
+  }, [songs, id, isLoading]);
 
   if (isLoading) {
     return (
