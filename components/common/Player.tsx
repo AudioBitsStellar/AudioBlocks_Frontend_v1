@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { AnimatePresence } from 'framer-motion';
 import {
   AlertCircle,
+  AudioWaveform,
   Dot,
   Ellipsis,
   Heart,
@@ -21,6 +22,7 @@ import {
   Volume2,
   VolumeX,
   X,
+  Zap,
 } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useMediaSession } from '@/hooks/useMediaSession';
@@ -50,6 +52,11 @@ const formatTime = (time: number) => {
  * Renders the scrubber and drives it from a requestAnimationFrame loop instead
  * of React state, so playback position updates at display refresh rate without
  * re-rendering the rest of the player on every tick.
+ *
+ * Seeking with preview (#330): hovering the bar shows a tooltip with the
+ * target time, and while scrubbing the audio element follows the pointer so
+ * the listener hears the segment they're scrubbing over (ducked while
+ * previewing, restored on release).
  */
 const ProgressBar = memo(function ProgressBar({
   audioRef,
@@ -65,6 +72,10 @@ const ProgressBar = memo(function ProgressBar({
   const rangeRef = useRef<HTMLInputElement | null>(null);
   const currentTimeRef = useRef<HTMLSpanElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const scrubbingRef = useRef(false);
+  const savedVolumeRef = useRef(1);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [previewTime, setPreviewTime] = useState<number | null>(null);
 
   const paint = useCallback(
     (time: number) => {
@@ -88,8 +99,10 @@ const ProgressBar = memo(function ProgressBar({
     paint(0);
   }, [resetKey, paint]);
 
+  // Pause the position loop while scrubbing so the drag isn't fought by
+  // playback-position updates.
   useEffect(() => {
-    if (!isPlaying) {
+    if (!isPlaying || isScrubbing) {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
       return;
@@ -104,11 +117,60 @@ const ProgressBar = memo(function ProgressBar({
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
-  }, [isPlaying, audioRef, paint]);
+  }, [isPlaying, isScrubbing, audioRef, paint]);
+
+  const computePreviewTime = useCallback(
+    (clientX: number) => {
+      const range = rangeRef.current;
+      if (!range) return null;
+      const rect = range.getBoundingClientRect();
+      if (rect.width === 0) return null;
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      return ratio * duration;
+    },
+    [duration]
+  );
+
+  // Start scrubbing: duck the volume so the preview is audible but not
+  // jarring, and remember the previous level to restore on release.
+  const startScrub = useCallback(() => {
+    scrubbingRef.current = true;
+    setIsScrubbing(true);
+    const audio = audioRef.current;
+    if (audio && !audio.muted && audio.volume > 0) {
+      savedVolumeRef.current = audio.volume;
+      audio.volume = Math.min(audio.volume, 0.35);
+    }
+  }, [audioRef]);
+
+  const endScrub = useCallback(() => {
+    scrubbingRef.current = false;
+    setIsScrubbing(false);
+    const audio = audioRef.current;
+    const range = rangeRef.current;
+    const target = range ? Number(range.value) : 0;
+    if (audio) {
+      audio.currentTime = target;
+      audio.volume = savedVolumeRef.current;
+    }
+    paint(target);
+  }, [audioRef, paint]);
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      setPreviewTime(computePreviewTime(e.clientX));
+    },
+    [computePreviewTime]
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    if (!scrubbingRef.current) setPreviewTime(null);
+  }, []);
 
   const handleSeek = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newTime = Number(e.target.value);
+      setPreviewTime(newTime);
       if (audioRef.current) {
         audioRef.current.currentTime = newTime;
       }
@@ -117,25 +179,45 @@ const ProgressBar = memo(function ProgressBar({
     [audioRef, paint]
   );
 
+  const previewPct = previewTime !== null && duration > 0 ? (previewTime / duration) * 100 : 0;
+
   return (
     <div className="flex items-center gap-2">
       <span ref={currentTimeRef} className="text-xs text-white w-8">
         0:00
       </span>
-      <input
-        ref={rangeRef}
-        aria-label="Track position"
-        aria-valuemax={duration}
-        aria-valuemin={0}
-        className="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
-        defaultValue={0}
-        max={duration}
-        min={0}
-        role="slider"
-        step={1}
-        type="range"
-        onChange={handleSeek}
-      />
+      <div
+        className="relative flex-1"
+        onPointerCancel={endScrub}
+        onPointerDown={startScrub}
+        onPointerLeave={handlePointerLeave}
+        onPointerMove={handlePointerMove}
+        onPointerUp={endScrub}
+      >
+        <input
+          ref={rangeRef}
+          aria-label="Track position"
+          aria-valuemax={duration}
+          aria-valuemin={0}
+          className="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+          defaultValue={0}
+          max={duration}
+          min={0}
+          role="slider"
+          step={1}
+          type="range"
+          onChange={handleSeek}
+        />
+        {previewTime !== null && (
+          <div
+            className="pointer-events-none absolute -top-7 -translate-x-1/2 rounded bg-black px-1.5 py-0.5 text-[10px] text-white shadow"
+            role="tooltip"
+            style={{ left: `${previewPct}%` }}
+          >
+            {formatTime(previewTime)}
+          </div>
+        )}
+      </div>
       <span className="text-xs text-white w-8 text-right">{formatTime(duration)}</span>
     </div>
   );
@@ -150,11 +232,13 @@ const Player = () => {
     isMuted,
     shuffle,
     repeat,
+    queue,
     trackError,
     autoplayBlocked,
     crossfadeDuration,
     isCrossfading,
-    playbackSpeed,
+    normalizeAudio,
+    gapless,
     play,
     pause,
     next,
@@ -169,7 +253,8 @@ const Player = () => {
     setAutoplayBlocked,
     resumeAudio,
     setCrossfading,
-    setPlaybackSpeed,
+    setNormalizeAudio,
+    setGapless,
   } = usePlayback();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -182,6 +267,11 @@ const Player = () => {
   const crossfadeRafRef = useRef<number | null>(null);
   const crossfadeActiveRef = useRef(false);
   const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Audio normalization (#328) graph nodes, keyed to the current primary element.
+  const primarySourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const primarySourceElementRef = useRef<HTMLAudioElement | null>(null);
+  const compressorRef = useRef<DynamicsCompressorNode | null>(null);
+  const primaryGainRef = useRef<GainNode | null>(null);
   const [duration, setDuration] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -189,7 +279,8 @@ const Player = () => {
   const [isBuffering, setIsBuffering] = useState(false);
   const [trackAnnouncement, setTrackAnnouncement] = useState('');
   const [incomingUrl, setIncomingUrl] = useState<string | null>(null);
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  // True once the preloaded (gapless) next track can start playing (#329).
+  const [incomingReady, setIncomingReady] = useState(false);
 
   const currentTrack = playlist[currentIndex];
   const trackId = currentTrack?.id || `track-${currentIndex}`;
@@ -247,6 +338,76 @@ const Player = () => {
     return audioCtxRef.current;
   }, []);
 
+  /**
+   * Apply (or neutralize) the loudness-normalization compressor settings (#328).
+   * With a ratio of 1 and threshold of 0 the compressor is a passthrough, so
+   * toggling normalization off never requires rebuilding the audio graph.
+   */
+  const applyNormalizationParams = useCallback((enabled: boolean) => {
+    const compressor = compressorRef.current;
+    if (!compressor) return;
+    if (enabled) {
+      compressor.threshold.value = -24;
+      compressor.knee.value = 30;
+      compressor.ratio.value = 12;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.25;
+    } else {
+      compressor.threshold.value = 0;
+      compressor.knee.value = 0;
+      compressor.ratio.value = 1;
+      compressor.attack.value = 0;
+      compressor.release.value = 0;
+    }
+  }, []);
+
+  /**
+   * Route the primary element through the normalization graph:
+   * element → compressor → gain → destination (#328).
+   * `createMediaElementSource` may only be called once per element, so the
+   * graph is rebuilt only when the primary element changes (track switch).
+   */
+  const ensureNormalizationGraph = useCallback(
+    (primary: HTMLAudioElement) => {
+      const ctx = ensureAudioGraph();
+      if (!ctx) return;
+
+      if (primarySourceElementRef.current !== primary && primarySourceRef.current) {
+        try {
+          primarySourceRef.current.disconnect();
+        } catch {
+          // already disconnected
+        }
+        try {
+          primaryGainRef.current?.disconnect();
+        } catch {
+          // already disconnected
+        }
+        primarySourceRef.current = null;
+        primarySourceElementRef.current = null;
+        compressorRef.current = null;
+        primaryGainRef.current = null;
+      }
+
+      if (primarySourceRef.current) return;
+      try {
+        const source = ctx.createMediaElementSource(primary);
+        const compressor = ctx.createDynamicsCompressor();
+        const gain = ctx.createGain();
+        source.connect(compressor);
+        compressor.connect(gain);
+        gain.connect(ctx.destination);
+        primarySourceRef.current = source;
+        primarySourceElementRef.current = primary;
+        compressorRef.current = compressor;
+        primaryGainRef.current = gain;
+      } catch {
+        // Element is already routed through another graph — leave it alone.
+      }
+    },
+    [ensureAudioGraph]
+  );
+
   const cleanupIncoming = useCallback(() => {
     if (crossfadeRafRef.current !== null) {
       cancelAnimationFrame(crossfadeRafRef.current);
@@ -292,6 +453,11 @@ const Player = () => {
         });
       }
     }
+    // Restore the normalization gain (pinned to 1 during the fade) so the
+    // volume level is applied exactly once going forward (#328).
+    if (primaryGainRef.current) {
+      primaryGainRef.current.gain.value = isMuted ? 0 : volume;
+    }
     cleanupIncoming();
   }, [cleanupIncoming, isMuted, volume, isPlaying]);
 
@@ -329,6 +495,13 @@ const Player = () => {
     } catch {
       cleanupIncoming();
       return;
+    }
+
+    // When the primary is routed through the normalization graph, its gain
+    // would double-apply the volume envelope — pin it to 1 during the fade so
+    // element.volume drives the transition cleanly (#328).
+    if (primaryGainRef.current && primarySourceElementRef.current === primary) {
+      primaryGainRef.current.gain.value = 1;
     }
 
     const ctx = ensureAudioGraph();
@@ -454,13 +627,35 @@ const Player = () => {
     if (outgoingGainRef.current) {
       outgoingGainRef.current.gain.value = isMuted ? 0 : volume;
     }
+    if (primaryGainRef.current) {
+      primaryGainRef.current.gain.value = isMuted ? 0 : volume;
+    }
   }, [volume, isMuted]);
 
-  // #336 — Sync playback speed to audio element
+  // Route the primary element through the normalization compressor whenever
+  // it is enabled and rebuild the graph when the track (element) changes (#328).
   useEffect(() => {
-    const audio = audioRef.current;
-    if (audio) audio.playbackRate = playbackSpeed;
-  }, [playbackSpeed]);
+    const primary = audioRef.current;
+    if (!primary) return;
+
+    if (!normalizeAudio) {
+      applyNormalizationParams(false);
+      return;
+    }
+
+    ensureNormalizationGraph(primary);
+    applyNormalizationParams(true);
+    if (primaryGainRef.current) {
+      primaryGainRef.current.gain.value = isMuted ? 0 : volume;
+    }
+  }, [
+    normalizeAudio,
+    streamUrl,
+    isMuted,
+    volume,
+    ensureNormalizationGraph,
+    applyNormalizationParams,
+  ]);
 
   // Watch primary audio position and kick off crossfade near the end
   useEffect(() => {
@@ -489,6 +684,41 @@ const Player = () => {
     };
   }, [isPlaying, crossfadeDuration, repeat, currentIndex, startCrossfade]);
 
+  // Gapless playback (#329): preload the next track while the current one
+  // plays so the handoff on `ended` has no audible gap. Only sequential
+  // playback with an empty queue is eligible — shuffle/queue ordering is
+  // decided at transition time and can't be preloaded reliably.
+  useEffect(() => {
+    if (!gapless || !isPlaying || crossfadeDuration > 0 || crossfadeActiveRef.current) return;
+    if (shuffle || queue.length > 0 || repeat) return;
+    if (playlist.length === 0) return;
+
+    const nextIdx = resolveNextIndex();
+    if (nextIdx < 0 || nextIdx === currentIndex) return;
+    const nextTrack = playlist[nextIdx];
+    if (!nextTrack) return;
+
+    const url = resolveStreamUrl(nextTrack, nextIdx);
+    if (!url) return;
+    setIncomingUrl(url);
+  }, [
+    gapless,
+    isPlaying,
+    crossfadeDuration,
+    shuffle,
+    queue.length,
+    repeat,
+    currentIndex,
+    playlist,
+    resolveNextIndex,
+    resolveStreamUrl,
+  ]);
+
+  // Reset readiness whenever a new track is preloaded (#329).
+  useEffect(() => {
+    setIncomingReady(false);
+  }, [incomingUrl]);
+
   // Stop playback and release the audio resource when the tab is closed or the
   // user navigates to an external URL, so streaming doesn't continue orphaned.
   useEffect(() => {
@@ -507,6 +737,16 @@ const Player = () => {
       }
       outgoingSourceRef.current = null;
       outgoingGainRef.current = null;
+      try {
+        primarySourceRef.current?.disconnect();
+        primaryGainRef.current?.disconnect();
+      } catch {
+        // ignore
+      }
+      primarySourceRef.current = null;
+      primarySourceElementRef.current = null;
+      compressorRef.current = null;
+      primaryGainRef.current = null;
       if (audioCtxRef.current) {
         void audioCtxRef.current.close().catch(() => {});
         audioCtxRef.current = null;
@@ -717,6 +957,26 @@ const Player = () => {
             <Heart size={16} />
           </button>
           <button
+            aria-label={
+              normalizeAudio ? 'Disable audio normalization' : 'Enable audio normalization'
+            }
+            aria-pressed={normalizeAudio}
+            className={`hover:text-gray-300 cursor-pointer text-white ${normalizeAudio ? 'text-pink-500' : ''}`}
+            title={normalizeAudio ? 'Audio normalization on' : 'Audio normalization off'}
+            onClick={() => setNormalizeAudio(!normalizeAudio)}
+          >
+            <AudioWaveform size={16} />
+          </button>
+          <button
+            aria-label={gapless ? 'Disable gapless playback' : 'Enable gapless playback'}
+            aria-pressed={gapless}
+            className={`hover:text-gray-300 cursor-pointer text-white ${gapless ? 'text-pink-500' : ''}`}
+            title={gapless ? 'Gapless playback on' : 'Gapless playback off'}
+            onClick={() => setGapless(!gapless)}
+          >
+            <Zap size={16} />
+          </button>
+          <button
             aria-label="More options"
             className="hover:text-gray-300 cursor-pointer text-white"
           >
@@ -781,9 +1041,9 @@ const Player = () => {
           </div>
         </div>
 
-        {/* Primary audio element — key forces remount on track change so new src loads cleanly */}
+        {/* Primary audio element — key forces remount on track change so new src loads cleanly; gapless mode (#329) keeps the element mounted and swaps src manually to avoid a gap */}
         <audio
-          key={streamUrl}
+          key={gapless ? undefined : streamUrl}
           ref={audioRef}
           src={streamUrl}
           onCanPlay={() => setIsBuffering(false)}
@@ -792,8 +1052,33 @@ const Player = () => {
               finishCrossfade();
               return;
             }
-            if (repeat) audioRef.current?.play();
-            else next();
+            if (repeat) {
+              audioRef.current?.play();
+              return;
+            }
+            const primary = audioRef.current;
+            const incoming = incomingAudioRef.current;
+            if (
+              gapless &&
+              incomingReady &&
+              !shuffle &&
+              queue.length === 0 &&
+              incoming?.src &&
+              primary
+            ) {
+              // Gapless handoff (#329): swap in the preloaded track and advance.
+              primary.src = incoming.src;
+              primary.currentTime = 0;
+              if (isPlaying) {
+                void primary.play().catch(() => {
+                  /* handled by autoplay / error paths */
+                });
+              }
+              next();
+              cleanupIncoming();
+              return;
+            }
+            next();
           }}
           onError={handleAudioError}
           onLoadedMetadata={(e) => {
@@ -809,6 +1094,7 @@ const Player = () => {
             aria-hidden="true"
             preload="auto"
             src={incomingUrl}
+            onCanPlay={() => setIncomingReady(true)}
             onError={() => {
               cleanupIncoming();
             }}

@@ -10,11 +10,12 @@ import { http } from 'viem';
 import { liskSepolia, mainnet, sepolia } from 'viem/chains';
 import { createConfig, WagmiProvider } from 'wagmi';
 import WrongNetworkBanner from '@/components/common/WrongNetworkBanner';
-import { TransactionProvider } from '@/context/TransactionContext';
 import { LoadingProvider } from '@/context/LoadingContext';
-import { UserPreferencesProvider } from "@/context/UserPreferencesContext";
-import { ThemeProvider } from "@/context/ThemeProvider";
+import { ThemeProvider } from '@/context/ThemeProvider';
+import { TransactionProvider } from '@/context/TransactionContext';
+import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
 import { WalletProvider } from '@/context/WalletContext';
+import { useWalletAnalytics } from '@/hooks/useWalletAnalytics';
 import { queryClient } from '@/lib/queryClient';
 
 const config = createConfig({
@@ -26,6 +27,16 @@ const config = createConfig({
     [sepolia.id]: http(),
   },
 });
+
+/**
+ * Watches wallet connect/disconnect transitions and reports them to the
+ * analytics layer (#323). Rendered inside the wagmi/Dynamic providers so it
+ * can read account state.
+ */
+function WalletAnalyticsTracker() {
+  useWalletAnalytics();
+  return null;
+}
 
 const Provider = ({ children }: { children: ReactNode }) => {
   return (
@@ -58,13 +69,16 @@ const Provider = ({ children }: { children: ReactNode }) => {
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
           <DynamicWagmiConnector>
+            <WalletAnalyticsTracker />
             <WalletProvider>
               <TransactionProvider>
                 <LoadingProvider>
-                  <ThemeProvider><UserPreferencesProvider>
-                    <WrongNetworkBanner />
-                    {children}
-                  </UserPreferencesProvider></ThemeProvider>
+                  <ThemeProvider>
+                    <UserPreferencesProvider>
+                      <WrongNetworkBanner />
+                      {children}
+                    </UserPreferencesProvider>
+                  </ThemeProvider>
                 </LoadingProvider>
               </TransactionProvider>
             </WalletProvider>
