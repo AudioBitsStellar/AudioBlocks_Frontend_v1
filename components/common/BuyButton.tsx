@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseEther } from 'viem';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { Modal } from '@/components/ui/Modal';
 import { contractAddress, abi } from '@/config/abi';
 
 interface BuyButtonProps {
@@ -17,6 +18,9 @@ interface BuyButtonProps {
 const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
   const { writeContract, data: hash, isPending } = useWriteContract();
   const queryClient = useQueryClient();
+  // Issue #319: confirm before submitting the transaction, so a stray click
+  // never sends an on-chain purchase without the user seeing price/token first.
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -38,6 +42,7 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
   }, [isSuccess, queryClient]);
 
   const handleBuy = async () => {
+    setShowConfirm(false);
     try {
       // Extract numeric ID from 'music-1', 'event-1', etc.
       const numericId = parseInt(tokenId.split('-')[1]);
@@ -64,20 +69,51 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
   const isProcessing = isPending || isConfirming;
 
   return (
-    <button
-      className="border-gray-600 border text-white px-4 py-2 rounded-2xl transition-colors text-sm mb-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      disabled={isProcessing}
-      onClick={handleBuy}
-    >
-      {isProcessing ? (
-        <>
-          <Loader2 className="h-3 w-3 animate-spin" />
-          {isConfirming ? 'Confirming...' : 'Pending...'}
-        </>
-      ) : (
-        label
-      )}
-    </button>
+    <>
+      <button
+        className="border-gray-600 border text-white px-4 py-2 rounded-2xl transition-colors text-sm mb-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        disabled={isProcessing}
+        onClick={() => setShowConfirm(true)}
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="h-3 w-3 animate-spin" />
+            {isConfirming ? 'Confirming...' : 'Pending...'}
+          </>
+        ) : (
+          label
+        )}
+      </button>
+
+      <Modal
+        description="This will submit an on-chain transaction and cannot be undone."
+        open={showConfirm}
+        size="sm"
+        title="Confirm purchase"
+        onClose={() => setShowConfirm(false)}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-on-muted">
+            You&apos;re about to buy <span className="text-white font-medium">{label}</span> for{' '}
+            <span className="text-white font-medium">{price}</span>.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              className="px-4 py-2 rounded-2xl text-sm text-on-muted hover:text-white transition-colors"
+              onClick={() => setShowConfirm(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 rounded-2xl text-sm bg-brand text-white hover:bg-pink-700 transition-colors"
+              onClick={handleBuy}
+            >
+              Confirm purchase
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 };
 
