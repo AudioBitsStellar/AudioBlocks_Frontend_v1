@@ -9,8 +9,8 @@ import { Variants, motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { toast } from 'sonner';
 import FullScreenLoader from '@/components/common/home/FullScreenLoader';
-import SearchOverlay from '@/components/common/SearchOverlay';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { SearchOverlay } from '@/components/ui/SearchOverlay';
 import { Auth } from '@/hooks/useAuth';
 
 /**

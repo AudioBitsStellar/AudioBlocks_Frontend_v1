@@ -77,6 +77,11 @@ export const AUTH = {
   COOKIE_NAME: 'audioblocks_jwt',
   TOKEN_HEADER: 'Authorization',
   TOKEN_PREFIX: 'Bearer',
+  COOKIE_OPTIONS: {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict' as const,
+    path: '/',
+  },
 } as const;
 
 // ===== ERROR MESSAGES =====

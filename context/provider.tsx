@@ -11,12 +11,11 @@ import { liskSepolia, mainnet, sepolia } from 'viem/chains';
 import { createConfig, WagmiProvider } from 'wagmi';
 import WrongNetworkBanner from '@/components/common/WrongNetworkBanner';
 import { LoadingProvider } from '@/context/LoadingContext';
-import { PlaybackProvider } from '@/context/PlaybackContext';
 import { ThemeProvider } from '@/context/ThemeProvider';
-import { ToastProvider } from '@/context/ToastContext';
 import { TransactionProvider } from '@/context/TransactionContext';
 import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
 import { WalletProvider } from '@/context/WalletContext';
+import { useWalletAnalytics } from '@/hooks/useWalletAnalytics';
 import { queryClient } from '@/lib/queryClient';
 
 const config = createConfig({
@@ -28,6 +27,16 @@ const config = createConfig({
     [sepolia.id]: http(),
   },
 });
+
+/**
+ * Watches wallet connect/disconnect transitions and reports them to the
+ * analytics layer (#323). Rendered inside the wagmi/Dynamic providers so it
+ * can read account state.
+ */
+function WalletAnalyticsTracker() {
+  useWalletAnalytics();
+  return null;
+}
 
 const Provider = ({ children }: { children: ReactNode }) => {
   return (
@@ -57,32 +66,31 @@ const Provider = ({ children }: { children: ReactNode }) => {
                 },
               ],
             },
-          }}
-        >
-          <WagmiProvider config={config}>
-            <QueryClientProvider client={queryClient}>
-              <DynamicWagmiConnector>
-                <WalletProvider>
-                  <TransactionProvider>
-                    <LoadingProvider>
-                      <ThemeProvider>
-                        <UserPreferencesProvider>
-                          <WrongNetworkBanner />
-                          {children}
-                        </UserPreferencesProvider>
-                      </ThemeProvider>
-                    </LoadingProvider>
-                  </TransactionProvider>
-                </WalletProvider>
-              </DynamicWagmiConnector>
-              {process.env.NODE_ENV === 'development' && (
-                <ReactQueryDevtools initialIsOpen={false} />
-              )}
-            </QueryClientProvider>
-          </WagmiProvider>
-        </DynamicContextProvider>
-      </PlaybackProvider>
-    </ToastProvider>
+          ],
+        },
+      }}
+    >
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <DynamicWagmiConnector>
+            <WalletAnalyticsTracker />
+            <WalletProvider>
+              <TransactionProvider>
+                <LoadingProvider>
+                  <ThemeProvider>
+                    <UserPreferencesProvider>
+                      <WrongNetworkBanner />
+                      {children}
+                    </UserPreferencesProvider>
+                  </ThemeProvider>
+                </LoadingProvider>
+              </TransactionProvider>
+            </WalletProvider>
+          </DynamicWagmiConnector>
+          {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+        </QueryClientProvider>
+      </WagmiProvider>
+    </DynamicContextProvider>
   );
 };
 

@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect, useMemo, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useMemo,
+  useCallback,
+  ReactNode,
+} from 'react';
 
 export type Track = {
   id: string;
@@ -52,6 +60,16 @@ type PlaybackState = {
   crossfadeDuration: number;
   /** True while two audio elements are overlapping during a crossfade. */
   isCrossfading: boolean;
+  /**
+   * Loudness normalization across tracks (#328). When enabled, playback is
+   * routed through a compressor so quiet and loud tracks sound consistent.
+   */
+  normalizeAudio: boolean;
+  /**
+   * Gapless playback (#329). When enabled, the next track is preloaded while
+   * the current one plays so track changes have no audible gap.
+   */
+  gapless: boolean;
 };
 
 type PlaybackAction =
@@ -83,7 +101,11 @@ type PlaybackAction =
   | { type: 'CLEAR_HISTORY' }
   // Crossfade (#115)
   | { type: 'SET_CROSSFADE_DURATION'; duration: number }
-  | { type: 'SET_CROSSFADING'; isCrossfading: boolean };
+  | { type: 'SET_CROSSFADING'; isCrossfading: boolean }
+  // Audio normalization (#328)
+  | { type: 'SET_NORMALIZE_AUDIO'; enabled: boolean }
+  // Gapless playback (#329)
+  | { type: 'SET_GAPPLESS'; enabled: boolean };
 
 export type PlaybackContextValue = PlaybackState & {
   playTrack: (track: Track) => void;
@@ -120,6 +142,12 @@ export type PlaybackContextValue = PlaybackState & {
   /** Set crossfade duration in seconds (clamped to 0–5). 0 disables. */
   setCrossfadeDuration: (duration: number) => void;
   setCrossfading: (isCrossfading: boolean) => void;
+  // Audio normalization (#328)
+  /** Toggle loudness normalization across tracks. */
+  setNormalizeAudio: (enabled: boolean) => void;
+  // Gapless playback (#329)
+  /** Toggle seamless (gapless) transitions between tracks. */
+  setGapless: (enabled: boolean) => void;
 };
 
 const defaultPlaylist: Track[] = [
@@ -152,6 +180,8 @@ const HISTORY_STORAGE_KEY = 'audioblocks_history';
 const VOLUME_STORAGE_KEY = 'audioblocks_volume';
 const MUTED_STORAGE_KEY = 'audioblocks_muted';
 const RECENTLY_PLAYED_STORAGE_KEY = 'audioblocks_recently_played';
+const NORMALIZE_AUDIO_STORAGE_KEY = 'audioblocks_normalize_audio';
+const GAPPLESS_STORAGE_KEY = 'audioblocks_gapless';
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -189,6 +219,8 @@ const initialState: PlaybackState = {
   history: [],
   crossfadeDuration: 0,
   isCrossfading: false,
+  normalizeAudio: true,
+  gapless: true,
 };
 
 // ── Reducer ───────────────────────────────────────────────────────────────
@@ -205,7 +237,13 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
         const [next, ...rest] = state.queue;
         const existing = state.playlist.findIndex((t) => t.id === next.id);
         if (existing >= 0) {
-          return { ...state, queue: rest, currentIndex: existing, isPlaying: true, trackError: null };
+          return {
+            ...state,
+            queue: rest,
+            currentIndex: existing,
+            isPlaying: true,
+            trackError: null,
+          };
         }
         return {
           ...state,
@@ -298,7 +336,13 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
         const [next, ...rest] = state.queue;
         const existing = state.playlist.findIndex((t) => t.id === next.id);
         if (existing >= 0) {
-          return { ...state, queue: rest, currentIndex: existing, isPlaying: true, trackError: null };
+          return {
+            ...state,
+            queue: rest,
+            currentIndex: existing,
+            isPlaying: true,
+            trackError: null,
+          };
         }
         return {
           ...state,
@@ -341,6 +385,18 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
       return { ...state, crossfadeDuration: clampCrossfadeDuration(action.duration) };
     case 'SET_CROSSFADING':
       return { ...state, isCrossfading: action.isCrossfading };
+    case 'SET_PLAYBACK_SPEED':
+      return { ...state, playbackSpeed: Math.min(2, Math.max(0.5, action.speed)) };
+
+    // ── Audio normalization (#328) ──────────────────────────────────────
+
+    case 'SET_NORMALIZE_AUDIO':
+      return { ...state, normalizeAudio: action.enabled };
+
+    // ── Gapless playback (#329) ─────────────────────────────────────────
+
+    case 'SET_GAPPLESS':
+      return { ...state, gapless: action.enabled };
 
     default:
       return state;
@@ -349,7 +405,7 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
 
 // ── Context ───────────────────────────────────────────────────────────────
 
-const PlaybackContext = createContext<PlaybackContextValue | null>(null);
+export const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
   // Hydrate queue, history, and volume from localStorage on mount (#121).
@@ -362,6 +418,11 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     // preferred level survives page reloads and browser restarts.
     volume: loadFromStorage<number>(VOLUME_STORAGE_KEY, initialState.volume),
     isMuted: loadFromStorage<boolean>(MUTED_STORAGE_KEY, initialState.isMuted),
+    normalizeAudio: loadFromStorage<boolean>(
+      NORMALIZE_AUDIO_STORAGE_KEY,
+      initialState.normalizeAudio
+    ),
+    gapless: loadFromStorage<boolean>(GAPPLESS_STORAGE_KEY, initialState.gapless),
   };
 
   const [state, dispatch] = useReducer(reducer, hydratedState);
@@ -387,7 +448,18 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     saveToStorage(RECENTLY_PLAYED_STORAGE_KEY, state.recentlyPlayed);
   }, [state.recentlyPlayed]);
 
-  const setAutoplayBlocked = useCallback((blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }), []);
+  useEffect(() => {
+    saveToStorage(NORMALIZE_AUDIO_STORAGE_KEY, state.normalizeAudio);
+  }, [state.normalizeAudio]);
+
+  useEffect(() => {
+    saveToStorage(GAPPLESS_STORAGE_KEY, state.gapless);
+  }, [state.gapless]);
+
+  const setAutoplayBlocked = useCallback(
+    (blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }),
+    []
+  );
   const resumeAudio = useCallback(() => dispatch({ type: 'RESUME_AUDIO' }), []);
 
   // Queue actions (#116)
@@ -420,7 +492,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       }
       return result;
     },
-    [state.history],
+    [state.history]
   );
 
   // Crossfade (#115)
@@ -431,40 +503,73 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_CROSSFADING', isCrossfading });
   }, []);
 
-  const value = useMemo<PlaybackContextValue>(() => ({
-    ...state,
-    play: () => dispatch({ type: 'PLAY' }),
-    pause: () => dispatch({ type: 'PAUSE' }),
-    next: () => dispatch({ type: 'NEXT' }),
-    prev: () => dispatch({ type: 'PREV' }),
-    setCurrentIndex: (index) => dispatch({ type: 'SET_INDEX', index }),
-    setVolume: (volume) => dispatch({ type: 'SET_VOLUME', volume }),
-    toggleMute: () => dispatch({ type: 'TOGGLE_MUTE' }),
-    toggleShuffle: () => dispatch({ type: 'TOGGLE_SHUFFLE' }),
-    toggleRepeat: () => dispatch({ type: 'TOGGLE_REPEAT' }),
-    playTrack: (track) => dispatch({ type: 'PLAY_TRACK', track }),
-    enqueueTrack: (track) => dispatch({ type: 'ENQUEUE_TRACK', track }),
-    setError: (error) => dispatch({ type: 'SET_ERROR', error }),
-    dismissError: () => dispatch({ type: 'DISMISS_ERROR' }),
-    addToRecentlyPlayed: (track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
-    clearRecentlyPlayed: () => dispatch({ type: 'CLEAR_RECENTLY_PLAYED' }),
-    autoplayBlocked: state.autoplayBlocked,
-    setAutoplayBlocked,
-    resumeAudio,
-    // Queue
-    addToQueue,
-    removeFromQueue,
-    reorderQueue,
-    clearQueue,
-    advanceQueue,
-    // History
-    recordPlay,
-    clearHistory,
-    getRecentlyPlayed,
-    // Crossfade
-    setCrossfadeDuration,
-    setCrossfading,
-  }), [state, setAutoplayBlocked, resumeAudio, addToQueue, removeFromQueue, reorderQueue, clearQueue, advanceQueue, recordPlay, clearHistory, getRecentlyPlayed, setCrossfadeDuration, setCrossfading]);
+  // Audio normalization (#328)
+  const setNormalizeAudio = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_NORMALIZE_AUDIO', enabled });
+  }, []);
+
+  // Gapless playback (#329)
+  const setGapless = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_GAPPLESS', enabled });
+  }, []);
+
+  const value = useMemo<PlaybackContextValue>(
+    () => ({
+      ...state,
+      play: () => dispatch({ type: 'PLAY' }),
+      pause: () => dispatch({ type: 'PAUSE' }),
+      next: () => dispatch({ type: 'NEXT' }),
+      prev: () => dispatch({ type: 'PREV' }),
+      setCurrentIndex: (index) => dispatch({ type: 'SET_INDEX', index }),
+      setVolume: (volume) => dispatch({ type: 'SET_VOLUME', volume }),
+      toggleMute: () => dispatch({ type: 'TOGGLE_MUTE' }),
+      toggleShuffle: () => dispatch({ type: 'TOGGLE_SHUFFLE' }),
+      toggleRepeat: () => dispatch({ type: 'TOGGLE_REPEAT' }),
+      playTrack: (track) => dispatch({ type: 'PLAY_TRACK', track }),
+      enqueueTrack: (track) => dispatch({ type: 'ENQUEUE_TRACK', track }),
+      setError: (error) => dispatch({ type: 'SET_ERROR', error }),
+      dismissError: () => dispatch({ type: 'DISMISS_ERROR' }),
+      addToRecentlyPlayed: (track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
+      clearRecentlyPlayed: () => dispatch({ type: 'CLEAR_RECENTLY_PLAYED' }),
+      autoplayBlocked: state.autoplayBlocked,
+      setAutoplayBlocked,
+      resumeAudio,
+      // Queue
+      addToQueue,
+      removeFromQueue,
+      reorderQueue,
+      clearQueue,
+      advanceQueue,
+      // History
+      recordPlay,
+      clearHistory,
+      getRecentlyPlayed,
+      // Crossfade
+      setCrossfadeDuration,
+      setCrossfading,
+      // Audio normalization (#328)
+      setNormalizeAudio,
+      // Gapless playback (#329)
+      setGapless,
+    }),
+    [
+      state,
+      setAutoplayBlocked,
+      resumeAudio,
+      addToQueue,
+      removeFromQueue,
+      reorderQueue,
+      clearQueue,
+      advanceQueue,
+      recordPlay,
+      clearHistory,
+      getRecentlyPlayed,
+      setCrossfadeDuration,
+      setCrossfading,
+      setNormalizeAudio,
+      setGapless,
+    ]
+  );
 
   return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
 }

@@ -17,17 +17,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    // Keep Playwright end-to-end specs (`tests/e2e`) out of the vitest run.
-    // vitest's default include would match `tests/**/*.spec.ts` and try to
-    // execute Playwright specs, which OOMs the worker and breaks coverage.
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/cypress/**',
-      '**/.{idea,git,cache,output,temp}/**',
-      '**/*.config.*',
-      'tests/e2e/**',
-    ],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/tests/e2e/**', '**/*.spec.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
