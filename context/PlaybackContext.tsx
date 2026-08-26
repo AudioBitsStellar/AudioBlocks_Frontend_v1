@@ -60,6 +60,8 @@ type PlaybackState = {
   crossfadeDuration: number;
   /** True while two audio elements are overlapping during a crossfade. */
   isCrossfading: boolean;
+  /** Playback speed multiplier (0.5–2.0). */
+  playbackSpeed: number;
 };
 
 type PlaybackAction =
@@ -91,7 +93,9 @@ type PlaybackAction =
   | { type: 'CLEAR_HISTORY' }
   // Crossfade (#115)
   | { type: 'SET_CROSSFADE_DURATION'; duration: number }
-  | { type: 'SET_CROSSFADING'; isCrossfading: boolean };
+  | { type: 'SET_CROSSFADING'; isCrossfading: boolean }
+  // Playback speed (#336)
+  | { type: 'SET_PLAYBACK_SPEED'; speed: number };
 
 export type PlaybackContextValue = PlaybackState & {
   playTrack: (track: Track) => void;
@@ -128,6 +132,8 @@ export type PlaybackContextValue = PlaybackState & {
   /** Set crossfade duration in seconds (clamped to 0–5). 0 disables. */
   setCrossfadeDuration: (duration: number) => void;
   setCrossfading: (isCrossfading: boolean) => void;
+  // Playback speed (#336)
+  setPlaybackSpeed: (speed: number) => void;
 };
 
 const defaultPlaylist: Track[] = [
@@ -197,6 +203,7 @@ const initialState: PlaybackState = {
   history: [],
   crossfadeDuration: 0,
   isCrossfading: false,
+  playbackSpeed: 1,
 };
 
 // ── Reducer ───────────────────────────────────────────────────────────────
@@ -361,6 +368,8 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
       return { ...state, crossfadeDuration: clampCrossfadeDuration(action.duration) };
     case 'SET_CROSSFADING':
       return { ...state, isCrossfading: action.isCrossfading };
+    case 'SET_PLAYBACK_SPEED':
+      return { ...state, playbackSpeed: Math.min(2, Math.max(0.5, action.speed)) };
 
     default:
       return state;
@@ -454,6 +463,11 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_CROSSFADING', isCrossfading });
   }, []);
 
+  // Playback speed (#336)
+  const setPlaybackSpeed = useCallback((speed: number) => {
+    dispatch({ type: 'SET_PLAYBACK_SPEED', speed });
+  }, []);
+
   const value = useMemo<PlaybackContextValue>(
     () => ({
       ...state,
@@ -488,6 +502,8 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       // Crossfade
       setCrossfadeDuration,
       setCrossfading,
+      // Playback speed
+      setPlaybackSpeed,
     }),
     [
       state,
@@ -503,6 +519,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       getRecentlyPlayed,
       setCrossfadeDuration,
       setCrossfading,
+      setPlaybackSpeed,
     ]
   );
 
