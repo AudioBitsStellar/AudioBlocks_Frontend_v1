@@ -1106,7 +1106,18 @@ const Player = () => {
 
       {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}
       <AnimatePresence>
-        {isFullScreen && <FullScreenPlayer onClose={() => setIsFullScreen(false)} />}
+        {isFullScreen && (
+          <FullScreenPlayer
+            artist={currentTrack?.artist}
+            audioRef={audioRef}
+            audioSrc={streamUrl}
+            cover={coverSrc}
+            duration={duration}
+            title={currentTrack?.title}
+            trackKey={trackId}
+            onClose={() => setIsFullScreen(false)}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
