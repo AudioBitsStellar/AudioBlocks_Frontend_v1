@@ -49,11 +49,12 @@ export default function ErrorState({
   return (
     <div
       aria-live="assertive"
-      className="flex flex-col items-center justify-center gap-3 py-10 text-center"
+      className={cn('flex flex-col items-center justify-center gap-3 py-10 text-center', className)}
       role="alert"
     >
-      <AlertTriangle className="text-brand" size={32} />
-      <p className="text-sm text-on-muted max-w-xs">{message}</p>
+      {displayIllustration}
+      <h2 className="text-lg font-semibold text-white">{displayTitle}</h2>
+      <p className="text-sm text-on-muted max-w-xs">{displayMessage}</p>
       {onRetry && (
         <button
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand hover:bg-brand-hover rounded-full transition-colors disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"

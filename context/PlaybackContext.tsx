@@ -409,8 +409,6 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
       return { ...state, crossfadeDuration: clampCrossfadeDuration(action.duration) };
     case 'SET_CROSSFADING':
       return { ...state, isCrossfading: action.isCrossfading };
-    case 'SET_PLAYBACK_SPEED':
-      return { ...state, playbackSpeed: Math.min(2, Math.max(0.5, action.speed)) };
 
     // ── Audio normalization (#328) ──────────────────────────────────────
 

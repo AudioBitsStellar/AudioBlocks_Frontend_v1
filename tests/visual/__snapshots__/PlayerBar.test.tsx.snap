@@ -420,6 +420,17 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <div
+          class="relative"
+        >
+          <button
+            aria-label="Playback speed: 1x"
+            class="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+          >
+            1
+            x
+          </button>
+        </div>
+        <div
           class="relative group flex items-center justify-center"
         >
           <button
@@ -890,6 +901,17 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
             />
           </svg>
         </button>
+        <div
+          class="relative"
+        >
+          <button
+            aria-label="Playback speed: 1x"
+            class="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+          >
+            1
+            x
+          </button>
+        </div>
         <div
           class="relative group flex items-center justify-center"
         >
@@ -1373,6 +1395,17 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <div
+          class="relative"
+        >
+          <button
+            aria-label="Playback speed: 1x"
+            class="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+          >
+            1
+            x
+          </button>
+        </div>
+        <div
           class="relative group flex items-center justify-center"
         >
           <button
@@ -1855,6 +1888,17 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <div
+          class="relative"
+        >
+          <button
+            aria-label="Playback speed: 1x"
+            class="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+          >
+            1
+            x
+          </button>
+        </div>
+        <div
           class="relative group flex items-center justify-center"
         >
           <button
@@ -2325,6 +2369,17 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
             />
           </svg>
         </button>
+        <div
+          class="relative"
+        >
+          <button
+            aria-label="Playback speed: 1x"
+            class="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+          >
+            1
+            x
+          </button>
+        </div>
         <div
           class="relative group flex items-center justify-center"
         >
@@ -2808,6 +2863,17 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <div
+          class="relative"
+        >
+          <button
+            aria-label="Playback speed: 1x"
+            class="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+          >
+            1
+            x
+          </button>
+        </div>
+        <div
           class="relative group flex items-center justify-center"
         >
           <button
@@ -3290,6 +3356,17 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <div
+          class="relative"
+        >
+          <button
+            aria-label="Playback speed: 1x"
+            class="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+          >
+            1
+            x
+          </button>
+        </div>
+        <div
           class="relative group flex items-center justify-center"
         >
           <button
@@ -3760,6 +3837,17 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
             />
           </svg>
         </button>
+        <div
+          class="relative"
+        >
+          <button
+            aria-label="Playback speed: 1x"
+            class="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+          >
+            1
+            x
+          </button>
+        </div>
         <div
           class="relative group flex items-center justify-center"
         >
@@ -4242,6 +4330,17 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
             />
           </svg>
         </button>
+        <div
+          class="relative"
+        >
+          <button
+            aria-label="Playback speed: 1x"
+            class="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
+          >
+            1
+            x
+          </button>
+        </div>
         <div
           class="relative group flex items-center justify-center"
         >

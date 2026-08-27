@@ -281,6 +281,8 @@ const Player = () => {
   const [incomingUrl, setIncomingUrl] = useState<string | null>(null);
   // True once the preloaded (gapless) next track can start playing (#329).
   const [incomingReady, setIncomingReady] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
   const currentTrack = playlist[currentIndex];
   const trackId = currentTrack?.id || `track-${currentIndex}`;
@@ -313,10 +315,12 @@ const Player = () => {
     onPlay: play,
     onPause: pause,
     onSeekBackward: (offset) => {
-      if (audioRef.current) audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - offset);
+      if (audioRef.current)
+        audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - offset);
     },
     onSeekForward: (offset) => {
-      if (audioRef.current) audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + offset);
+      if (audioRef.current)
+        audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + offset);
     },
     onPrevTrack: prev,
     onNextTrack: next,
@@ -718,6 +722,13 @@ const Player = () => {
   useEffect(() => {
     setIncomingReady(false);
   }, [incomingUrl]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    const incoming = incomingAudioRef.current;
+    if (audio) audio.playbackRate = playbackSpeed;
+    if (incoming) incoming.playbackRate = playbackSpeed;
+  }, [playbackSpeed]);
 
   // Stop playback and release the audio resource when the tab is closed or the
   // user navigates to an external URL, so streaming doesn't continue orphaned.

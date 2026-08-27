@@ -7,9 +7,14 @@ import React from 'react';
 import { useDisplayName } from '@/hooks/useENS';
 import { AddressLink } from './ExplorerLink';
 
+interface ProviderLike {
+  resolveName?: (name: string) => Promise<string | null>;
+  lookupAddress?: (address: string) => Promise<string | null>;
+}
+
 interface AddressDisplayProps {
   address: string;
-  provider?: any;
+  provider?: ProviderLike;
   showExplorerLink?: boolean;
   chainId?: number;
   className?: string;

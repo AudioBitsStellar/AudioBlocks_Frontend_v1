@@ -12,6 +12,29 @@ const BLOCK_EXPLORERS: Record<number, string> = {
   80001: 'https://mumbai.polygonscan.com',
 };
 
+interface EnsProviderLike {
+  resolveName?: (name: string) => Promise<string | null>;
+  lookupAddress?: (address: string) => Promise<string | null>;
+}
+
+interface ContractMethodLike {
+  estimateGas?: (...args: unknown[]) => Promise<bigint>;
+}
+
+interface ContractLike {
+  [method: string]: ContractMethodLike | unknown;
+  on?: (eventName: string, callback: (...args: unknown[]) => void) => void;
+  off?: (eventName: string, callback: (...args: unknown[]) => void) => void;
+  filters?: {
+    [eventName: string]: () => unknown;
+  };
+  queryFilter?: (
+    filter: unknown,
+    fromBlock: number,
+    toBlock: number | string
+  ) => Promise<unknown[]>;
+}
+
 /**
  * Get block explorer URL for a transaction hash
  * @param txHash - Transaction hash
@@ -42,21 +65,21 @@ export function getExplorerAddressUrl(address: string, chainId: number = 1): str
  */
 export async function resolveENS(
   nameOrAddress: string,
-  provider?: any
+  provider?: EnsProviderLike
 ): Promise<string> {
   if (!provider) return nameOrAddress;
-  
+
   // Check if it's an ENS name (ends with .eth)
   if (nameOrAddress.endsWith('.eth')) {
     try {
-      const address = await provider.resolveName(nameOrAddress);
+      const address = await provider.resolveName?.(nameOrAddress);
       return address || nameOrAddress;
     } catch (error) {
       console.error('ENS resolution failed:', error);
       return nameOrAddress;
     }
   }
-  
+
   return nameOrAddress;
 }
 
@@ -68,13 +91,13 @@ export async function resolveENS(
  */
 export async function lookupENS(
   address: string,
-  provider?: any
+  provider?: EnsProviderLike
 ): Promise<string | null> {
   if (!provider) return null;
-  
+
   try {
-    const ensName = await provider.lookupAddress(address);
-    return ensName;
+    const ensName = await provider.lookupAddress?.(address);
+    return ensName ?? null;
   } catch (error) {
     console.error('ENS lookup failed:', error);
     return null;
@@ -104,13 +127,17 @@ export function formatAddressWithENS(address: string, ensName?: string | null): 
  * @returns Estimated gas cost in wei
  */
 export async function estimateGas(
-  contract: any,
+  contract: ContractLike,
   method: string,
-  args: any[] = [],
+  args: unknown[] = [],
   value?: bigint
 ): Promise<bigint> {
   try {
-    const gasEstimate = await contract[method].estimateGas(...args, value ? { value } : {});
+    const methodAccessor = contract[method] as ContractMethodLike | undefined;
+    const gasEstimate = await methodAccessor?.estimateGas?.(...args, value ? { value } : {});
+    if (gasEstimate == null) {
+      return BigInt(300000);
+    }
     // Add 20% buffer for safety
     return (gasEstimate * BigInt(120)) / BigInt(100);
   } catch (error) {
@@ -140,15 +167,15 @@ export function calculateGasCost(gasLimit: bigint, gasPrice: bigint): string {
  * @returns Cleanup function to remove listener
  */
 export function setupContractListener(
-  contract: any,
+  contract: ContractLike,
   eventName: string,
-  callback: (...args: any[]) => void
+  callback: (...args: unknown[]) => void
 ): () => void {
-  contract.on(eventName, callback);
-  
+  contract.on?.(eventName, callback);
+
   // Return cleanup function
   return () => {
-    contract.off(eventName, callback);
+    contract.off?.(eventName, callback);
   };
 }
 
@@ -159,19 +186,19 @@ export function setupContractListener(
  * @returns Cleanup function to remove all listeners
  */
 export function setupMultipleListeners(
-  contract: any,
-  events: Record<string, (...args: any[]) => void>
+  contract: ContractLike,
+  events: Record<string, (...args: unknown[]) => void>
 ): () => void {
   const cleanupFunctions: (() => void)[] = [];
-  
+
   Object.entries(events).forEach(([eventName, callback]) => {
-    contract.on(eventName, callback);
-    cleanupFunctions.push(() => contract.off(eventName, callback));
+    contract.on?.(eventName, callback);
+    cleanupFunctions.push(() => contract.off?.(eventName, callback));
   });
-  
+
   // Return cleanup function that removes all listeners
   return () => {
-    cleanupFunctions.forEach(cleanup => cleanup());
+    cleanupFunctions.forEach((cleanup) => cleanup());
   };
 }
 
@@ -184,14 +211,18 @@ export function setupMultipleListeners(
  * @returns Array of event logs
  */
 export async function queryPastEvents(
-  contract: any,
+  contract: ContractLike,
   eventName: string,
   fromBlock: number = 0,
   toBlock: number | string = 'latest'
-): Promise<any[]> {
+): Promise<unknown[]> {
   try {
-    const filter = contract.filters[eventName]();
-    const events = await contract.queryFilter(filter, fromBlock, toBlock);
+    const filterBuilder = contract.filters?.[eventName];
+    const filter = filterBuilder ? filterBuilder() : undefined;
+    const events =
+      filter != null && contract.queryFilter
+        ? await contract.queryFilter(filter, fromBlock, toBlock)
+        : [];
     return events;
   } catch (error) {
     console.error('Failed to query past events:', error);

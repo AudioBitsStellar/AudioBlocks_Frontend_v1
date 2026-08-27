@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { getExplorerTxUrl, getExplorerAddressUrl } from '@/lib/web3Utils';
 import { ExternalLink } from 'lucide-react';
+import { getExplorerTxUrl, getExplorerAddressUrl } from '@/lib/web3Utils';
 
 interface ExplorerLinkProps {
   hash?: string;
@@ -36,17 +36,17 @@ export function ExplorerLink({
   const url = hash
     ? getExplorerTxUrl(hash, chainId)
     : address
-    ? getExplorerAddressUrl(address, chainId)
-    : '#';
+      ? getExplorerAddressUrl(address, chainId)
+      : '#';
 
   const displayText = children || hash || address;
 
   return (
     <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
       className={`inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline ${className}`}
+      href={url}
+      rel="noopener noreferrer"
+      target="_blank"
     >
       {displayText}
       {showIcon && <ExternalLink className="h-4 w-4" />}
@@ -67,9 +67,9 @@ export function TxHashLink({
   className?: string;
 }) {
   const shortHash = `${hash.slice(0, 6)}...${hash.slice(-4)}`;
-  
+
   return (
-    <ExplorerLink hash={hash} chainId={chainId} className={className}>
+    <ExplorerLink chainId={chainId} className={className} hash={hash}>
       <code className="font-mono text-sm">{shortHash}</code>
     </ExplorerLink>
   );
@@ -82,16 +82,18 @@ export function AddressLink({
   address,
   chainId = 1,
   className = '',
+  children,
 }: {
   address: string;
   chainId?: number;
   className?: string;
+  children?: React.ReactNode;
 }) {
   const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
-  
+
   return (
     <ExplorerLink address={address} chainId={chainId} className={className}>
-      <code className="font-mono text-sm">{shortAddress}</code>
+      {children || <code className="font-mono text-sm">{shortAddress}</code>}
     </ExplorerLink>
   );
 }
