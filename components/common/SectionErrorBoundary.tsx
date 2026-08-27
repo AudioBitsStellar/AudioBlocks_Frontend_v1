@@ -24,16 +24,22 @@ function normalizeError(error: unknown): Error {
   }
 
   if (error === null || error === undefined) {
-    console.warn('[SectionErrorBoundary] Caught a null/undefined error.');
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[SectionErrorBoundary] Caught a null/undefined error.');
+    }
     return new Error(UNKNOWN_ERROR_MESSAGE);
   }
 
   if (typeof error === 'string') {
-    console.warn('[SectionErrorBoundary] Caught a non-Error string value:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[SectionErrorBoundary] Caught a non-Error string value:', error);
+    }
     return new Error(error.trim() || UNKNOWN_ERROR_MESSAGE);
   }
 
-  console.warn('[SectionErrorBoundary] Caught an unexpected error shape:', error);
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('[SectionErrorBoundary] Caught an unexpected error shape:', error);
+  }
   try {
     const message =
       typeof error === 'number' || typeof error === 'boolean'
@@ -85,12 +91,14 @@ export default class SectionErrorBoundary extends Component<
   componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
     const normalizedError = normalizeError(error);
     this.setState({ errorInfo, error: normalizedError });
-    // Always log error to console for debugging
-    console.error(
-      `[SectionErrorBoundary${this.props.sectionName ? `: ${this.props.sectionName}` : ''}]`,
-      normalizedError,
-      errorInfo.componentStack
-    );
+    // Log error to console only in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error(
+        `[SectionErrorBoundary${this.props.sectionName ? `: ${this.props.sectionName}` : ''}]`,
+        normalizedError,
+        errorInfo.componentStack
+      );
+    }
   }
 
   handleRetry = () => {

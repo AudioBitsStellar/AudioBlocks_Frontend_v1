@@ -18,13 +18,16 @@ const TelegramPlane = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const ShareModal = ({ link }: { link: string }) => {
+const ShareModal = ({ link, timestamp }: { link: string; timestamp?: number }) => {
+  const shareUrl = timestamp != null && timestamp > 0
+    ? `${link}${link.includes('?') ? '&' : '?'}t=${Math.floor(timestamp)}`
+    : link;
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       toast.success('Link copied to clipboard');
       setTimeout(() => {
@@ -64,7 +67,7 @@ const ShareModal = ({ link }: { link: string }) => {
             <Link
               aria-label="Share on Facebook"
               className="border p-1 rounded-md"
-              href={`https://www.facebook.com/sharer/sharer.php?u=${link}`}
+              href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`}
               rel="noopener noreferrer"
               target="_blank"
             >
@@ -89,7 +92,7 @@ const ShareModal = ({ link }: { link: string }) => {
             <Link
               aria-label="Share on Telegram"
               className="border p-1 rounded-md"
-              href={`https://t.me/share/url?url=${link}`}
+              href={`https://t.me/share/url?url=${shareUrl}`}
               rel="noopener noreferrer"
               target="_blank"
             >
@@ -103,7 +106,7 @@ const ShareModal = ({ link }: { link: string }) => {
             <input
               readOnly
               className="w-full px-3 py-2 text-sm border rounded-md mr-3  bg-transparent text-white outline-none"
-              value={link}
+              value={shareUrl}
             />
             <button
               className="bg-[#D2045B] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b80348] transition flex items-center gap-1"

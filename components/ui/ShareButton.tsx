@@ -9,9 +9,14 @@ export interface ShareButtonProps {
   title?: string;
   text?: string;
   className?: string;
+  timestamp?: number;
 }
 
-export function ShareButton({ url, title, text, className = '' }: ShareButtonProps) {
+export function ShareButton({ url, title, text, className = '', timestamp }: ShareButtonProps) {
+  const shareUrl =
+    timestamp != null && timestamp > 0
+      ? `${url}${url.includes('?') ? '&' : '?'}t=${Math.floor(timestamp)}`
+      : url;
   const [isLoading, setIsLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,14 +50,14 @@ export function ShareButton({ url, title, text, className = '' }: ShareButtonPro
 
     try {
       if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-        await navigator.share({ title, text, url });
+        await navigator.share({ title, text, url: shareUrl });
         toast.success('Shared successfully');
       } else if (
         typeof navigator !== 'undefined' &&
         navigator.clipboard &&
         typeof navigator.clipboard.writeText === 'function'
       ) {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(shareUrl);
         showCopiedFeedback();
       } else {
         throw new Error('Clipboard access is not available');

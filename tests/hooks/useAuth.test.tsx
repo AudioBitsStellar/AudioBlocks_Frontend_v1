@@ -65,7 +65,7 @@ describe('Auth', () => {
       handleLogOut: mockHandleLogOut,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true });
+    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
 
     const signature = '0xsignature';
     mockWallet.signMessage.mockResolvedValue(signature);
@@ -88,7 +88,14 @@ describe('Auth', () => {
       signature,
       message: expect.stringContaining('Welcome to AudioBlocks!'),
     });
-    expect(mockCookies.set).toHaveBeenCalledWith('audioblocks_jwt', 'jwt-token');
+    expect(mockCookies.set).toHaveBeenCalledWith(
+      'audioblocks_jwt',
+      'jwt-token',
+      expect.objectContaining({
+        sameSite: 'strict',
+        path: '/',
+      })
+    );
     expect(mockToast.success).toHaveBeenCalledWith('Login successful');
   });
 
@@ -102,7 +109,7 @@ describe('Auth', () => {
       handleLogOut: mockHandleLogOut,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true });
+    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
 
     mockWallet.signMessage.mockResolvedValue('0xsignature');
 
@@ -136,7 +143,14 @@ describe('Auth', () => {
       signature: '0xsignature',
       message: expect.stringContaining('Welcome to AudioBlocks!'),
     });
-    expect(mockCookies.set).toHaveBeenCalledWith('audioblocks_jwt', 'register-token');
+    expect(mockCookies.set).toHaveBeenCalledWith(
+      'audioblocks_jwt',
+      'register-token',
+      expect.objectContaining({
+        sameSite: 'strict',
+        path: '/',
+      })
+    );
   });
 
   it('shows error toast and calls handleLogOut on generic auth failure', async () => {
@@ -149,7 +163,7 @@ describe('Auth', () => {
       handleLogOut: mockHandleLogOut,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true });
+    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
 
     mockWallet.signMessage.mockResolvedValue('0xsignature');
     mockApiClient.post.mockRejectedValue({
@@ -177,7 +191,7 @@ describe('Auth', () => {
       handleLogOut: mockHandleLogOut,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true });
+    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
 
     mockWallet.signMessage.mockRejectedValue(new Error('User rejected the request'));
     mockApiClient.post.mockResolvedValue({
@@ -206,7 +220,7 @@ describe('Auth', () => {
       handleLogOut: vi.fn(),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    mockUseAccount.mockReturnValue({ address: null, isConnected: false });
+    mockUseAccount.mockReturnValue({ address: null, isConnected: false } as any);
 
     const { result } = renderHook(() => Auth());
 
@@ -216,5 +230,66 @@ describe('Auth', () => {
 
     await waitFor(() => expect(mockWallet.signMessage).not.toHaveBeenCalled(), { timeout: 1000 });
     expect(mockApiClient.post).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid wallet address before signing or calling the API', async () => {
+    const mockWallet = { signMessage: vi.fn() };
+
+    mockUseDynamicContext.mockReturnValue({
+      user: mockUser,
+      primaryWallet: mockWallet,
+      handleLogOut: vi.fn(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    mockUseAccount.mockReturnValue({ address: 'not-an-address', isConnected: true } as any);
+
+    const { result } = renderHook(() => Auth());
+
+    act(() => {
+      result.current.setShouldTriggerSignature(true);
+    });
+
+    await waitFor(() =>
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'Connected wallet address is invalid. Please reconnect your wallet.'
+      ),
+    );
+    expect(mockWallet.signMessage).not.toHaveBeenCalled();
+    expect(mockApiClient.post).not.toHaveBeenCalled();
+  });
+
+  it('sets JWT cookie with Secure and SameSite flags', async () => {
+    const mockWallet = { signMessage: vi.fn() };
+    const mockHandleLogOut = vi.fn();
+
+    mockUseDynamicContext.mockReturnValue({
+      user: mockUser,
+      primaryWallet: mockWallet,
+      handleLogOut: mockHandleLogOut,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
+
+    mockWallet.signMessage.mockResolvedValue('0xsignature');
+    mockApiClient.post.mockResolvedValue({
+      data: { user: { token: 'secure-token' }, message: 'Login successful' },
+    });
+
+    const { result } = renderHook(() => Auth());
+
+    act(() => {
+      result.current.setShouldTriggerSignature(true);
+    });
+
+    await waitFor(() => expect(mockCookies.set).toHaveBeenCalled(), { timeout: 2000 });
+
+    expect(mockCookies.set).toHaveBeenCalledWith(
+      'audioblocks_jwt',
+      'secure-token',
+      expect.objectContaining({
+        sameSite: 'strict',
+        path: '/',
+      })
+    );
   });
 });

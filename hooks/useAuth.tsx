@@ -3,7 +3,9 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { useAccount } from 'wagmi';
+import { isAddress } from 'viem';
 import apiClient from '@/lib/apiClient';
+import { AUTH } from '@/lib/constants';
 
 /**
  * Distinguishes a user declining/cancelling a wallet signature prompt from a
@@ -35,10 +37,15 @@ export const Auth = () => {
     async (
       role: string,
       email: string,
-      walletAddress: unknown,
+      walletAddress: string,
       signature: string,
       message: string
     ) => {
+      if (!isAddress(walletAddress)) {
+        toast.error('Connected wallet address is invalid. Please reconnect your wallet.');
+        return;
+      }
+
       try {
         const response = await apiClient.post('/api/auth/login', {
           role,
@@ -49,7 +56,7 @@ export const Auth = () => {
         });
 
         const token = response.data.user.token;
-        Cookies.set('audioblocks_jwt', token);
+        Cookies.set(AUTH.COOKIE_NAME, token, AUTH.COOKIE_OPTIONS);
         toast.success(response.data?.message);
         return response.data;
 
@@ -68,7 +75,7 @@ export const Auth = () => {
             });
 
             const registerToken = registerResponse.data?.user?.token;
-            Cookies.set('audioblocks_jwt', registerToken);
+            Cookies.set(AUTH.COOKIE_NAME, registerToken, AUTH.COOKIE_OPTIONS);
             toast.success(registerResponse.data?.message);
             return registerResponse.data;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,6 +95,12 @@ export const Auth = () => {
   useEffect(() => {
     const runSignatureFlow = async () => {
       if (!user?.userId || !primaryWallet || !address || !shouldTriggerSignature) return;
+
+      if (!isAddress(address)) {
+        toast.error('Connected wallet address is invalid. Please reconnect your wallet.');
+        setShouldTriggerSignature(false);
+        return;
+      }
 
       const message = `Welcome to AudioBlocks! Sign this message to authenticate: ${new Date().toISOString()}`;
 

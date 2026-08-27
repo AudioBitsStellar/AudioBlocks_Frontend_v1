@@ -97,6 +97,14 @@ export default function LayeredDepthSlider({
 
   const config = sizeConfig[size];
 
+  const slideNext = useCallback(() => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setCurrentIndex((prev) => (prev + 1) % slides.length);
+    setProgress(0);
+    setTimeout(() => setIsAnimating(false), 800);
+  }, [isAnimating, slides.length]);
+
   // Auto-advance slides
   useEffect(() => {
     if (isHovered && pauseOnHover) return;
@@ -133,14 +141,6 @@ export default function LayeredDepthSlider({
       if (progressRef.current) clearTimeout(progressRef.current);
     };
   }, [currentIndex, interval, isHovered, pauseOnHover]);
-
-  const slideNext = useCallback(() => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    setCurrentIndex((prev) => (prev + 1) % slides.length);
-    setProgress(0);
-    setTimeout(() => setIsAnimating(false), 800);
-  }, [isAnimating, slides.length]);
 
   const slidePrev = () => {
     if (isAnimating) return;

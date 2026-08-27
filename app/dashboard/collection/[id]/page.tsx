@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { use, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, Download } from 'lucide-react';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
@@ -16,14 +16,15 @@ function ipfsImage(cid: string): string {
   return '/audio.jpg';
 }
 
-export default function CollectionDetailPage({ params }: { params: { id: string } }) {
-  useScrollRestoration(`collection-${params.id}`);
+export default function CollectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  useScrollRestoration(`collection-${id}`);
   const { songs, isLoading } = useNFTCollection();
 
   const song = useMemo(() => {
     if (isLoading) return undefined;
-    return songs.find((s) => s.songCID === params.id || s.id === params.id);
-  }, [songs, params.id, isLoading]);
+    return songs.find((s) => s.songCID === id || s.songId.toString() === id);
+  }, [songs, id, isLoading]);
 
   if (isLoading) {
     return (
@@ -58,6 +59,19 @@ export default function CollectionDetailPage({ params }: { params: { id: string 
           <p className="text-sm text-gray-400 break-all">
             <span className="text-gray-500">Artist:</span> {song.artistAddress}
           </p>
+          {/* Issue #339: owning the NFT (this page only renders for songs in
+              the connected wallet's collection) unlocks a direct download of
+              the underlying audio, not just streaming. */}
+          <a
+            download
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand hover:bg-pink-700 text-white text-sm font-semibold transition-colors"
+            href={`${IPFS_GATEWAY}${song.songCID}`}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <Download aria-hidden="true" size={16} />
+            Download audio
+          </a>
         </div>
       </div>
     </div>

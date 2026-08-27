@@ -1,0 +1,39 @@
+# Performance budget (#301).
+#
+# Enforces a client-side bundle-size budget in CI using `size-limit`
+# (@size-limit/file). The job runs a real `next build` (Next.js needs
+# NEXT_PUBLIC_API_URL at prerender time — the documented dev value is used
+# here; it is not a secret) and then checks the measured output against the
+# budgets in `.size-limit.js`. A large regression (e.g. a heavyweight
+# dependency added to a route or to the shared vendor bundle) fails the check.
+name: performance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  size-limit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Check performance budget
+        run: npx size-limit --json

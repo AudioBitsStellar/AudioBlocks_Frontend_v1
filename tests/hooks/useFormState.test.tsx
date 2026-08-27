@@ -115,6 +115,24 @@ describe('useFormState validation', () => {
     );
   });
 
+  it.each([
+    'javascript:alert(1)',
+    'https://user:password@example.com',
+    'https://',
+    ' https://example.com',
+  ])(
+    'rejects unsafe or incomplete profile URLs: %s',
+    (website) => {
+      render(<TestForm />);
+      const websiteInput = screen.getByLabelText('Website');
+
+      fireEvent.change(websiteInput, { target: { value: website } });
+      fireEvent.blur(websiteInput);
+
+      expect(screen.getByTestId('error-website')).toBeInTheDocument();
+    },
+  );
+
   it('Valid form submits successfully (button enabled)', () => {
     render(<TestForm />);
     const nameInput = screen.getByLabelText('Name');

@@ -1,0 +1,92 @@
+# PR size labeling (#303).
+#
+# Adds a size label to every PR based on the total number of added + deleted
+# lines in the diff. Uses only the built-in `actions/github-script`, so no
+# third-party actions are required. Stale size labels are removed before the
+# new one is applied, keeping exactly one size label present at a time.
+name: pr-size-label
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  size-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute diff size and apply label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const thresholds = [
+              { name: 'PR: S', max: 150 },
+              { name: 'PR: M', max: 400 },
+              { name: 'PR: L', max: 800 },
+              { name: 'PR: XL', max: Infinity },
+            ];
+            const sizeLabelNames = thresholds.map((t) => t.name);
+
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            });
+
+            const added = files.data.reduce((sum, f) => sum + (f.additions || 0), 0);
+            const deleted = files.data.reduce((sum, f) => sum + (f.deletions || 0), 0);
+            const size = added + deleted;
+
+            const target = thresholds.find((t) => size <= t.max).name;
+            core.info(`PR changed ${added} added / ${deleted} deleted lines (${size} total) -> ${target}`);
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const currentSizeLabels = pr.labels
+              .map((l) => l.name)
+              .filter((name) => sizeLabelNames.includes(name));
+
+            for (const name of currentSizeLabels) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name,
+                });
+              } catch {
+                core.info(`Size label "${name}" not present; skipping removal.`);
+              }
+            }
+
+            // Ensure the label exists (addLabels does not create labels).
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: target,
+              });
+            } catch {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: target,
+                color: 'fbca04',
+                description:
+                  'Automatically applied based on PR diff size (added + deleted lines).',
+              });
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [target],
+            });

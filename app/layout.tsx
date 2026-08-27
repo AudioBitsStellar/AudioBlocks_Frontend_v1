@@ -6,12 +6,11 @@ import './globals.css';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import AccessibilityAnnouncer from '@/components/AccessibilityAnnouncer';
-import { ThemeScript } from "@/components/ThemeScript";
 import EnvCheck from '@/components/EnvCheck';
 import SWRegister from '@/components/SWRegister';
+import { ThemeScript } from '@/components/ThemeScript';
 import RouteProgress from '@/components/ui/RouteProgress';
 import Provider from '@/context/provider';
-import { ToastProvider } from '@/context/ToastContext';
 import type { Metadata } from 'next';
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -41,7 +40,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head><ThemeScript /></head>
+      <head>
+        <ThemeScript />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
@@ -59,7 +60,7 @@ export default function RootLayout({
             Skip to main content
           </a>
           <Toaster closeButton position="bottom-right" />
-          <ToastProvider>{children}</ToastProvider>
+          {children}
           {/* Analytics script loaded after user interaction to reduce main thread blocking */}
           <Script
             id="analytics-script"

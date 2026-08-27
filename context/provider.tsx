@@ -10,11 +10,12 @@ import { http } from 'viem';
 import { liskSepolia, mainnet, sepolia } from 'viem/chains';
 import { createConfig, WagmiProvider } from 'wagmi';
 import WrongNetworkBanner from '@/components/common/WrongNetworkBanner';
-import { TransactionProvider } from '@/context/TransactionContext';
 import { LoadingProvider } from '@/context/LoadingContext';
-import { UserPreferencesProvider } from "@/context/UserPreferencesContext";
-import { ThemeProvider } from "@/context/ThemeProvider";
+import { ThemeProvider } from '@/context/ThemeProvider';
+import { TransactionProvider } from '@/context/TransactionContext';
+import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
 import { WalletProvider } from '@/context/WalletContext';
+import { useWalletAnalytics } from '@/hooks/useWalletAnalytics';
 import { queryClient } from '@/lib/queryClient';
 
 const config = createConfig({
@@ -27,27 +28,41 @@ const config = createConfig({
   },
 });
 
+/**
+ * Watches wallet connect/disconnect transitions and reports them to the
+ * analytics layer (#323). Rendered inside the wagmi/Dynamic providers so it
+ * can read account state.
+ */
+function WalletAnalyticsTracker() {
+  useWalletAnalytics();
+  return null;
+}
+
 const Provider = ({ children }: { children: ReactNode }) => {
   return (
-    <DynamicContextProvider
-      settings={{
-        environmentId: 'c686da1e-ac86-4bd4-a2f4-5fe6ff42ed85',
-        walletConnectors: [EthereumWalletConnectors],
-        overrides: {
-          views: [
-            {
-              type: SdkViewType.Login,
-              sections: [
+    <ToastProvider>
+      <PlaybackProvider>
+        <DynamicContextProvider
+          settings={{
+            environmentId: 'c686da1e-ac86-4bd4-a2f4-5fe6ff42ed85',
+            walletConnectors: [EthereumWalletConnectors],
+            overrides: {
+              views: [
                 {
-                  type: SdkViewSectionType.Email,
-                },
-                {
-                  type: SdkViewSectionType.Separator,
-                  label: 'Or',
-                },
-                {
-                  type: SdkViewSectionType.Social,
-                  defaultItem: 'google',
+                  type: SdkViewType.Login,
+                  sections: [
+                    {
+                      type: SdkViewSectionType.Email,
+                    },
+                    {
+                      type: SdkViewSectionType.Separator,
+                      label: 'Or',
+                    },
+                    {
+                      type: SdkViewSectionType.Social,
+                      defaultItem: 'google',
+                    },
+                  ],
                 },
               ],
             },
@@ -58,13 +73,16 @@ const Provider = ({ children }: { children: ReactNode }) => {
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
           <DynamicWagmiConnector>
+            <WalletAnalyticsTracker />
             <WalletProvider>
               <TransactionProvider>
                 <LoadingProvider>
-                  <ThemeProvider><UserPreferencesProvider>
-                    <WrongNetworkBanner />
-                    {children}
-                  </UserPreferencesProvider></ThemeProvider>
+                  <ThemeProvider>
+                    <UserPreferencesProvider>
+                      <WrongNetworkBanner />
+                      {children}
+                    </UserPreferencesProvider>
+                  </ThemeProvider>
                 </LoadingProvider>
               </TransactionProvider>
             </WalletProvider>
