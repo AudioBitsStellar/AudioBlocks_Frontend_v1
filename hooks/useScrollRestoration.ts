@@ -38,6 +38,10 @@ export function useScrollRestoration(key?: string) {
   const pathname = usePathname();
   const storageKey = key ?? pathname;
   const restoredKeyRef = useRef<string | null>(null);
+  // True only for a *back/forward* navigation (popstate). A fresh navigation
+  // must not restore a stale position — it is a new visit, so the old one is
+  // cleared instead (acceptance criteria for #131).
+  const isPopNavigationRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -50,9 +54,28 @@ export function useScrollRestoration(key?: string) {
     };
   }, []);
 
+  // Tag popstate (back/forward) so the restore effect below can tell it apart
+  // from a fresh navigation. Registered once, before any per-key logic, so the
+  // flag is accurate on the very first navigation into a page.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePopState = () => {
+      isPopNavigationRef.current = true;
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   useEffect(() => {
     if (restoredKeyRef.current === storageKey) return;
     restoredKeyRef.current = storageKey;
+
+    // Fresh navigation: discard whatever the user saved on a previous visit so
+    // a back button never resurrects an unrelated scroll position.
+    if (!isPopNavigationRef.current) {
+      clearPosition(storageKey);
+      return;
+    }
 
     const saved = getPositions()[storageKey];
     if (typeof saved !== 'number' || saved <= 0) return;
@@ -64,7 +87,8 @@ export function useScrollRestoration(key?: string) {
     const restore = () => {
       if (typeof window === 'undefined') return;
 
-      const pageCanReachSavedPosition = document.documentElement.scrollHeight >= saved + window.innerHeight;
+      const pageCanReachSavedPosition =
+        document.documentElement.scrollHeight >= saved + window.innerHeight;
       if (pageCanReachSavedPosition || attempts >= maxAttempts) {
         window.scrollTo(0, saved);
         return;
@@ -87,6 +111,7 @@ export function useScrollRestoration(key?: string) {
 
   useEffect(() => {
     const handlePopState = () => {
+      isPopNavigationRef.current = true;
       savePosition(storageKey, window.scrollY);
     };
     window.addEventListener('popstate', handlePopState);
