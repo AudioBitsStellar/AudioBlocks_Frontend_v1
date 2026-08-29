@@ -223,6 +223,16 @@ const ProgressBar = memo(function ProgressBar({
   );
 });
 
+/**
+ * Main Player Component (`components/common/Player.tsx`)
+ *
+ * Drives global audio playback, track scrub previewing, crossfade overlapping (#115),
+ * gapless preloading (#329), audio loudness normalization (#328), and media session integration.
+ *
+ * @crossfade
+ * Crossfade transitions overlap outgoing and incoming tracks when `crossfadeDuration` > 0.
+ * Detailed crossfade architecture and configuration guides can be found in `docs/CROSSFADE.md`.
+ */
 const Player = () => {
   const {
     playlist,

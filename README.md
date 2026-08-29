@@ -405,17 +405,17 @@ The project enforces accessibility via:
 
 The following accessibility features are implemented across the app:
 
-| Feature                         | Status                                                    |
-| ------------------------------- | --------------------------------------------------------- |
-| Skip link to main content       | ✅ `app/layout.tsx`                                       |
-| Visible focus indicators        | ✅ `*:focus-visible` in `globals.css`                     |
-| ARIA labels on buttons          | ✅ Player controls, nav buttons, modals                   |
-| `role="slider"` on seek/volume  | ✅ `components/common/Player.tsx`                         |
-| `aria-live` track announcements | ✅ Player announces "Now playing: Title by Artist"        |
+| Feature                         | Status                                                      |
+| ------------------------------- | ----------------------------------------------------------- |
+| Skip link to main content       | ✅ `app/layout.tsx`                                         |
+| Visible focus indicators        | ✅ `*:focus-visible` in `globals.css`                       |
+| ARIA labels on buttons          | ✅ Player controls, nav buttons, modals                     |
+| `role="slider"` on seek/volume  | ✅ `components/common/Player.tsx`                           |
+| `aria-live` track announcements | ✅ Player announces "Now playing: Title by Artist"          |
 | Seek preview tooltip            | ✅ Player scrubber shows target time while hovering/seeking |
-| Focus trapping in modals        | ✅ Comment panel, UserMenu, mobile nav, Share, AvatarCrop |
-| Keyboard-accessible lists       | ✅ Recently Played cards                                  |
-| `eslint-plugin-jsx-a11y`        | ✅ Recommended ruleset                                    |
+| Focus trapping in modals        | ✅ Comment panel, UserMenu, mobile nav, Share, AvatarCrop   |
+| Keyboard-accessible lists       | ✅ Recently Played cards                                    |
+| `eslint-plugin-jsx-a11y`        | ✅ Recommended ruleset                                      |
 
 ## Contributing
 
@@ -483,9 +483,46 @@ Open a GitHub issue with:
   read/write feature.
 - `@tanstack/react-query` is wired into the provider tree (required
   internally by `wagmi`) but isn't yet used for the app's own data fetching.
-- Automated test suite is not yet implemented.
 - Dynamic Labs `environmentId` is hardcoded in `context/provider.tsx` and
   should be moved to an environment variable.
+
+## Testing
+
+AudioBlocks Frontend includes an automated test suite powered by **Vitest** for unit/component testing and **Playwright** for end-to-end (E2E) & visual regression testing.
+
+### Test Directory Structure
+
+```
+tests/
+├── components/          # Component unit tests (Player, Controls, Dashboard)
+├── context/             # React context & hook tests (PlaybackContext)
+└── visual/              # Visual regression and UI layout tests (PlayerBar)
+```
+
+### Running Tests
+
+- **Run All Unit Tests**:
+  ```bash
+  npm test
+  ```
+- **Run Unit Tests in Watch Mode**:
+  ```bash
+  npm run test:watch
+  ```
+- **Generate Test Coverage Report**:
+  ```bash
+  npm run test:coverage
+  ```
+- **Run End-to-End (E2E) Tests**:
+  ```bash
+  npm run test:e2e
+  ```
+- **Run E2E Tests in Interactive UI Mode**:
+  ```bash
+  npm run test:e2e:ui
+  ```
+
+---
 
 ## Roadmap
 
