@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import AvatarCrop from '@/components/common/dashboard/AvatarCrop';
 import { useFormState } from '@/hooks/useFormState';
 import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { sanitizeUserInput } from '@/lib/sanitize';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_SIZE_MB = 5;
@@ -88,8 +89,8 @@ const EditProfile = () => {
     if (!isFormValid) return;
     update(
       {
-        name: values.displayName,
-        bio: values.bio,
+        name: sanitizeUserInput(values.displayName),
+        bio: sanitizeUserInput(values.bio),
         website: values.website,
         twitter: values.twitter,
       },

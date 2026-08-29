@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { SendHorizonal, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { sanitizeUserInput } from '@/lib/sanitize';
 
 interface CommentPanelProps {
   onClose: () => void;
@@ -81,7 +82,7 @@ const Comment = ({ onClose }: CommentPanelProps) => {
   };
 
   const handleSendComment = () => {
-    const trimmed = commentText.trim();
+    const trimmed = sanitizeUserInput(commentText);
     if (!trimmed) {
       toast.error('Please enter a comment before sending.');
       return;
