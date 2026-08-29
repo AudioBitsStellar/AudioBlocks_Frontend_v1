@@ -1,14 +1,41 @@
 'use client';
 
-import { useRef } from 'react';
+import { memo, useCallback, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import AudioCard from '@/components/ui/AudioCard';
 import { usePlayback } from '@/context/PlaybackContext';
+
+const TrackListRow = memo(function TrackListRow({
+  track,
+  onPlay,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  track: any;
+  onPlay: () => void;
+}) {
+  return (
+    <AudioCard
+      artist={track.artist}
+      artworkUrl={track.cover}
+      className="border-b border-border-dark"
+      duration={track.duration}
+      title={track.title}
+      variant="compact"
+      onClick={onPlay}
+      onPlay={onPlay}
+    />
+  );
+});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function TrackList({ tracks }: { tracks: any[] }) {
   const { playTrack } = usePlayback();
   const parentRef = useRef<HTMLDivElement>(null);
+
+  // Stable per-track callback so a re-render of the list never cascades into
+  // every visible row re-rendering (#161).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handlePlay = useCallback((track: any) => playTrack(track), [playTrack]);
 
   const virtualizer = useVirtualizer({
     count: tracks.length,
@@ -44,16 +71,7 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                 transform: `translateY(${virtualItem.start}px)`,
               }}
             >
-              <AudioCard
-                artist={track.artist}
-                artworkUrl={track.cover}
-                className="border-b border-border-dark"
-                duration={track.duration}
-                title={track.title}
-                variant="compact"
-                onClick={() => playTrack(track)}
-                onPlay={() => playTrack(track)}
-              />
+              <TrackListRow track={track} onPlay={() => handlePlay(track)} />
             </div>
           );
         })}

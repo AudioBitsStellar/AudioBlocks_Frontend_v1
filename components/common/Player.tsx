@@ -40,6 +40,9 @@ const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
 
+/** Session key tracking whether the autoplay prompt was already shown (#134). */
+const AUTOPLAY_PROMPT_KEY = 'audioblocks_autoplay_prompted';
+
 const formatTime = (time: number) => {
   const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60)
@@ -778,9 +781,36 @@ const Player = () => {
     }
   }, [currentIndex, currentTrack]);
 
+  // #134: gate the "click to play" banner to once per session. A blocked
+  // autoplay after the first user interaction is handled silently (the
+  // audio error path retries on the next track), so the banner is not
+  // re-shown every time the browser rejects an automatic play().
+  const [autoplayPrompted, setAutoplayPrompted] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return sessionStorage.getItem(AUTOPLAY_PROMPT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const hasPromptedAutoplay = autoplayPrompted;
+
   useEffect(() => {
-    if (!autoplayBlocked) return;
+    if (!autoplayBlocked || hasPromptedAutoplay) return;
+    setAutoplayPrompted(true);
+    try {
+      sessionStorage.setItem(AUTOPLAY_PROMPT_KEY, '1');
+    } catch {
+      // Storage unavailable — prompt this once regardless.
+    }
     const handler = () => {
+      // Unblock Web Audio on the user gesture itself: AudioContext only
+      // starts running after a user interaction, so the resume must happen
+      // inside this handler to actually take effect (#134).
+      const ctx = ensureAudioGraph();
+      if (ctx && ctx.state === 'suspended') {
+        void ctx.resume().catch(() => {});
+      }
       resumeAudio();
       setAutoplayBlocked(false);
     };
@@ -790,7 +820,7 @@ const Player = () => {
       document.removeEventListener('click', handler);
       document.removeEventListener('keydown', handler);
     };
-  }, [autoplayBlocked, resumeAudio, setAutoplayBlocked]);
+  }, [autoplayBlocked, resumeAudio, setAutoplayBlocked, ensureAudioGraph, hasPromptedAutoplay]);
 
   useEffect(() => {
     return () => {
@@ -839,7 +869,7 @@ const Player = () => {
         </div>
       )}
 
-      {autoplayBlocked && (
+      {autoplayBlocked && !hasPromptedAutoplay && (
         <div
           className="flex items-center justify-between bg-yellow-900/80 text-white text-xs px-4 py-2 rounded-md mb-2 max-w-7xl mx-auto cursor-pointer"
           role="button"

@@ -1,22 +1,12 @@
+'use client';
+
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import NatureDepthSlider from '../../../components/common/NatureDepth';
 import NftCollections from '../../../components/common/NftCollections';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Marketplace | AudioBlocks',
-  description:
-    'Explore and purchase unique audio-inspired NFTs, sound packs, and digital art on the AudioBlocks marketplace.',
-  openGraph: {
-    title: 'Marketplace | AudioBlocks',
-    description:
-      'Explore and purchase unique audio-inspired NFTs, sound packs, and digital art on the AudioBlocks marketplace.',
-    type: 'website',
-    siteName: 'AudioBlocks',
-  },
-};
 
 export default function MarketplacePage() {
+  useScrollRestoration('marketplace');
   return (
     <div className="min-h-screen bg-black">
       <div className="w-full space-y-12 py-6">

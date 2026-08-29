@@ -43,4 +43,13 @@ describe('useScrollRestoration', () => {
     const positions = JSON.parse(mockSessionStorage['audioblocks_scroll_positions'] || '{}');
     expect(positions['/test']).toBe(0);
   });
+
+  it('clears the saved position on a fresh (non-back) navigation', () => {
+    // No popstate fired, so this is a fresh navigation — the stored position
+    // must not be restored and must be cleared.
+    const { result } = renderHook(() => useScrollRestoration());
+    const positions = JSON.parse(mockSessionStorage['audioblocks_scroll_positions'] || '{}');
+    expect(positions['/test']).toBeUndefined();
+    expect(result.current).toBeDefined();
+  });
 });
