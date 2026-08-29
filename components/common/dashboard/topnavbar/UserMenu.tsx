@@ -70,6 +70,11 @@ const UserMenu = () => {
 
   const logOut = () => {
     Cookies.remove('audioblocks_jwt');
+    // #277 — clears the HttpOnly session cookie middleware.ts relies on
+    // for route-gating; see app/api/session/route.ts. Best-effort: even if
+    // this fails, the readable cookie above is already gone so the app's
+    // normal auth state is cleared immediately.
+    fetch('/api/session', { method: 'DELETE' }).catch(() => {});
     handleLogOut();
     route.push('/');
   };

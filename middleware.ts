@@ -10,6 +10,7 @@
 //    so stale tokens don't grant access to protected pages
 
 import { NextRequest, NextResponse } from 'next/server';
+import { AUTH } from '@/lib/constants';
 
 const PROTECTED_PREFIXES = ['/dashboard', '/profile'];
 const LOGIN_PATH = '/';
@@ -32,7 +33,11 @@ export default function middleware(req: NextRequest) {
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
   if (!isProtected) return NextResponse.next();
 
-  const tokenCookie = req.cookies.get('audioblocks_jwt');
+  // #277 — read the HttpOnly session cookie, not `audioblocks_jwt` (which
+  // must stay JS-readable for apiClient.ts's Bearer-header use case and is
+  // therefore forgeable/readable by an XSS payload). See
+  // app/api/session/route.ts for how this cookie is set.
+  const tokenCookie = req.cookies.get(AUTH.SESSION_COOKIE_NAME);
   const isAuthenticated = tokenCookie && !isExpiredJwt(tokenCookie.value);
 
   if (!isAuthenticated) {
