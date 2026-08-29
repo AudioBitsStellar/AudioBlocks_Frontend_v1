@@ -454,6 +454,10 @@ We welcome contributions! Please follow these guidelines.
    - Screenshots (for UI changes)
    - Any manual testing performed
 
+`main` is protected — see [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md)
+for the required approvals and CI status checks a PR must pass before it can
+be merged.
+
 ### Code Style Guidelines
 
 - **TypeScript**: Strict mode enabled — avoid `any` and `@ts-ignore` where possible
