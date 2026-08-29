@@ -13,6 +13,22 @@ import { AUTH } from '@/lib/constants';
  * common shapes across injected-wallet providers: EIP-1193 code 4001, and
  * message text used by most wallets/providers for user-initiated rejection.
  */
+// #277 — mirrors the token into an HttpOnly cookie (via app/api/session)
+// that middleware.ts uses for route-gating, alongside the JS-readable
+// `audioblocks_jwt` cookie apiClient.ts still needs for the Bearer header.
+// Best-effort: a failure here only means /dashboard's server-side gate
+// falls back to redirecting to login, not that the user is locked out of
+// the app entirely.
+function establishHttpOnlySession(token: string): void {
+  fetch('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  }).catch(() => {
+    /* non-fatal — see comment above */
+  });
+}
+
 function isUserRejectionError(err: unknown): boolean {
   const e = err as { code?: number; message?: string; reason?: string } | null | undefined;
   if (e?.code === 4001) return true;
@@ -57,6 +73,7 @@ export const Auth = () => {
 
         const token = response.data.user.token;
         Cookies.set(AUTH.COOKIE_NAME, token, AUTH.COOKIE_OPTIONS);
+        establishHttpOnlySession(token);
         toast.success(response.data?.message);
         return response.data;
 
@@ -76,6 +93,7 @@ export const Auth = () => {
 
             const registerToken = registerResponse.data?.user?.token;
             Cookies.set(AUTH.COOKIE_NAME, registerToken, AUTH.COOKIE_OPTIONS);
+            establishHttpOnlySession(registerToken);
             toast.success(registerResponse.data?.message);
             return registerResponse.data;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
