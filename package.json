@@ -54,6 +54,8 @@
     "wagmi": "^2.15.6"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
     "@eslint/eslintrc": "^3",
     "@next/bundle-analyzer": "^16.2.9",
     "@playwright/test": "^1.62.1",

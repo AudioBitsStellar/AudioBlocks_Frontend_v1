@@ -128,6 +128,11 @@ chore: update dependencies
 docs: update setup instructions
 ```
 
+This is enforced: a Husky `commit-msg` hook runs [commitlint](https://commitlint.js.org/) against `commitlint.config.mjs` on every
+commit, and `.github/workflows/commitlint.yml` re-checks every commit on a
+pull request. Allowed types are the Conventional Commits set plus `a11y`
+and `security`.
+
 ## Pull Request Process
 
 Open a pull request against `main` with a clear description that includes:

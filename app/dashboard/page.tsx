@@ -8,6 +8,7 @@ import Collections from '@/components/common/dashboard/Collections';
 import EventSection from '@/components/common/dashboard/EventSection';
 import Merch from '@/components/common/dashboard/Merch';
 import RecentlyPlayed from '@/components/common/dashboard/RecentlyPlayed';
+import DataErrorBoundary from '@/components/common/DataErrorBoundary';
 import { ProfileCompletion } from '@/components/dashboard/ProfileCompletion';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
@@ -57,17 +58,34 @@ const ExplorePage = () => {
         </div>
       </div>
 
-      <RecentlyPlayed />
+      {/*
+        Each section is isolated by a DataErrorBoundary so one failing section
+        renders an inline retry UI instead of blanking the whole page. See
+        docs/ERROR_BOUNDARIES.md for applying this to Collection/Community/Playlist.
+      */}
+      <DataErrorBoundary name="Recently Played">
+        <RecentlyPlayed />
+      </DataErrorBoundary>
 
-      <CategorySection />
+      <DataErrorBoundary name="Categories">
+        <CategorySection />
+      </DataErrorBoundary>
 
-      <Collections activeGenre={activeGenre} searchQuery={searchQuery} />
+      <DataErrorBoundary name="Collections">
+        <Collections activeGenre={activeGenre} searchQuery={searchQuery} />
+      </DataErrorBoundary>
 
-      <EventSection />
+      <DataErrorBoundary name="Events">
+        <EventSection />
+      </DataErrorBoundary>
 
-      <Artists activeGenre={activeGenre} searchQuery={searchQuery} />
+      <DataErrorBoundary name="Artists">
+        <Artists activeGenre={activeGenre} searchQuery={searchQuery} />
+      </DataErrorBoundary>
 
-      <Merch />
+      <DataErrorBoundary name="Merch">
+        <Merch />
+      </DataErrorBoundary>
     </div>
   );
 };
