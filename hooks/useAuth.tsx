@@ -72,7 +72,9 @@ export const Auth = () => {
         });
 
         const token = response.data.user.token;
+        const refreshToken = response.data.user.refreshToken ?? response.data.refreshToken;
         Cookies.set(AUTH.COOKIE_NAME, token, AUTH.COOKIE_OPTIONS);
+        if (refreshToken) Cookies.set(AUTH.REFRESH_COOKIE_NAME, refreshToken, AUTH.COOKIE_OPTIONS);
         establishHttpOnlySession(token);
         toast.success(response.data?.message);
         return response.data;
@@ -92,7 +94,11 @@ export const Auth = () => {
             });
 
             const registerToken = registerResponse.data?.user?.token;
+            const refreshToken =
+              registerResponse.data?.user?.refreshToken ?? registerResponse.data?.refreshToken;
             Cookies.set(AUTH.COOKIE_NAME, registerToken, AUTH.COOKIE_OPTIONS);
+            if (refreshToken)
+              Cookies.set(AUTH.REFRESH_COOKIE_NAME, refreshToken, AUTH.COOKIE_OPTIONS);
             establishHttpOnlySession(registerToken);
             toast.success(registerResponse.data?.message);
             return registerResponse.data;

@@ -79,6 +79,44 @@ interface FetchOptions extends RequestInit {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+let refreshPromise: Promise<string> | null = null;
+
+function clearSession() {
+  Cookies.remove(AUTH.COOKIE_NAME);
+  Cookies.remove(AUTH.REFRESH_COOKIE_NAME);
+  void fetch('/api/session', { method: 'DELETE' });
+}
+
+async function refreshAccessToken(): Promise<string> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    const refreshToken = Cookies.get(AUTH.REFRESH_COOKIE_NAME);
+    const response = await fetch(`${NEXT_PUBLIC_API_URL}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(refreshToken ? { refreshToken } : {}),
+    });
+    if (!response.ok) throw new AuthError('Session expired');
+    const payload = await response.json();
+    const token = payload?.user?.token ?? payload?.accessToken ?? payload?.token;
+    const nextRefreshToken = payload?.user?.refreshToken ?? payload?.refreshToken;
+    if (!token) throw new AuthError('Token refresh returned no access token');
+    Cookies.set(AUTH.COOKIE_NAME, token, AUTH.COOKIE_OPTIONS);
+    if (nextRefreshToken)
+      Cookies.set(AUTH.REFRESH_COOKIE_NAME, nextRefreshToken, AUTH.COOKIE_OPTIONS);
+    void fetch('/api/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    return token;
+  })().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
 async function fetchWithRetry(
   url: string,
   options: FetchOptions = {},
@@ -107,9 +145,6 @@ async function fetchWithRetry(
 
     if (!response.ok) {
       if (response.status === HTTP_STATUS.UNAUTHORIZED) {
-        if (typeof window !== 'undefined') {
-          Cookies.remove(AUTH.COOKIE_NAME);
-        }
         throw new AuthError();
       }
       if (response.status === HTTP_STATUS.NOT_FOUND) {
@@ -156,7 +191,7 @@ async function fetchWithRetry(
   }
 }
 
-async function request(endpoint: string, options: FetchOptions = {}) {
+async function request(endpoint: string, options: FetchOptions = {}, hasRetriedAuth = false) {
   const url = `${NEXT_PUBLIC_API_URL}${endpoint}`;
   const token = Cookies.get(AUTH.COOKIE_NAME);
 
@@ -168,7 +203,22 @@ async function request(endpoint: string, options: FetchOptions = {}) {
     headers.set(AUTH.TOKEN_HEADER, `${AUTH.TOKEN_PREFIX} ${token}`);
   }
 
-  const response = await fetchWithRetry(url, { ...options, headers });
+  let response: Response;
+  try {
+    response = await fetchWithRetry(url, { ...options, headers });
+  } catch (error) {
+    if (error instanceof AuthError && !hasRetriedAuth && endpoint !== '/api/auth/refresh') {
+      try {
+        const refreshedToken = await refreshAccessToken();
+        headers.set(AUTH.TOKEN_HEADER, `${AUTH.TOKEN_PREFIX} ${refreshedToken}`);
+        return request(endpoint, { ...options, headers }, true);
+      } catch {
+        clearSession();
+        throw new AuthError('Session expired');
+      }
+    }
+    throw error;
+  }
 
   const data = await response.json().catch(() => null);
   return { data, status: response.status, headers: response.headers };
