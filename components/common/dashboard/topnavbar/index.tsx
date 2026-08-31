@@ -2,6 +2,7 @@
 
 import { Bell, Menu, Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ChainSwitcher from '@/components/common/ChainSwitcher';
 import UserMenu from './UserMenu';
 
 interface TopNavbarProps {
@@ -49,6 +50,8 @@ const TopNavbar = ({ onMenuClick }: TopNavbarProps) => {
           <Bell className="text-white" size={20} />
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
         </button>
+
+        <ChainSwitcher className="hidden sm:block" />
 
         <UserMenu />
       </div>
