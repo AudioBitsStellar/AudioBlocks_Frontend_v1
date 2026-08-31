@@ -1,0 +1,22 @@
+name: commitlint
+
+on:
+  pull_request:
+
+# Lints every commit on the PR branch against commitlint.config.mjs so a
+# non-conventional message is caught in review even if the author bypassed
+# the local commit-msg hook (#302).
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Lint PR commits
+        run: npx commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}" --verbose
