@@ -4,15 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import Slider from 'react-slick';
-import { useSectionData } from '@/hooks/useSectionData';
+import { useGetExploreCollections } from '@/hooks/useExplore';
 import { getCarouselSettings } from './carouselSettings';
-import { collectionsData } from './data';
-
-function fetchCollections() {
-  return new Promise<typeof collectionsData>((resolve) => {
-    setTimeout(() => resolve(collectionsData), 200);
-  });
-}
 
 const Skeleton = () => (
   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
@@ -34,10 +27,7 @@ type Props = {
 };
 
 const Collections = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
-  const { data, isLoading, isError, isEmpty } = useSectionData({
-    queryKey: ['dashboard-collections', searchQuery, activeGenre],
-    fetchFn: fetchCollections,
-  });
+  const { data = [], isLoading, isError } = useGetExploreCollections();
 
   const filtered = useMemo(
     () =>
@@ -46,18 +36,22 @@ const Collections = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
           !searchQuery ||
           item.song.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.artist.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSearch;
+        const matchesGenre =
+          activeGenre === 'All' ||
+          item.description.toLowerCase().includes(activeGenre.toLowerCase());
+        return matchesSearch && matchesGenre;
       }),
-    [data, searchQuery]
+    [data, searchQuery, activeGenre]
   );
 
   return (
     <section>
       <div className="flex justify-between items-center pb-6 border-b">
-        <h1 className="text-2xl font-semibold text-on-muted font-poppins leading-tight tracking-tight">
+        <h2 className="text-2xl font-semibold text-on-muted font-poppins leading-tight tracking-tight">
           Collections
-        </h1>
+        </h2>
         <Link
+          aria-label="View all collections"
           className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
           href="/dashboard/all-collections"
         >
@@ -82,8 +76,8 @@ const Collections = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
             aria-label="Collections carousel"
             aria-roledescription="carousel"
           >
-            {filtered.map((item, index) => (
-              <div key={index} className="px-4">
+            {filtered.map((item) => (
+              <div key={item.id} className="px-4">
                 <div className="w-full h-40 rounded-lg overflow-hidden mx-auto">
                   <Image
                     alt={item.song}

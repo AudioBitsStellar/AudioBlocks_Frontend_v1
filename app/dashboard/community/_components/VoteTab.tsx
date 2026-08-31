@@ -58,7 +58,7 @@ const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: Vot
             <button
               key={g}
               aria-pressed={filter === g}
-              className={`px-4 py-1 font-medium cursor-pointer text-sm rounded-2xl border ${
+              className={`px-4 py-1.5 min-h-[44px] font-medium cursor-pointer text-sm rounded-2xl border ${
                 filter === g ? 'bg-brand text-white' : 'bg-surface-input text-on-muted'
               }`}
               onClick={() => setFilter(g)}
@@ -74,7 +74,7 @@ const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: Vot
           Failed to load artists. Please try again later.
         </p>
       ) : isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
           {[...Array(5)].map((_, i) => (
             <Card
               key={i}
@@ -103,7 +103,7 @@ const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: Vot
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-7">
           {filteredArtists.map((artist) => (
             <ArtistCard
               key={artist.id}

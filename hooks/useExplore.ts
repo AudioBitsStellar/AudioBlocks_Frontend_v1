@@ -2,12 +2,45 @@ import { useQuery } from '@tanstack/react-query';
 import { useReadContract, useReadContracts } from 'wagmi';
 import { abi, contractAddress } from '@/config/abi';
 import { QUERY_KEYS, CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
-import { getMerchListings, getEventListings } from '@/lib/exploreService';
+import {
+  getMerchListings,
+  getEventListings,
+  getExploreCategories,
+  getExploreCollections,
+  getExploreArtists,
+} from '@/lib/exploreService';
 
 export function useGetMerch() {
   return useQuery({
     queryKey: QUERY_KEYS.EXPLORE_MERCH,
     queryFn: getMerchListings,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
+  });
+}
+
+export function useGetExploreCategories() {
+  return useQuery({
+    queryKey: QUERY_KEYS.EXPLORE_CATEGORIES,
+    queryFn: getExploreCategories,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
+  });
+}
+
+export function useGetExploreCollections() {
+  return useQuery({
+    queryKey: QUERY_KEYS.EXPLORE_COLLECTIONS,
+    queryFn: getExploreCollections,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
+  });
+}
+
+export function useGetExploreArtists() {
+  return useQuery({
+    queryKey: QUERY_KEYS.EXPLORE_ARTISTS,
+    queryFn: getExploreArtists,
     staleTime: CACHE_DURATIONS.MEDIUM,
     retry: RETRY_CONFIG.DEFAULT,
   });

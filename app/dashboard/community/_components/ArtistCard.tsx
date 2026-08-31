@@ -53,7 +53,7 @@ const ArtistCard = ({ artist, hasVoted, isVoting, onVote }: ArtistCardProps) => 
           <ShareModal link={`https://audioblocks.com/vote/${slugify(artist.name)}`} />
         </div>
         <button
-          className="mt-auto bg-brand w-full hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold shadow"
+          className="mt-auto bg-brand w-full hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold shadow"
           disabled={isVoting || hasVoted}
           onClick={() => onVote(artist.id)}
         >

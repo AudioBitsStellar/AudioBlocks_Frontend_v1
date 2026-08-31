@@ -38,9 +38,9 @@ const EventSection = () => {
     <div>
       <section>
         <div className="flex justify-between items-center pb-6 border-b">
-          <h1 className="text-2xl font-semibold text-[#A3A3A3] font-poppins leading-tight tracking-tight">
+          <h2 className="text-2xl font-semibold text-[#A3A3A3] font-poppins leading-tight tracking-tight">
             Event
-          </h1>
+          </h2>
           <Link
             className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
             href="#"

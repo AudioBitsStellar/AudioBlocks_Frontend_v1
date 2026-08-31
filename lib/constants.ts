@@ -119,12 +119,21 @@ export const API_ENDPOINTS = {
   // Explore
   MERCH: '/api/merch',
   EVENTS: '/api/events',
+  EXPLORE_CATEGORIES: '/api/explore/categories',
+  EXPLORE_COLLECTIONS: '/api/explore/collections',
+  EXPLORE_ARTISTS: '/api/explore/artists',
+
+  // Collection / Owned NFTs
+  OWNED_COLLECTION: (address: string) => `/api/nfts/owned/${address}`,
 } as const;
 
 // ===== QUERY KEYS =====
 export const QUERY_KEYS = {
   EXPLORE_MERCH: ['explore-merch'],
   EXPLORE_EVENTS: ['explore-events'],
+  EXPLORE_CATEGORIES: ['explore-categories'],
+  EXPLORE_COLLECTIONS: ['explore-collections'],
+  EXPLORE_ARTISTS: ['explore-artists'],
   COMMUNITY_LEADERBOARD: ['community-leaderboard'],
   COMMUNITY_MY_VOTES: ['community-my-votes'],
 } as const;

@@ -54,15 +54,15 @@ const CommunityTabs = () => {
         value={selectedTab}
         onValueChange={(value) => setSelectedTab(value)}
       >
-        <TabsList className="flex gap-4 py-4">
+        <TabsList className="flex gap-4 py-4 overflow-x-auto w-full scrollbar-none">
           <TabsTrigger
-            className="data-[state=active]:bg-brand font-medium text-sm cursor-pointer data-[state=active]:text-white text-on-muted bg-surface-input px-3 py-2 rounded-xl"
+            className="data-[state=active]:bg-brand font-medium text-sm cursor-pointer data-[state=active]:text-white text-on-muted bg-surface-input px-5 py-2.5 rounded-xl shrink-0 min-h-[44px]"
             value="vote"
           >
             Vote
           </TabsTrigger>
           <TabsTrigger
-            className="data-[state=active]:bg-brand font-medium text-sm cursor-pointer data-[state=active]:text-white text-on-muted bg-surface-input px-3 py-2 rounded-xl"
+            className="data-[state=active]:bg-brand font-medium text-sm cursor-pointer data-[state=active]:text-white text-on-muted bg-surface-input px-5 py-2.5 rounded-xl shrink-0 min-h-[44px]"
             value="leaderboard"
           >
             Leaderboards

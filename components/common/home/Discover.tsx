@@ -54,25 +54,26 @@ const Discover = () => {
     <section className="py-12 bg-black text-white">
       {/* Header */}
       <div className="flex justify-between items-center w-4/5 mx-auto">
-        <h1 className="text-4xl font-semibold text-[#A3A3A3] font-poppins leading-tight tracking-tight">
+        <h2 className="text-3xl md:text-4xl font-semibold text-[#A3A3A3] font-poppins leading-tight tracking-tight">
           Buy, Sell <span className="text-white">& Discover</span> Tracks
-        </h1>
+        </h2>
         <Link
+          aria-label="Explore tracks"
           className="bg-[#1E181D] hover:bg-[#885FA8] text-[#F2AFC9] hover:text-[#1E181D] rounded-full p-5"
           href="#"
         >
-          <ArrowRight className="-rotate-45 w-6 h-6" />
+          <ArrowRight aria-hidden="true" className="-rotate-45 w-6 h-6" />
         </Link>
       </div>
 
       {/* Tabs and Carousel */}
       <div className="flex w-4/5 pt-10 mx-auto">
         {/* Sidebar Tabs */}
-        <aside className=" w-1/5 mr-6 space-y-3">
+        <aside className=" w-full md:w-1/5 md:mr-6 space-y-3">
           {categories.map((cat) => (
             <button
               key={cat}
-              className={`block px-4 py-2 text-left rounded-full text-sm font-medium transition ${
+              className={`block px-4 py-2.5 min-h-[44px] text-left rounded-full text-sm font-medium transition ${
                 activeTab === cat ? 'bg-pink-600 text-white' : 'hover:text-pink-400 text-white/70'
               }`}
               onClick={() => setActiveTab(cat)}
@@ -83,13 +84,15 @@ const Discover = () => {
           {/* Arrows */}
           <div className="flex gap-6 mt-8">
             <button
-              className="p-2 rounded-full cursor-pointer bg-[#1E181D] text-[#F2AFC9] hover:bg-white/20"
+              aria-label="Scroll tracks backward"
+              className="p-2.5 min-h-[44px] min-w-[44px] rounded-full cursor-pointer bg-[#1E181D] text-[#F2AFC9] hover:bg-white/20"
               onClick={() => sliderRef.current?.slickPrev()}
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <button
-              className="p-2 rounded-full cursor-pointer bg-[#1E181D] text-[#F2AFC9] hover:bg-white/20"
+              aria-label="Scroll tracks forward"
+              className="p-2.5 min-h-[44px] min-w-[44px] rounded-full cursor-pointer bg-[#1E181D] text-[#F2AFC9] hover:bg-white/20"
               onClick={() => sliderRef.current?.slickNext()}
             >
               <ArrowRight className="w-5 h-5" />
@@ -98,13 +101,13 @@ const Discover = () => {
         </aside>
 
         {/* Carousel Section */}
-        <div className="w-4/5">
+        <div className="w-full md:w-4/5">
           <Slider {...settings} ref={sliderRef}>
             {trackData[activeTab].map((track) => (
               <div key={track.id} className="px-3">
                 <div className="bg-[#111] hover:bg-[#181818] rounded-lg overflow-hidden p-4 transition">
                   <Image
-                    alt={track.title}
+                    alt={`Album artwork for ${track.title} by ${track.artist}`}
                     className="h-48 w-full object-cover mb-4 rounded"
                     height={200}
                     src={track.image}
@@ -114,7 +117,10 @@ const Discover = () => {
                   <p className="text-xs text-white/60 mb-1">{track.artist}</p>
                   <p className="text-xs text-white/60 mb-4">{track.left}</p>
                   <div className="flex justify-between items-center">
-                    <button className="bg-white text-black text-xs px-4 py-1 rounded font-semibold">
+                    <button
+                      aria-label={`Buy ${track.title} for ${track.price}`}
+                      className="bg-white text-black text-xs px-4 py-1.5 min-h-[44px] rounded font-semibold"
+                    >
                       Buy Now
                     </button>
                     <span className="text-xs">{track.price}</span>
