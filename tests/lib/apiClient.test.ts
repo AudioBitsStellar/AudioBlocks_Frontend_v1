@@ -29,6 +29,46 @@ describe('apiClient', () => {
     expect(Cookies.remove).toHaveBeenCalledWith('audioblocks_jwt');
   });
 
+  it('refreshes an expired token and retries the original request', async () => {
+    vi.mocked(Cookies.get).mockImplementation((name) =>
+      name === 'audioblocks_refresh_token' ? 'refresh-token' : 'expired-token'
+    );
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/api/auth/refresh')) {
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers(),
+          json: async () => ({ accessToken: 'fresh-token' }),
+        } as Response;
+      }
+      if (url === '/api/session') {
+        return { ok: true, status: 200, headers: new Headers() } as Response;
+      }
+      const authenticatedCalls = vi
+        .mocked(fetch)
+        .mock.calls.filter(([request]) => String(request).endsWith('/protected')).length;
+      return authenticatedCalls === 1
+        ? ({ ok: false, status: 401, headers: new Headers() } as Response)
+        : ({
+            ok: true,
+            status: 200,
+            headers: new Headers(),
+            json: async () => ({ success: true }),
+          } as Response);
+    });
+
+    const response = await apiClient.get('/protected');
+
+    expect(response.data).toEqual({ success: true });
+    expect(Cookies.set).toHaveBeenCalledWith(
+      'audioblocks_jwt',
+      'fresh-token',
+      expect.objectContaining({ sameSite: 'strict' })
+    );
+  });
+
   it('categorizes 404 as NotFoundError', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: false,

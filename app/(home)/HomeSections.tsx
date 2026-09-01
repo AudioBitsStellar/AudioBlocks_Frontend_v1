@@ -1,6 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useQueryClient } from '@tanstack/react-query';
+import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { RecentlyPlayed } from '@/components/common/home/RecentlyPlayed';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
@@ -33,8 +36,13 @@ const Experience = dynamic(() => import('../../components/common/home/Experience
 
 export default function HomeSections() {
   useScrollRestoration('home');
+  const queryClient = useQueryClient();
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: () => queryClient.refetchQueries({ type: 'active' }),
+  });
   return (
     <>
+      <PullToRefreshIndicator {...pullToRefresh} />
       <RecentlyPlayed />
 
       <LazySection minHeight={360}>

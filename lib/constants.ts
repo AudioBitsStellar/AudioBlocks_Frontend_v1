@@ -75,6 +75,7 @@ export const VALIDATION = {
 // ===== AUTH & COOKIES =====
 export const AUTH = {
   COOKIE_NAME: 'audioblocks_jwt',
+  REFRESH_COOKIE_NAME: 'audioblocks_refresh_token',
   // #277 — separate HttpOnly cookie used only by middleware.ts for
   // route-gating; set/cleared server-side via app/api/session/route.ts.
   // See that file's header comment for why this can't just be a flag on

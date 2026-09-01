@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Search } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
 import Artists from '@/components/common/dashboard/Artists';
 import CategorySection from '@/components/common/dashboard/CategorySection';
 import Collections from '@/components/common/dashboard/Collections';
@@ -11,6 +13,7 @@ import RecentlyPlayed from '@/components/common/dashboard/RecentlyPlayed';
 import DataErrorBoundary from '@/components/common/DataErrorBoundary';
 import { ProfileCompletion } from '@/components/dashboard/ProfileCompletion';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 const genreFilters = ['All', 'Pop', 'Contemporary', 'Rock', 'Afro', 'Jazz'];
 
@@ -18,9 +21,14 @@ const ExplorePage = () => {
   useScrollRestoration('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('All');
+  const queryClient = useQueryClient();
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: () => queryClient.refetchQueries({ type: 'active' }),
+  });
 
   return (
     <div>
+      <PullToRefreshIndicator {...pullToRefresh} />
       <ProfileCompletion />
 
       <div className="flex flex-col gap-4 mb-6">
