@@ -28,7 +28,7 @@
     "@dynamic-labs/sdk-react-core": "^4.23.0",
     "@dynamic-labs/wagmi-connector": "^4.23.0",
     "@heroicons/react": "^2.2.0",
-    "@radix-ui/react-accordion": "^1.2.11",
+    "@radix-ui/react-accordion": "^1.2.20",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slider": "^1.3.5",
