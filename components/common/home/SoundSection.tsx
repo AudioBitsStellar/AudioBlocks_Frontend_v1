@@ -31,14 +31,15 @@ const SoundsSection = memo(function SoundsSection() {
   return (
     <section className="text-white w-4/5 mx-auto py-5">
       <div className="flex justify-between items-center mb-5">
-        <h1 className="font-semibold text-[#A3A3A3] text-4xl leading-[100%] tracking-[0%] capitalize font-poppins">
+        <h2 className="font-semibold text-[#A3A3A3] text-2xl md:text-4xl leading-[100%] tracking-[0%] capitalize font-poppins">
           Sounds <span className="text-white">You Shouldn’t </span> Miss
-        </h1>
+        </h2>
         <Link
+          aria-label="View all sounds"
           className="bg-[#1E181D] hover:bg-[#885FA8] text-[#F2AFC9] hover:text-[#1E181D] cursor-pointer rounded-full p-5"
           href="#"
         >
-          <ArrowRight className="text-7xl -rotate-45" />
+          <ArrowRight aria-hidden="true" className="text-7xl -rotate-45" />
         </Link>
       </div>
 

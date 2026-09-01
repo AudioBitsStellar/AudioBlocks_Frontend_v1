@@ -4,15 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import Slider from 'react-slick';
-import { useSectionData } from '@/hooks/useSectionData';
+import { useGetExploreArtists } from '@/hooks/useExplore';
 import { getCarouselSettings } from './carouselSettings';
-import { artistsData } from './data';
-
-function fetchArtists() {
-  return new Promise<typeof artistsData>((resolve) => {
-    setTimeout(() => resolve(artistsData), 200);
-  });
-}
 
 const Skeleton = () => (
   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
@@ -34,10 +27,7 @@ type Props = {
 };
 
 const Artists = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
-  const { data, isLoading, isError, isEmpty } = useSectionData({
-    queryKey: ['dashboard-artists', searchQuery, activeGenre],
-    fetchFn: fetchArtists,
-  });
+  const { data = [], isLoading, isError } = useGetExploreArtists();
 
   const filtered = useMemo(
     () =>
@@ -58,10 +48,11 @@ const Artists = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
   return (
     <section>
       <div className="flex justify-between items-center pb-6 border-b">
-        <h1 className="text-2xl font-semibold text-on-muted font-poppins leading-tight tracking-tight">
+        <h2 className="text-2xl font-semibold text-on-muted font-poppins leading-tight tracking-tight">
           Artists
-        </h1>
+        </h2>
         <Link
+          aria-label="View all artists"
           className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
           href="/dashboard/all-artists"
         >
@@ -86,8 +77,8 @@ const Artists = ({ searchQuery = '', activeGenre = 'All' }: Props) => {
             aria-label="Artists carousel"
             aria-roledescription="carousel"
           >
-            {filtered.map((artist, index) => (
-              <div key={index} className="px-4">
+            {filtered.map((artist) => (
+              <div key={artist.id} className="px-4">
                 <div className="w-full h-40 rounded-lg overflow-hidden mx-auto">
                   <Image
                     alt={artist.song}

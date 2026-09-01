@@ -31,9 +31,9 @@ const Featured = memo(function Featured() {
   return (
     <>
       <div className="max-w-lg px-4 md:px-0 text-center mx-auto mt-10">
-        <h1 className="font-semibold text-[#A3A3A3] text-2xl mb-2 md:text-4xl leading-[100%] tracking-[0%] capitalize font-poppins">
+        <h2 className="font-semibold text-[#A3A3A3] text-2xl mb-2 md:text-4xl leading-[100%] tracking-[0%] capitalize font-poppins">
           Key <span className="text-white">Features</span> Overview
-        </h1>
+        </h2>
         <p className="text-[#A3A3A3] text-sm font-medium">
           Explore the tools that make AudioBlocks the go-to platform for artists and music lovers
           alike
@@ -57,7 +57,7 @@ const Featured = memo(function Featured() {
               />
             </div>
             <div className="px-6 py-8">
-              <h2 className="font-semibold text-base mb-2">{feature.title}</h2>
+              <h3 className="font-semibold text-base mb-2">{feature.title}</h3>
               <p className="font-normal text-sm text-[#A3A3A3]">{feature.description}</p>
             </div>
           </article>

@@ -4,9 +4,11 @@ import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ListFilter, Music, Search, UsersRound } from 'lucide-react';
+import { useAccount } from 'wagmi';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
+import { useOwnedCollection } from '@/hooks/useOwnedCollection';
 
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 const ITEMS_PER_PAGE = 10;
@@ -16,10 +18,34 @@ function ipfsImage(cid: string): string {
   return '/audio.jpg';
 }
 
+interface OwnedNFT {
+  songId: bigint;
+  artistAddress: string;
+  songCID: string;
+  totalStreams: bigint;
+  totalLikes: bigint;
+}
+
 const CollectionsPage = () => {
-  const { isConnected, nftBalance, songs, isLoading } = useNFTCollection();
+  const { address, isConnected } = useAccount();
+  const { nftBalance, isLoading: chainLoading } = useNFTCollection();
+  const { data: ownedNfts = [], isLoading: backendLoading } = useOwnedCollection();
+
+  const isLoading = (chainLoading || backendLoading) && isConnected;
+
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+
+  const songs: OwnedNFT[] = useMemo(() => {
+    if (!address || ownedNfts.length === 0) return [] as OwnedNFT[];
+    return ownedNfts.map((n) => ({
+      songId: BigInt(n.songId),
+      artistAddress: n.artistAddress,
+      songCID: n.songCID,
+      totalStreams: BigInt(n.totalStreams ?? 0),
+      totalLikes: BigInt(n.totalLikes ?? 0),
+    }));
+  }, [address, ownedNfts]);
 
   const filtered = useMemo(() => {
     return songs.filter(
@@ -43,7 +69,7 @@ const CollectionsPage = () => {
   const statCards = [
     {
       label: 'Number Of Assets',
-      value: isLoading ? '…' : nftBalance.toString(),
+      value: isLoading ? '…' : (nftBalance ?? BigInt(0)).toString(),
       accent: 'text-[#3575FF]',
       bg: 'bg-[#3575ff27]',
     },
@@ -130,7 +156,7 @@ const CollectionsPage = () => {
         </div>
       )}
 
-      {isConnected && !isLoading && songs.length === 0 && (
+      {isConnected && !isLoading && !backendLoading && songs.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center text-on-muted">
           <Music aria-hidden="true" className="mb-4 opacity-40" size={64} />
           <h3 className="text-white text-lg font-semibold mb-2">No NFTs yet</h3>
@@ -147,14 +173,18 @@ const CollectionsPage = () => {
         </div>
       )}
 
-      {isConnected && !isLoading && songs.length > 0 && filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-on-muted">
-          <Music aria-hidden="true" className="mb-4 opacity-40" size={48} />
-          <p className="text-lg font-medium">No NFT songs match your search</p>
-        </div>
-      )}
+      {isConnected &&
+        !isLoading &&
+        !backendLoading &&
+        songs.length > 0 &&
+        filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-on-muted">
+            <Music aria-hidden="true" className="mb-4 opacity-40" size={48} />
+            <p className="text-lg font-medium">No NFT songs match your search</p>
+          </div>
+        )}
 
-      {isConnected && !isLoading && paginatedSongs.length > 0 && (
+      {isConnected && !isLoading && !backendLoading && paginatedSongs.length > 0 && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {paginatedSongs.map((song) => (
