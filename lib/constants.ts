@@ -90,6 +90,14 @@ export const AUTH = {
   },
 } as const;
 
+// ===== SESSION EXPIRY =====
+export const SESSION = {
+  /** Show the expiry warning modal when this much time is left on the access token. */
+  WARNING_THRESHOLD_MS: 1000 * 60 * 2,
+  /** How often the access token cookie is re-read to track expiry. */
+  CHECK_INTERVAL_MS: 1000,
+} as const;
+
 // ===== ERROR MESSAGES =====
 export const ERROR_MESSAGES = {
   NETWORK: 'Network Error',
