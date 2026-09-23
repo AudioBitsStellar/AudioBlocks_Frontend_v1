@@ -9,6 +9,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { http } from 'viem';
 import { liskSepolia, mainnet, sepolia } from 'viem/chains';
 import { createConfig, WagmiProvider } from 'wagmi';
+import SessionExpiryModal from '@/components/common/SessionExpiryModal';
 import WrongNetworkBanner from '@/components/common/WrongNetworkBanner';
 import { LoadingProvider } from '@/context/LoadingContext';
 import { PlaybackProvider } from '@/context/PlaybackContext';
@@ -80,6 +81,7 @@ const Provider = ({ children }: { children: ReactNode }) => {
                       <ThemeProvider>
                         <UserPreferencesProvider>
                           <WrongNetworkBanner />
+                          <SessionExpiryModal />
                           {children}
                         </UserPreferencesProvider>
                       </ThemeProvider>

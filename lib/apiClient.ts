@@ -81,13 +81,13 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let refreshPromise: Promise<string> | null = null;
 
-function clearSession() {
+export function clearSession() {
   Cookies.remove(AUTH.COOKIE_NAME);
   Cookies.remove(AUTH.REFRESH_COOKIE_NAME);
   void fetch('/api/session', { method: 'DELETE' });
 }
 
-async function refreshAccessToken(): Promise<string> {
+export async function refreshAccessToken(): Promise<string> {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
     const refreshToken = Cookies.get(AUTH.REFRESH_COOKIE_NAME);
