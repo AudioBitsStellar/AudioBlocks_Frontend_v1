@@ -213,7 +213,10 @@ Login is wallet-based via [Dynamic Labs](https://www.dynamic.xyz/):
 5. `middleware.ts` reads this cookie to gate authenticated routes
 
 The auth flow is managed by `hooks/useAuth.tsx` with wallet connectors configured
-in `context/provider.tsx` (Ethereum, email, and social login via Google).
+in `context/provider.tsx` (Ethereum, email, and social login via Google). Wallet
+connection failures are handled at the provider boundary and shown as safe,
+user-facing toast messages; wallet connection error details are not displayed
+and a failed connection attempt does not clear an existing session.
 
 Supported chains: `mainnet`, `sepolia`, `liskSepolia`.
 

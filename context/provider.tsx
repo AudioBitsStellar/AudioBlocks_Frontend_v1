@@ -19,6 +19,7 @@ import { TransactionProvider } from '@/context/TransactionContext';
 import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
 import { WalletProvider } from '@/context/WalletContext';
 import { useWalletAnalytics } from '@/hooks/useWalletAnalytics';
+import { useWalletConnectionErrors } from '@/hooks/useWalletConnectionErrors';
 import { queryClient } from '@/lib/queryClient';
 
 const config = createConfig({
@@ -38,6 +39,12 @@ const config = createConfig({
  */
 function WalletAnalyticsTracker() {
   useWalletAnalytics();
+  return null;
+}
+
+/** Keeps provider connection failures user-facing without duplicating listeners in each CTA. */
+function WalletConnectionErrorHandler() {
+  useWalletConnectionErrors();
   return null;
 }
 
@@ -71,6 +78,7 @@ const Provider = ({ children }: { children: ReactNode }) => {
             },
           }}
         >
+          <WalletConnectionErrorHandler />
           <WagmiProvider config={config}>
             <QueryClientProvider client={queryClient}>
               <DynamicWagmiConnector>
