@@ -1,4 +1,5 @@
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useDynamicContext, useDynamicEvents } from '@dynamic-labs/sdk-react-core';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
@@ -9,6 +10,7 @@ import apiClient from '@/lib/apiClient';
 
 vi.mock('@dynamic-labs/sdk-react-core', () => ({
   useDynamicContext: vi.fn(),
+  useDynamicEvents: vi.fn(),
 }));
 
 vi.mock('wagmi', () => ({
@@ -37,6 +39,7 @@ vi.mock('sonner', () => ({
 }));
 
 const mockUseDynamicContext = vi.mocked(useDynamicContext);
+const mockUseDynamicEvents = vi.mocked(useDynamicEvents);
 const mockUseAccount = vi.mocked(useAccount);
 const mockCookies = vi.mocked(Cookies);
 const mockApiClient = vi.mocked(apiClient);
@@ -53,7 +56,7 @@ describe('Auth', () => {
   });
 
   const mockUser = { userId: 'user-1', email: 'test@example.com' };
-  const mockAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD38';
+  const mockAddress = '0x742d35CC6634c0532925A3b844bc9E7595f2BD38';
 
   it('triggers signature flow when user, wallet, and address are present', async () => {
     const mockWallet = { signMessage: vi.fn() };
@@ -63,7 +66,6 @@ describe('Auth', () => {
       user: mockUser,
       primaryWallet: mockWallet,
       handleLogOut: mockHandleLogOut,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
 
@@ -107,7 +109,6 @@ describe('Auth', () => {
       user: mockUser,
       primaryWallet: mockWallet,
       handleLogOut: mockHandleLogOut,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
 
@@ -161,7 +162,6 @@ describe('Auth', () => {
       user: mockUser,
       primaryWallet: mockWallet,
       handleLogOut: mockHandleLogOut,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
 
@@ -179,9 +179,10 @@ describe('Auth', () => {
     await waitFor(() => expect(mockApiClient.post).toHaveBeenCalled(), { timeout: 2000 });
 
     expect(mockToast.error).toHaveBeenCalledWith('Server error');
+    expect(mockHandleLogOut).toHaveBeenCalledTimes(1);
   });
 
-  it('shows cancellation toast on user rejection error', async () => {
+  it('shows a safe fallback toast when the auth API fails without a message', async () => {
     const mockWallet = { signMessage: vi.fn() };
     const mockHandleLogOut = vi.fn();
 
@@ -189,11 +190,80 @@ describe('Auth', () => {
       user: mockUser,
       primaryWallet: mockWallet,
       handleLogOut: mockHandleLogOut,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
 
-    mockWallet.signMessage.mockRejectedValue(new Error('User rejected the request'));
+    mockWallet.signMessage.mockResolvedValue('0xsignature');
+    mockApiClient.post.mockRejectedValue(new Error('network unavailable'));
+
+    const { result } = renderHook(() => Auth());
+
+    act(() => {
+      result.current.setShouldTriggerSignature(true);
+    });
+
+    await waitFor(
+      () =>
+        expect(mockToast.error).toHaveBeenCalledWith('Authentication failed. Please try again.'),
+      { timeout: 2000 }
+    );
+    expect(mockHandleLogOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears a pending signature trigger when wallet connection fails', () => {
+    const mockWallet = { signMessage: vi.fn() };
+
+    mockUseDynamicContext.mockReturnValue({
+      user: null,
+      primaryWallet: null,
+      handleLogOut: vi.fn(),
+    } as any);
+    mockUseAccount.mockReturnValue({ address: null, isConnected: false } as any);
+
+    const { result, rerender } = renderHook(() => Auth());
+    act(() => {
+      result.current.setShouldTriggerSignature(true);
+    });
+
+    const connectionFailureHandler = mockUseDynamicEvents.mock.calls.find(
+      ([event]) => event === 'walletConnectionFailed'
+    )?.[1];
+    expect(typeof connectionFailureHandler).toBe('function');
+    const authCancellationHandler = mockUseDynamicEvents.mock.calls.find(
+      ([event]) => event === 'authFlowCancelled'
+    )?.[1];
+    expect(typeof authCancellationHandler).toBe('function');
+    expect(mockUseDynamicEvents).toHaveBeenCalledWith('authFlowCancelled', expect.any(Function));
+    act(() => {
+      (connectionFailureHandler as () => void)();
+      (authCancellationHandler as () => void)();
+    });
+
+    mockUseDynamicContext.mockReturnValue({
+      user: mockUser,
+      primaryWallet: mockWallet,
+      handleLogOut: vi.fn(),
+    } as any);
+    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
+    act(() => {
+      rerender();
+    });
+
+    expect(mockWallet.signMessage).not.toHaveBeenCalled();
+  });
+
+  it('shows cancellation toast on an EIP-1193 user rejection', async () => {
+    const mockWallet = { signMessage: vi.fn() };
+    const mockHandleLogOut = vi.fn();
+
+    mockUseDynamicContext.mockReturnValue({
+      user: mockUser,
+      primaryWallet: mockWallet,
+      handleLogOut: mockHandleLogOut,
+    } as any);
+    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
+
+    mockWallet.signMessage.mockRejectedValue({ code: 4001 });
     mockApiClient.post.mockResolvedValue({
       data: { user: { token: 'jwt-token' }, message: 'Login successful' },
     });
@@ -218,7 +288,6 @@ describe('Auth', () => {
       user: null,
       primaryWallet: null,
       handleLogOut: vi.fn(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     mockUseAccount.mockReturnValue({ address: null, isConnected: false } as any);
 
@@ -239,7 +308,6 @@ describe('Auth', () => {
       user: mockUser,
       primaryWallet: mockWallet,
       handleLogOut: vi.fn(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     mockUseAccount.mockReturnValue({ address: 'not-an-address', isConnected: true } as any);
 
@@ -252,7 +320,7 @@ describe('Auth', () => {
     await waitFor(() =>
       expect(mockToast.error).toHaveBeenCalledWith(
         'Connected wallet address is invalid. Please reconnect your wallet.'
-      ),
+      )
     );
     expect(mockWallet.signMessage).not.toHaveBeenCalled();
     expect(mockApiClient.post).not.toHaveBeenCalled();
@@ -266,7 +334,6 @@ describe('Auth', () => {
       user: mockUser,
       primaryWallet: mockWallet,
       handleLogOut: mockHandleLogOut,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
 
