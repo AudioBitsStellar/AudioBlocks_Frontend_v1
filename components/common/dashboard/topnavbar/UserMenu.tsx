@@ -15,7 +15,7 @@ const UserMenu = () => {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const { user } = useDynamicContext();
+  const { user, setShowDynamicUserProfile } = useDynamicContext();
   const { handleLogOut } = Auth();
   const route = useRouter();
   const pathname = usePathname();
@@ -149,14 +149,16 @@ const UserMenu = () => {
                     <User />
                     <span>Profile</span>
                   </Link>
-                  <Link
+                  <button
                     className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
-                    href="#"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setShowDynamicUserProfile(true);
+                    }}
                   >
                     <Repeat />
-                    <span>Swap</span>
-                  </Link>
+                    <span>Switch Account</span>
+                  </button>
                   <Link
                     className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                     href="/dashboard/collection"
