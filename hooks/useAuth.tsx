@@ -76,6 +76,12 @@ export const Auth = () => {
         const responseMessage = error?.response?.data?.message;
         const errorMsg = typeof responseMessage === 'string' ? responseMessage : undefined;
 
+        if (error?.response?.status === 429) {
+          toast.error('Too many failed login attempts. Please try again later.');
+          handleLogOut();
+          return;
+        }
+
         if (errorMsg?.toLowerCase().includes('user not found')) {
           try {
             const registerResponse = await apiClient.post('/api/auth/register', {
