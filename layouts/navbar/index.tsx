@@ -8,7 +8,7 @@ import { DynamicUserProfile, useDynamicContext } from '@dynamic-labs/sdk-react-c
 import { Variants, motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { toast } from 'sonner';
-import FullScreenLoader from '@/components/common/home/FullScreenLoader';
+import ConnectWalletPrompt from '@/components/auth/ConnectWalletPrompt';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SearchOverlay } from '@/components/ui/SearchOverlay';
 import { Auth } from '@/hooks/useAuth';
@@ -35,7 +35,10 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const { setShouldTriggerSignature, loading } = Auth();
+  // Auth() mounts the signature flow and the #476 role-selection listener for
+  // every public page; nothing is destructured because the prompt now owns the
+  // sign-in trigger UI.
+  Auth();
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileCloseRef = useRef<HTMLButtonElement | null>(null);
 
@@ -71,8 +74,11 @@ const Navbar = () => {
     }
   }, []);
 
-  const { setShowAuthFlow } = useDynamicContext();
   const { setShowDynamicUserProfile, user } = useDynamicContext();
+
+  // #476 — open the differentiated listener/artist connect-wallet prompt
+  // instead of dropping every visitor into the same Dynamic auth flow.
+  const [isWalletPromptOpen, setIsWalletPromptOpen] = useState(false);
 
   const handleAuthentication = async () => {
     if (!hasInjectedWallet()) {
@@ -87,8 +93,7 @@ const Navbar = () => {
         }
       );
     }
-    setShouldTriggerSignature(true);
-    setShowAuthFlow(true);
+    setIsWalletPromptOpen(true);
   };
 
   useEffect(() => {
@@ -160,6 +165,10 @@ const Navbar = () => {
 
         {/* Sign In */}
         <div className="hidden md:flex">
+          <ConnectWalletPrompt
+            open={isWalletPromptOpen}
+            onClose={() => setIsWalletPromptOpen(false)}
+          />
           {!user?.userId ? (
             <button
               className="px-4 cursor-pointer py-2 gap-3 rounded-full bg-[#D2045B] hover:bg-[#B8043F] flex justify-between items-center text-white font-bold transition-all duration-200 whitespace-nowrap text-sm hover:scale-105 shadow-lg hover:shadow-xl"
