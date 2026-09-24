@@ -598,3 +598,13 @@ Fixing issue 72
 
 Fixing issue 72
 .
+
+## Privy Integration
+
+To enable Privy authentication, you must set the feature flag:
+`NEXT_PUBLIC_USE_PRIVY_AUTH=true`
+
+The Privy `appId` must also be set:
+`NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id`
+
+When enabled, the frontend will use Privy for wallet connections and authentication instead of Dynamic.
