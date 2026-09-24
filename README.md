@@ -213,10 +213,27 @@ Login is wallet-based via [Dynamic Labs](https://www.dynamic.xyz/):
 5. `middleware.ts` reads this cookie to gate authenticated routes
 
 The auth flow is managed by `hooks/useAuth.tsx` with wallet connectors configured
-in `context/provider.tsx` (Ethereum, email, and social login via Google). Wallet
-connection failures are handled at the provider boundary and shown as safe,
-user-facing toast messages; wallet connection error details are not displayed
-and a failed connection attempt does not clear an existing session.
+in `context/provider.tsx` (Ethereum, email, and social login via Google).
+
+### Wallet connection errors
+
+Wallet connection failures are handled centrally by
+`hooks/useWalletConnectionErrors.ts` and surfaced through the app's toast
+notifications:
+
+- User cancellations and rejected connection requests receive a retry-oriented
+  cancellation message.
+- Other provider, wallet, or network failures receive a safe generic message
+  without exposing raw provider details.
+- A failed connection does not clear the existing AudioBlocks session. Users
+  can retry from the **Sign in** or **Stream Now** action.
+- Pending signature requests are cleared when the connection or authentication
+  flow is cancelled, preventing a later unrelated connection from triggering an
+  unexpected signature.
+
+The current app uses Dynamic Labs. The error presentation is kept behind a
+provider callback so it can be reused when the Privy authentication migration
+is enabled.
 
 Supported chains: `mainnet`, `sepolia`, `liskSepolia`.
 
