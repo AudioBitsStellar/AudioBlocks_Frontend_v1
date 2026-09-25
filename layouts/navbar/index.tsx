@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import ConnectWalletPrompt from '@/components/auth/ConnectWalletPrompt';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SearchOverlay } from '@/components/ui/SearchOverlay';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Auth } from '@/hooks/useAuth';
 
 /**
