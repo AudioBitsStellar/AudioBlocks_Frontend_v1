@@ -206,14 +206,56 @@ graph TD
 
 Login is wallet-based via [Dynamic Labs](https://www.dynamic.xyz/):
 
-1. A user connects or creates a wallet through Dynamic's embedded modal
-2. The wallet signs a one-time message
-3. The signature is sent to the backend's `/api/auth/login` (falling back to `/api/auth/register` for new users)
-4. The returned JWT is stored in the `audioblocks_jwt` cookie
-5. `middleware.ts` reads this cookie to gate authenticated routes
+1. The **Sign in** action opens a differentiated connect-wallet prompt (#476): the visitor picks **listener** or **artist**, which is carried through to the backend's `role` field (defaulting to `listener` when auth is triggered from other CTAs)
+2. A user connects or creates a wallet through Dynamic's embedded modal
+3. The wallet signs a one-time message
+4. The signature is sent to the backend's `/api/auth/login` (falling back to `/api/auth/register` for new users)
+5. The returned JWT is stored in the `audioblocks_jwt` cookie
+6. The authenticated provider user state (wallet address, email, Dynamic user id, role) is synced to the backend via `POST /api/auth/sync` on every successful login/registration (#477) — best-effort, and never blocks the session
+7. `middleware.ts` reads the HttpOnly `audioblocks_session` cookie to gate authenticated routes
+8. Authenticated users visiting the dashboard for the first time are redirected to `/onboarding` (#478); completing or skipping it sets a per-browser localStorage flag so the redirect never repeats
 
 The auth flow is managed by `hooks/useAuth.tsx` with wallet connectors configured
-in `context/provider.tsx` (Ethereum, email, and social login via Google).
+in `context/provider.tsx` (Ethereum, email, and social login via Google and X).
+Branded entry points live in `components/auth/SocialLoginButtons.tsx` and reuse the
+same signature trigger as **Sign in**.
+
+### Roles: listener vs artist (#476)
+
+`components/auth/ConnectWalletPrompt.tsx` renders a two-option modal before the
+Dynamic auth flow opens. The chosen role travels through a DOM event
+(`lib/authRoles.ts`) into `hooks/useAuth.tsx`, which includes it in the
+`/api/auth/login` and `/api/auth/register` payloads. Copy for both roles is
+centralized in `CONNECT_WALLET_PROMPT_COPY`.
+
+### First-time onboarding (#478)
+
+`components/auth/OnboardingRedirect.tsx` (mounted in the dashboard layout)
+routes authenticated users to `/onboarding` until they finish or skip it. The
+completion flag lives in `localStorage` (`lib/onboarding.ts`) and is treated as
+"completed" under SSR or storage failures, so a storage error can never trap a
+user in a redirect loop. `/onboarding` is added to the middleware-protected
+prefixes so guests are bounced to the landing page.
+
+### Wallet connection errors
+
+Wallet connection failures are handled centrally by
+`hooks/useWalletConnectionErrors.ts` and surfaced through the app's toast
+notifications:
+
+- User cancellations and rejected connection requests receive a retry-oriented
+  cancellation message.
+- Other provider, wallet, or network failures receive a safe generic message
+  without exposing raw provider details.
+- A failed connection does not clear the existing AudioBlocks session. Users
+  can retry from the **Sign in** or **Stream Now** action.
+- Pending signature requests are cleared when the connection or authentication
+  flow is cancelled, preventing a later unrelated connection from triggering an
+  unexpected signature.
+
+The current app uses Dynamic Labs. The error presentation is kept behind a
+provider callback so it can be reused when the Privy authentication migration
+is enabled.
 
 Supported chains: `mainnet`, `sepolia`, `liskSepolia`.
 

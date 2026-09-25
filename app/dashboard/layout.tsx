@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import dynamic from 'next/dynamic';
+import OnboardingRedirect from '@/components/auth/OnboardingRedirect';
 import Sidebar from '@/components/common/dashboard/sidebar';
 import TopNavbar from '@/components/common/dashboard/topnavbar';
 import { QueueDrawer } from '@/components/common/QueueDrawer';
@@ -21,6 +22,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="w-full overflow-x-hidden touch-pan-y">
+      {/* #478 — first-time visitors are routed to /onboarding before they see
+          the dashboard; renders nothing itself. */}
+      <OnboardingRedirect />
       <Sidebar openMobile={mobileOpen} onOpenMobileChange={setMobileOpen} />
 
       <div className="flex-1 md:ml-45 flex flex-col pb-28 min-w-0">
