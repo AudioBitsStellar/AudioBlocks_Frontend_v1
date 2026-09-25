@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { DynamicUserProfile, useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { usePathname, useRouter } from 'next/navigation';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Variants, motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Menu, X } from 'lucide-react';
+import Cookies from 'js-cookie';
+import { ArrowRight, Folder, LogOut, Menu, User, X } from 'lucide-react';
 import { toast } from 'sonner';
-import FullScreenLoader from '@/components/common/home/FullScreenLoader';
+import ConnectWalletPrompt from '@/components/auth/ConnectWalletPrompt';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SearchOverlay } from '@/components/ui/SearchOverlay';
 import { Auth } from '@/hooks/useAuth';
@@ -35,9 +36,16 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const { setShouldTriggerSignature, loading } = Auth();
+  // Auth() mounts the signature flow and the #476 role-selection listener for
+  // every public page; nothing is destructured because the prompt now owns the
+  // sign-in trigger UI.
+  Auth();
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileCloseRef = useRef<HTMLButtonElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileUserMenuRef = useRef<HTMLDivElement | null>(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const route = useRouter();
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -71,8 +79,11 @@ const Navbar = () => {
     }
   }, []);
 
-  const { setShowAuthFlow } = useDynamicContext();
   const { setShowDynamicUserProfile, user } = useDynamicContext();
+
+  // #476 — open the differentiated listener/artist connect-wallet prompt
+  // instead of dropping every visitor into the same Dynamic auth flow.
+  const [isWalletPromptOpen, setIsWalletPromptOpen] = useState(false);
 
   const handleAuthentication = async () => {
     if (!hasInjectedWallet()) {
@@ -87,8 +98,7 @@ const Navbar = () => {
         }
       );
     }
-    setShouldTriggerSignature(true);
-    setShowAuthFlow(true);
+    setIsWalletPromptOpen(true);
   };
 
   useEffect(() => {
@@ -160,8 +170,14 @@ const Navbar = () => {
 
         {/* Sign In */}
         <div className="hidden md:flex">
+          <ConnectWalletPrompt
+            open={isWalletPromptOpen}
+            onClose={() => setIsWalletPromptOpen(false)}
+          />
           {!user?.userId ? (
-            <button
+            <>
+              <SocialLoginButtons onLoginStart={() => setShouldTriggerSignature(true)} />
+              <button
               className="px-4 cursor-pointer py-2 gap-3 rounded-full bg-[#D2045B] hover:bg-[#B8043F] flex justify-between items-center text-white font-bold transition-all duration-200 whitespace-nowrap text-sm hover:scale-105 shadow-lg hover:shadow-xl"
               onClick={handleAuthentication}
             >
@@ -170,16 +186,56 @@ const Navbar = () => {
                 <ArrowRight className="h-4 w-4 rotate-[300deg]" />
               </div>
             </button>
+            </>
           ) : (
-            <button
-              className="px-4 cursor-pointer py-2 gap-3 rounded-4xl bg-[#D2045B] hover:bg-[#B8043F] flex justify-between items-center text-white font-bold transition-all duration-200 whitespace-nowrap text-sm hover:scale-105 shadow-lg hover:shadow-xl"
-              onClick={() => setShowDynamicUserProfile(true)}
-            >
-              {user?.email}
-            </button>
+            <div ref={userMenuRef} className="relative">
+              <button
+                aria-label="Open account menu"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#D2045B] text-sm font-bold text-white transition-all duration-200 hover:scale-105"
+                onClick={() => setIsUserMenuOpen((open) => !open)}
+              >
+                {avatarInitial}
+              </button>
+              {isUserMenuOpen && (
+                <div className="absolute right-0 top-12 z-50 w-60 rounded-xl border border-gray-800 bg-[#0F0F0F] p-4 shadow-xl">
+                  <div className="mb-3 truncate border-b border-gray-800 pb-3">
+                    <p className="truncate text-sm font-semibold text-white">{user?.email}</p>
+                  </div>
+                  <div className="flex flex-col gap-1 text-sm">
+                    <Link
+                      className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                      href="/dashboard/profile"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <span className="flex items-center gap-3">
+                        <User className="h-4 w-4" />
+                        Profile
+                      </span>
+                    </Link>
+                    <Link
+                      className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                      href="/dashboard/collection"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <span className="flex items-center gap-3">
+                        <Folder className="h-4 w-4" />
+                        My Collections
+                      </span>
+                    </Link>
+                    <button
+                      className="cursor-pointer rounded-lg px-3 py-2 text-left text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                      onClick={logOut}
+                    >
+                      <span className="flex items-center gap-3">
+                        <LogOut className="h-4 w-4" />
+                        Log out
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
-
-          <DynamicUserProfile />
         </div>
 
         {/* Mobile Menu Button */}
@@ -238,22 +294,75 @@ const Navbar = () => {
 
               <motion.div variants={itemVariants}>
                 {!user?.userId ? (
-                  <button
-                    className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
-                    onClick={handleAuthentication}
-                  >
-                    Sign in
-                    <div className="bg-black rounded-full p-1">
-                      <ArrowRight className="h-4 w-4 rotate-[300deg]" />
-                    </div>
-                  </button>
+                  <>
+                    <button
+                      className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
+                      onClick={handleAuthentication}
+                    >
+                      Sign in
+                      <div className="bg-black rounded-full p-1">
+                        <ArrowRight className="h-4 w-4 rotate-[300deg]" />
+                      </div>
+                    </button>
+                    <SocialLoginButtons
+                      className="mt-3 justify-center"
+                      onLoginStart={() => setShouldTriggerSignature(true)}
+                    />
+                  </>
                 ) : (
-                  <button
-                    className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
-                    onClick={() => setShowDynamicUserProfile(true)}
-                  >
-                    {user?.email}
-                  </button>
+                  <div ref={mobileUserMenuRef} className="relative mt-6">
+                    <button
+                      aria-label="Open account menu"
+                      className="w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
+                      onClick={() => setIsUserMenuOpen((open) => !open)}
+                    >
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black text-xs font-bold">
+                        {avatarInitial}
+                      </span>
+                      <span className="max-w-[180px] truncate">{user?.email}</span>
+                    </button>
+                    {isUserMenuOpen && (
+                      <div className="mt-2 rounded-xl border border-gray-800 bg-[#0F0F0F] p-4 shadow-xl">
+                        <div className="flex flex-col gap-1 text-sm">
+                          <Link
+                            className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                            href="/dashboard/profile"
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              setIsMenuOpen(false);
+                            }}
+                          >
+                            <span className="flex items-center gap-3">
+                              <User className="h-4 w-4" />
+                              Profile
+                            </span>
+                          </Link>
+                          <Link
+                            className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                            href="/dashboard/collection"
+                            onClick={() => {
+                              setIsUserMenuOpen(false);
+                              setIsMenuOpen(false);
+                            }}
+                          >
+                            <span className="flex items-center gap-3">
+                              <Folder className="h-4 w-4" />
+                              My Collections
+                            </span>
+                          </Link>
+                          <button
+                            className="cursor-pointer rounded-lg px-3 py-2 text-left text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                            onClick={logOut}
+                          >
+                            <span className="flex items-center gap-3">
+                              <LogOut className="h-4 w-4" />
+                              Log out
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </motion.div>
             </div>

@@ -17,5 +17,7 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 300_000,
+    // CI has no .env.local; lib/env.ts refuses to boot without an API URL.
+    env: { NEXT_PUBLIC_API_URL: 'http://localhost:4000/api' },
   },
 });

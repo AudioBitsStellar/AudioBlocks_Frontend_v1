@@ -8,11 +8,13 @@
 //  • `returnTo` query param preserves the original URL for post-login redirect
 //  • Expired JWTs are detected by checking the `exp` claim in the cookie value
 //    so stale tokens don't grant access to protected pages
+//  • #478 — /onboarding is also gated so only authenticated users reach it;
+//    guests are sent to the landing page with a returnTo back to onboarding.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { AUTH } from '@/lib/constants';
 
-const PROTECTED_PREFIXES = ['/dashboard', '/profile'];
+const PROTECTED_PREFIXES = ['/dashboard', '/profile', '/onboarding'];
 const LOGIN_PATH = '/';
 
 function isExpiredJwt(tokenValue: string): boolean {
@@ -51,5 +53,7 @@ export default function middleware(req: NextRequest) {
 
 export const config = {
   // Literal array required — Next.js extracts this at build time (#138).
-  matcher: ['/dashboard/:path*', '/profile/:path*'],
+  matcher: ['/dashboard/:path*', '/profile/:path*', '/onboarding'],
 };
+
+// Enhanced authentication middleware for routes added.
