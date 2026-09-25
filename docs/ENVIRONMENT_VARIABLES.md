@@ -36,6 +36,15 @@ Environment variables are loaded from `.env.local` at startup. Missing required 
 |----------|------|-------------|---------|
 | `NEXT_PUBLIC_SEGMENT_WRITE_KEY` | string | Segment analytics write key (optional for analytics) | `YOUR_KEY` |
 
+### Privy Authentication
+
+| Variable | Type | Description | Example |
+|----------|------|-------------|---------|
+| `NEXT_PUBLIC_USE_PRIVY_AUTH` | boolean | Feature flag — when `true`, use Privy instead of Dynamic for authentication | `true` |
+| `NEXT_PUBLIC_PRIVY_APP_ID` | string | Privy app id from the [Privy dashboard](https://dashboard.privy.io) (required when Privy is enabled) | `YOUR_APP_ID` |
+
+See `docs/PRIVY_SETUP.md` for the full setup guide.
+
 ## Optional Variables
 
 | Variable | Type | Default | Description |
