@@ -1,3 +1,4 @@
+import { PrivyProvider } from '@privy-io/react-auth';
 import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
@@ -46,7 +47,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <Provider>
+        <PrivyProvider appId="dummy"><Provider>
           <Suspense fallback={null}>
             <RouteProgress />
           </Suspense>
@@ -67,7 +68,7 @@ export default function RootLayout({
             src="https://www.google-analytics.com/analytics.js"
             strategy="lazyOnload"
           />
-        </Provider>
+        </Provider></PrivyProvider>
       </body>
     </html>
   );
