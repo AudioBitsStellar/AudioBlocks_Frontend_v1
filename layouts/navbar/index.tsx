@@ -8,6 +8,7 @@ import { DynamicUserProfile, useDynamicContext } from '@dynamic-labs/sdk-react-c
 import { Variants, motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import FullScreenLoader from '@/components/common/home/FullScreenLoader';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SearchOverlay } from '@/components/ui/SearchOverlay';
@@ -159,9 +160,11 @@ const Navbar = () => {
         </div>
 
         {/* Sign In */}
-        <div className="hidden md:flex">
+        <div className="hidden items-center gap-2 md:flex">
           {!user?.userId ? (
-            <button
+            <>
+              <SocialLoginButtons onLoginStart={() => setShouldTriggerSignature(true)} />
+              <button
               className="px-4 cursor-pointer py-2 gap-3 rounded-full bg-[#D2045B] hover:bg-[#B8043F] flex justify-between items-center text-white font-bold transition-all duration-200 whitespace-nowrap text-sm hover:scale-105 shadow-lg hover:shadow-xl"
               onClick={handleAuthentication}
             >
@@ -170,6 +173,7 @@ const Navbar = () => {
                 <ArrowRight className="h-4 w-4 rotate-[300deg]" />
               </div>
             </button>
+            </>
           ) : (
             <button
               className="px-4 cursor-pointer py-2 gap-3 rounded-4xl bg-[#D2045B] hover:bg-[#B8043F] flex justify-between items-center text-white font-bold transition-all duration-200 whitespace-nowrap text-sm hover:scale-105 shadow-lg hover:shadow-xl"
@@ -238,15 +242,21 @@ const Navbar = () => {
 
               <motion.div variants={itemVariants}>
                 {!user?.userId ? (
-                  <button
-                    className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
-                    onClick={handleAuthentication}
-                  >
-                    Sign in
-                    <div className="bg-black rounded-full p-1">
-                      <ArrowRight className="h-4 w-4 rotate-[300deg]" />
-                    </div>
-                  </button>
+                  <>
+                    <button
+                      className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
+                      onClick={handleAuthentication}
+                    >
+                      Sign in
+                      <div className="bg-black rounded-full p-1">
+                        <ArrowRight className="h-4 w-4 rotate-[300deg]" />
+                      </div>
+                    </button>
+                    <SocialLoginButtons
+                      className="mt-3 justify-center"
+                      onLoginStart={() => setShouldTriggerSignature(true)}
+                    />
+                  </>
                 ) : (
                   <button
                     className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
