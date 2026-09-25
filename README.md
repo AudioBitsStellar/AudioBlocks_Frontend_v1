@@ -216,7 +216,9 @@ Login is wallet-based via [Dynamic Labs](https://www.dynamic.xyz/):
 8. Authenticated users visiting the dashboard for the first time are redirected to `/onboarding` (#478); completing or skipping it sets a per-browser localStorage flag so the redirect never repeats
 
 The auth flow is managed by `hooks/useAuth.tsx` with wallet connectors configured
-in `context/provider.tsx` (Ethereum, email, and social login via Google).
+in `context/provider.tsx` (Ethereum, email, and social login via Google and X).
+Branded entry points live in `components/auth/SocialLoginButtons.tsx` and reuse the
+same signature trigger as **Sign in**.
 
 ### Roles: listener vs artist (#476)
 
