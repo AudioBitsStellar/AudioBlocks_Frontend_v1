@@ -7,7 +7,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
-import { Wallet, User, Repeat, Folder, X, LogIn } from 'lucide-react';
+import { Wallet, User, Repeat, Folder, X } from 'lucide-react';
+import { WalletConnectButtons } from '@/components/auth/WalletConnectButtons';
 import { Auth } from '@/hooks/useAuth';
 
 const UserMenu = () => {
@@ -189,14 +190,7 @@ const UserMenu = () => {
                     Connect your wallet to access your dashboard
                   </p>
                 </div>
-                <Link
-                  className="flex items-center gap-2 bg-[#D2045B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#b80348] transition cursor-pointer"
-                  href="/"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <LogIn />
-                  <span>Connect Wallet</span>
-                </Link>
+                <WalletConnectButtons className="w-full" onLoginStart={() => setIsOpen(false)} />
               </div>
             )}
           </motion.div>
