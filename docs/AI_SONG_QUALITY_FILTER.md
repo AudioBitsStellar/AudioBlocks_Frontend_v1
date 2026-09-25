@@ -73,3 +73,29 @@ Behavior:
 - `complete()` clears the alert state, so a re-registered job id can alert again.
 
 The monitor is storage-agnostic: it keeps state in memory and composes with any backend queue (e.g. BullMQ) whose worker loop calls `register`/`heartbeat`/`complete`. Tests live in `tests/lib/analysisQueueMonitor.test.ts` and use injected timestamps, so they are fully deterministic.
+
+---
+
+## 🎚️ Stems / Multi-Track Uploads (#452)
+
+Artists upload multi-track projects as individual stems (vocals, drums, bass, …) rather than one bounced file. `lib/stemAnalysis.ts` analyzes every stem of an upload and aggregates the per-stem assessments into one verdict for the upload:
+
+```typescript
+import { analyzeStemUpload } from '@/lib/stemAnalysis';
+
+const analysis = await analyzeStemUpload(stems, (stem) =>
+  analyzeSongQuality(
+    { title: `${project.title} — ${stem.role}`, genre: project.genre },
+    { apiKey: process.env.NVIDIA_API_KEY! }
+  )
+);
+```
+
+Behavior:
+
+- Every stem is analyzed **in parallel** (`Promise.allSettled`); one failing stem never cancels the others.
+- Per-stem failures are captured on the result (`assessment: null` plus `error`), never thrown.
+- The overall score is the average of successful stems; a single rejected stem rejects the upload, and any review or failed stem sends it to manual review — a broken stem can never slip through as approved.
+- An upload with zero stems is rejected as invalid input.
+
+Tests live in `tests/lib/stemAnalysis.test.ts` with an injected per-stem analyzer, so no network is involved.
