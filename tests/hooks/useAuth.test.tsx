@@ -7,6 +7,8 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useAccount } from 'wagmi';
 import { Auth } from '@/hooks/useAuth';
 import apiClient from '@/lib/apiClient';
+import { AUTH_ROLE_SELECTED_EVENT } from '@/lib/authRoles';
+import { AUTH_SYNC_ENDPOINT } from '@/lib/profileSync';
 
 vi.mock('@dynamic-labs/sdk-react-core', () => ({
   useDynamicContext: vi.fn(),
@@ -120,7 +122,8 @@ describe('Auth', () => {
       })
       .mockResolvedValueOnce({
         data: { user: { token: 'register-token' }, message: 'Registered successfully' },
-      });
+      })
+      .mockResolvedValueOnce({ data: { ok: true } }); // #477 profile sync
 
     const { result } = renderHook(() => Auth());
 
@@ -128,7 +131,8 @@ describe('Auth', () => {
       result.current.setShouldTriggerSignature(true);
     });
 
-    await waitFor(() => expect(mockApiClient.post).toHaveBeenCalledTimes(2), { timeout: 2000 });
+    // login → register → #477 sync
+    await waitFor(() => expect(mockApiClient.post).toHaveBeenCalledTimes(3), { timeout: 2000 });
 
     expect(mockApiClient.post).toHaveBeenNthCalledWith(1, '/api/auth/login', {
       role: 'listener',
@@ -324,6 +328,83 @@ describe('Auth', () => {
     );
     expect(mockWallet.signMessage).not.toHaveBeenCalled();
     expect(mockApiClient.post).not.toHaveBeenCalled();
+  });
+
+  it('passes the role chosen in the connect-wallet prompt to the auth payload (#476)', async () => {
+    const mockWallet = { signMessage: vi.fn() };
+    const mockHandleLogOut = vi.fn();
+    const mockSetShowAuthFlow = vi.fn();
+
+    mockUseDynamicContext.mockReturnValue({
+      user: mockUser,
+      primaryWallet: mockWallet,
+      handleLogOut: mockHandleLogOut,
+      setShowAuthFlow: mockSetShowAuthFlow,
+    } as any);
+    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
+
+    mockWallet.signMessage.mockResolvedValue('0xsignature');
+    mockApiClient.post.mockResolvedValue({
+      data: { user: { token: 'jwt-token' }, message: 'Login successful' },
+    });
+
+    renderHook(() => Auth());
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(AUTH_ROLE_SELECTED_EVENT, { detail: { role: 'artist' } })
+      );
+    });
+
+    // The prompt → auth contract: remember the role, then open Dynamic's flow.
+    expect(mockSetShowAuthFlow).toHaveBeenCalledWith(true);
+
+    await waitFor(() => expect(mockApiClient.post).toHaveBeenCalled(), { timeout: 2000 });
+
+    expect(mockApiClient.post).toHaveBeenCalledWith(
+      '/api/auth/login',
+      expect.objectContaining({ role: 'artist' })
+    );
+  });
+
+  it('syncs the provider user state with the backend after login (#477)', async () => {
+    const mockWallet = { signMessage: vi.fn() };
+    const mockHandleLogOut = vi.fn();
+
+    mockUseDynamicContext.mockReturnValue({
+      user: mockUser,
+      primaryWallet: mockWallet,
+      handleLogOut: mockHandleLogOut,
+      setShowAuthFlow: vi.fn(),
+    } as any);
+    mockUseAccount.mockReturnValue({ address: mockAddress, isConnected: true } as any);
+
+    const fetchSpy = vi
+      .spyOn(window, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    mockWallet.signMessage.mockResolvedValue('0xsignature');
+    mockApiClient.post.mockResolvedValue({
+      data: { user: { token: 'jwt-token' }, message: 'Login successful' },
+    });
+
+    const { result } = renderHook(() => Auth());
+
+    act(() => {
+      result.current.setShouldTriggerSignature(true);
+    });
+
+    await waitFor(() => expect(mockCookies.set).toHaveBeenCalled(), { timeout: 2000 });
+
+    expect(mockApiClient.post).toHaveBeenCalledWith(
+      AUTH_SYNC_ENDPOINT,
+      expect.objectContaining({
+        walletAddress: mockAddress.toLowerCase(),
+        email: 'test@example.com',
+        dynamicUserId: 'user-1',
+        role: 'listener',
+      })
+    );
+    fetchSpy.mockRestore();
   });
 
   it('sets JWT cookie with Secure and SameSite flags', async () => {
