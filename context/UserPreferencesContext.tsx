@@ -24,6 +24,8 @@ export interface UserPreferences {
   autoplay: boolean;
   showExplicitContent: boolean;
   audioQuality: AudioQuality;
+  /** When true, the artist's uploads skip the automated AI quality checks. */
+  qualityAnalysisOptOut: boolean;
   emailNotifications: boolean;
   inAppNotifications: boolean;
 }
@@ -34,6 +36,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   autoplay: true,
   showExplicitContent: false,
   audioQuality: 'auto',
+  qualityAnalysisOptOut: false,
   emailNotifications: true,
   inAppNotifications: true,
 };
