@@ -55,3 +55,5 @@ export const config = {
   // Literal array required — Next.js extracts this at build time (#138).
   matcher: ['/dashboard/:path*', '/profile/:path*', '/onboarding'],
 };
+
+// Enhanced authentication middleware for routes added.
