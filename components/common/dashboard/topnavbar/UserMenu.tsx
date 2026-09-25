@@ -7,7 +7,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
-import { Wallet, User, Repeat, Folder, X, LogIn } from 'lucide-react';
+import { Wallet, User, Repeat, Folder, X } from 'lucide-react';
+import { EmbeddedWalletCreator } from '@/components/auth/EmbeddedWalletCreator';
+import { WalletConnectButtons } from '@/components/auth/WalletConnectButtons';
 import { Auth } from '@/hooks/useAuth';
 
 const UserMenu = () => {
@@ -15,7 +17,7 @@ const UserMenu = () => {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const { user } = useDynamicContext();
+  const { user, setShowDynamicUserProfile } = useDynamicContext();
   const { handleLogOut } = Auth();
   const route = useRouter();
   const pathname = usePathname();
@@ -149,14 +151,16 @@ const UserMenu = () => {
                     <User />
                     <span>Profile</span>
                   </Link>
-                  <Link
+                  <button
                     className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
-                    href="#"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setShowDynamicUserProfile(true);
+                    }}
                   >
                     <Repeat />
-                    <span>Swap</span>
-                  </Link>
+                    <span>Switch Account</span>
+                  </button>
                   <Link
                     className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                     href="/dashboard/collection"
@@ -170,6 +174,7 @@ const UserMenu = () => {
                     <span>Balance:</span>
                     <span className="font-medium text-[#666C6C]">11000 ABT</span>
                   </div>
+                  <EmbeddedWalletCreator />
                   <button
                     className="cursor-pointer hover:text-[#666C6C] transition"
                     onClick={logOut}
@@ -189,14 +194,7 @@ const UserMenu = () => {
                     Connect your wallet to access your dashboard
                   </p>
                 </div>
-                <Link
-                  className="flex items-center gap-2 bg-[#D2045B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#b80348] transition cursor-pointer"
-                  href="/"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <LogIn />
-                  <span>Connect Wallet</span>
-                </Link>
+                <WalletConnectButtons className="w-full" onLoginStart={() => setIsOpen(false)} />
               </div>
             )}
           </motion.div>

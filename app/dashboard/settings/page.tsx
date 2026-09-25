@@ -2,6 +2,54 @@
 
 import { useUserPreferences } from '@/context/UserPreferencesContext';
 import type { AudioQuality } from '@/context/UserPreferencesContext';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { Mail, Wallet, Trash2 } from 'lucide-react';
+
+function LinkedAccountsList() {
+  const { user, handleUnlinkWallet } = useDynamicContext();
+  const linkedWallets = user?.verifiedCredentials?.filter((cred) => cred.format === 'wallet') || [];
+  const linkedEmails = user?.verifiedCredentials?.filter((cred) => cred.format === 'email') || [];
+
+  return (
+    <>
+      {linkedWallets.map((wallet) => (
+        <div key={wallet.id} className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E]">
+          <div className="flex items-center gap-3">
+            <Wallet className="h-5 w-5 text-gray-400" />
+            <div>
+              <div className="font-medium text-white">{wallet.walletName || 'Wallet'}</div>
+              <div className="text-xs text-gray-400 mt-1">
+                {wallet.address && `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`}
+              </div>
+            </div>
+          </div>
+          <button
+            className="text-red-500 hover:text-red-400 p-2 rounded-full hover:bg-red-500/10 transition-colors"
+            onClick={() => handleUnlinkWallet(wallet.id)}
+            title="Unlink Wallet"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      {linkedEmails.map((emailCred) => (
+        <div key={emailCred.id} className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E]">
+          <div className="flex items-center gap-3">
+            <Mail className="h-5 w-5 text-gray-400" />
+            <div>
+              <div className="font-medium text-white">Email</div>
+              <div className="text-xs text-gray-400 mt-1">{emailCred.email}</div>
+            </div>
+          </div>
+          {/* Note: Unlinking email might be different or not supported depending on Dynamic configuration, but we can provide the UI if it has an ID and handleUnlinkWallet handles it, or just show it */}
+        </div>
+      ))}
+      {linkedWallets.length === 0 && linkedEmails.length === 0 && (
+        <div className="text-sm text-gray-400">No linked accounts found.</div>
+      )}
+    </>
+  );
+}
 
 const QUALITY_OPTIONS: { value: AudioQuality; label: string; description: string }[] = [
   { value: 'auto', label: 'Auto', description: 'Adapt quality based on your connection speed' },
@@ -16,6 +64,17 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-white mb-8">Settings</h1>
+
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold text-white mb-4">Linked Accounts</h2>
+        <p className="text-sm text-gray-400 mb-4">
+          Manage the wallets and identities connected to your account.
+        </p>
+        <div className="space-y-4">
+          {/* We'll render linked accounts dynamically here */}
+          <LinkedAccountsList />
+        </div>
+      </section>
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Audio Quality</h2>

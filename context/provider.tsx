@@ -56,6 +56,19 @@ const Provider = ({ children }: { children: ReactNode }) => {
           settings={{
             environmentId: 'c686da1e-ac86-4bd4-a2f4-5fe6ff42ed85',
             walletConnectors: [EthereumWalletConnectors],
+            theme: 'auto',
+            cssOverrides: `
+              .dynamic-shadow-dom {
+                width: 100% !important;
+                max-width: 400px;
+                margin: 0 auto;
+              }
+              /* Accessibility focus indicators */
+              button:focus-visible, input:focus-visible {
+                outline: 2px solid #D2045B !important;
+                outline-offset: 2px !important;
+              }
+            `,
             overrides: {
               views: [
                 {

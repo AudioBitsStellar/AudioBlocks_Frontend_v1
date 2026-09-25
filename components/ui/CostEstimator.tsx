@@ -1,0 +1,1 @@
+export default function CostEstimator() { return <div>Cost: $10</div>; }
