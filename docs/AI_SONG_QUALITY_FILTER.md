@@ -44,3 +44,32 @@ Covered scenarios:
 6. **Unexpected shapes** — missing `choices` or JSON-less answers raise `SongQualityError` instead of leaking a parse crash.
 
 The tests need no API key and no network access, so they run in CI as part of `npm run test`.
+
+---
+
+## 📡 Queue Monitoring & Alerting (#451)
+
+Stalled analysis jobs (crashed worker, wedged HTTP call, lost message) block the queue and delay every upload behind them. `lib/analysisQueueMonitor.ts` tracks job heartbeats and surfaces the jobs that stopped sending them:
+
+```typescript
+import { AnalysisQueueMonitor } from '@/lib/analysisQueueMonitor';
+
+const monitor = new AnalysisQueueMonitor({
+  stuckThresholdMs: 5 * 60 * 1000, // default threshold
+  onAlert: (stuck) => sendAlert(stuck), // PagerDuty / Slack / log sink
+});
+
+monitor.register(jobId); // when the analysis starts
+monitor.heartbeat(jobId); // on every progress step
+monitor.complete(jobId); // on success or requeue
+
+const stuckJobs = monitor.check(); // on an interval
+```
+
+Behavior:
+
+- A job is **stuck** when it has been silent (no heartbeat) for longer than the threshold.
+- `check()` returns all stuck jobs oldest first and fires `onAlert` **once per newly stuck job**, so repeated checks do not spam the same alert.
+- `complete()` clears the alert state, so a re-registered job id can alert again.
+
+The monitor is storage-agnostic: it keeps state in memory and composes with any backend queue (e.g. BullMQ) whose worker loop calls `register`/`heartbeat`/`complete`. Tests live in `tests/lib/analysisQueueMonitor.test.ts` and use injected timestamps, so they are fully deterministic.
