@@ -8,6 +8,7 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
 import { Wallet, User, Repeat, Folder, X } from 'lucide-react';
+import { EmbeddedWalletCreator } from '@/components/auth/EmbeddedWalletCreator';
 import { WalletConnectButtons } from '@/components/auth/WalletConnectButtons';
 import { Auth } from '@/hooks/useAuth';
 
@@ -171,6 +172,7 @@ const UserMenu = () => {
                     <span>Balance:</span>
                     <span className="font-medium text-[#666C6C]">11000 ABT</span>
                   </div>
+                  <EmbeddedWalletCreator />
                   <button
                     className="cursor-pointer hover:text-[#666C6C] transition"
                     onClick={logOut}
