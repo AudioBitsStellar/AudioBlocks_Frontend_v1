@@ -9,8 +9,7 @@ import { Variants, motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
 import { ArrowRight, Folder, LogOut, Menu, User, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
-import FullScreenLoader from '@/components/common/home/FullScreenLoader';
+import ConnectWalletPrompt from '@/components/auth/ConnectWalletPrompt';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SearchOverlay } from '@/components/ui/SearchOverlay';
 import { Auth } from '@/hooks/useAuth';
@@ -37,7 +36,10 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const { setShouldTriggerSignature, handleLogOut, loading } = Auth();
+  // Auth() mounts the signature flow and the #476 role-selection listener for
+  // every public page; nothing is destructured because the prompt now owns the
+  // sign-in trigger UI.
+  Auth();
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileCloseRef = useRef<HTMLButtonElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
@@ -77,46 +79,11 @@ const Navbar = () => {
     }
   }, []);
 
-  const { setShowAuthFlow } = useDynamicContext();
-  const { user } = useDynamicContext();
+  const { setShowDynamicUserProfile, user } = useDynamicContext();
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      const inDesktopMenu = userMenuRef.current?.contains(target) ?? false;
-      const inMobileMenu = mobileUserMenuRef.current?.contains(target) ?? false;
-      if (!inDesktopMenu && !inMobileMenu) {
-        setIsUserMenuOpen(false);
-      }
-    };
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsUserMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, []);
-
-  useEffect(() => {
-    setIsUserMenuOpen(false);
-  }, [pathname]);
-
-  const logOut = () => {
-    Cookies.remove('audioblocks_jwt');
-    // #277 — clears the HttpOnly session cookie middleware.ts relies on
-    // for route-gating. Best-effort like components/common/dashboard/topnavbar/UserMenu.tsx.
-    fetch('/api/session', { method: 'DELETE' }).catch(() => {});
-    handleLogOut();
-    setIsUserMenuOpen(false);
-    route.push('/');
-  };
-
-  const avatarInitial = (user?.email?.[0] ?? 'A').toUpperCase();
+  // #476 — open the differentiated listener/artist connect-wallet prompt
+  // instead of dropping every visitor into the same Dynamic auth flow.
+  const [isWalletPromptOpen, setIsWalletPromptOpen] = useState(false);
 
   const handleAuthentication = async () => {
     if (!hasInjectedWallet()) {
@@ -131,8 +98,7 @@ const Navbar = () => {
         }
       );
     }
-    setShouldTriggerSignature(true);
-    setShowAuthFlow(true);
+    setIsWalletPromptOpen(true);
   };
 
   useEffect(() => {
@@ -203,7 +169,11 @@ const Navbar = () => {
         </div>
 
         {/* Sign In */}
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden md:flex">
+          <ConnectWalletPrompt
+            open={isWalletPromptOpen}
+            onClose={() => setIsWalletPromptOpen(false)}
+          />
           {!user?.userId ? (
             <>
               <SocialLoginButtons onLoginStart={() => setShouldTriggerSignature(true)} />
