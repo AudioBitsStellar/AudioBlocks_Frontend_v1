@@ -3,6 +3,8 @@
 NVIDIA API keys (used by the AI song quality filter) are secrets held
 server-side only. This repo tracks key **metadata**, not keys themselves —
 see `lib/nvidiaKeyRotation.ts` for the rotation helpers this runbook uses.
+For the full integration setup (key storage, model pinning, inference
+service), see `docs/NVIDIA_API_SETUP.md`.
 
 ## Schedule
 
