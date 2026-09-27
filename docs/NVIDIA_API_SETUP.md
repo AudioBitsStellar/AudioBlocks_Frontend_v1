@@ -9,8 +9,13 @@ cost, errors, and admin controls.
 ## Pipeline Overview
 
 1. An artist uploads a track.
-2. The Mastra agent (configured in `config/mastra.ts`) sends the audio to
-   the NVIDIA NIM inference endpoint for a quality verdict.
+2. The Mastra agent (configured in `config/mastra.ts`) sends the song's
+   **metadata** (title, genre, duration) to the NVIDIA NIM chat endpoint for a
+   quality verdict. Raw audio is **not** sent: the pinned model
+   (`nvidia/llama-3.1-nemotron-70b-instruct`) is text-only, so today's verdict
+   can't reflect clipping, noise or loudness. See the #401 spike,
+   `docs/spikes/NVIDIA_NIM_AUDIO_MODELS.md`, for the recommended fix: measure
+   audio features first, then have the NIM reason over them.
 3. The verdict is stored with the track; admins can override it and the
    overrides feed the threshold feedback loop (#448).
 
@@ -60,6 +65,8 @@ that fronts the inference service (see `docs/ENVIRONMENT_VARIABLES.md`).
   free-tier allowance.
 
 ## Related
+
+- NIM audio-model evaluation (#401): `docs/spikes/NVIDIA_NIM_AUDIO_MODELS.md`
 
 - Key rotation: `docs/NVIDIA_KEY_ROTATION.md`
 - Incident runbook template: `docs/AI_PIPELINE_POSTMORTEM_TEMPLATE.md`
