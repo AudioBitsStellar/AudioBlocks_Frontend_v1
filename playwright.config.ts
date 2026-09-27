@@ -7,6 +7,13 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: 'list',
+  snapshotDir: './tests/snapshots',
+  snapshotPathTemplate: '{snapshotDir}/{testFilePath}/{arg}{ext}',
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.001,
+    },
+  },
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
