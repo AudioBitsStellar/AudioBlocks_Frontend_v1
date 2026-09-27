@@ -4,7 +4,8 @@
  * Part of the AI Song Quality Filter (Mastra AI + NVIDIA) initiative for AudioBlock.
  * Orchestrates the end-to-end verification of uploaded tracks:
  * 1. Admin/Trusted Artist exemption pre-checks (`lib/qualityChecks.ts`).
- * 2. Plagiarism & duplicate detection (`lib/plagiarismDetection.ts`).
+ * 2. Audio preprocessing — metadata normalization, container/level checks (`lib/audioPreprocessing.ts`, #406).
+ * 2b. Plagiarism & duplicate detection (`lib/plagiarismDetection.ts`).
  * 3. Queue monitoring & heartbeat registration (`lib/analysisQueueMonitor.ts`).
  * 4. NVIDIA AI quality assessment for single track or stems (`lib/songQualityFilter.ts`, `lib/stemAnalysis.ts`).
  * 5. Configurable genre quality threshold evaluation (`lib/qualityThresholds.ts`).
@@ -28,6 +29,7 @@ import { getGenreThreshold, evaluateQualityScoreAgainstGenre } from './qualityTh
 import { recordQualityCheckResult } from './qualityAnalytics';
 import { AnalysisQueueMonitor } from './analysisQueueMonitor';
 import { detectExplicitContent, type ExplicitDetectionResult } from './explicitContentDetection';
+import { preprocessAudio, type PreprocessedAudio } from './audioPreprocessing';
 import {
   analyzeLoudnessAndSuggest,
   type LoudnessNormalizationSuggestion,
@@ -73,6 +75,8 @@ export interface UploadQualityPipelineResult {
   stemAnalysis?: StemUploadAnalysis;
   explicitCheck?: ExplicitDetectionResult;
   loudnessSuggestion?: LoudnessNormalizationSuggestion;
+  /** Result of the pre-AI preprocessing step (#406). */
+  preprocessing?: PreprocessedAudio;
   reasons: string[];
   processedAt: number;
 }
@@ -131,7 +135,43 @@ export async function processUploadQualityCheck(
     };
   }
 
-  // 2. Plagiarism & duplicate pre-screening
+  // 2. Preprocess before AI analysis (#406): normalize the metadata the model
+  // sees and reject uploads that can't be analysed (empty / silent audio,
+  // invalid duration) without spending an NVIDIA API call.
+  const preprocessing = preprocessAudio({
+    title: input.title,
+    artist: input.artist,
+    genre: input.genre,
+    lyrics: input.lyrics,
+    durationSeconds: input.durationSeconds,
+    audioBuffer: input.audioBuffer,
+  });
+  if (!preprocessing.ok) {
+    recordQualityCheckResult({
+      trackId: input.trackId,
+      outcome: 'failed',
+      score: 0.0,
+      recordedAt: processedAt,
+    });
+
+    return {
+      trackId: input.trackId,
+      status: 'rejected',
+      score: 0,
+      genre,
+      genreThreshold,
+      passedGenreThreshold: false,
+      exempt: false,
+      explicitCheck,
+      loudnessSuggestion,
+      preprocessing,
+      reasons: [`Rejected during audio preprocessing: ${preprocessing.rejectReason}`],
+      processedAt,
+    };
+  }
+  const meta = preprocessing.metadata;
+
+  // 2b. Plagiarism & duplicate pre-screening
   let plagiarismResult: PlagiarismCheckResult | undefined;
   if (!options.skipPlagiarismCheck) {
     plagiarismResult = checkPlagiarism({
@@ -164,6 +204,7 @@ export async function processUploadQualityCheck(
         plagiarismCheck: plagiarismResult,
         explicitCheck,
         loudnessSuggestion,
+        preprocessing,
         reasons: [`Rejected by plagiarism detector: ${plagiarismResult.reasons.join(' ')}`],
         processedAt,
       };
@@ -195,9 +236,9 @@ export async function processUploadQualityCheck(
       stemAnalysis = await analyzeStemUpload(input.stems, (stem) =>
         analyzeSongQuality(
           {
-            title: `${input.title} — ${stem.role}`,
-            artist: input.artist,
-            genre: input.genre,
+            title: `${meta.title} — ${stem.role}`,
+            artist: meta.artist,
+            genre: meta.genre,
           },
           songQualityOptions
         )
@@ -212,11 +253,11 @@ export async function processUploadQualityCheck(
     } else {
       assessment = await analyzeSongQuality(
         {
-          title: input.title,
-          artist: input.artist,
-          genre: input.genre,
-          durationSeconds: input.durationSeconds,
-          lyrics: input.lyrics,
+          title: meta.title,
+          artist: meta.artist,
+          genre: meta.genre,
+          durationSeconds: meta.durationSeconds,
+          lyrics: meta.lyrics,
         },
         songQualityOptions
       );
@@ -251,6 +292,7 @@ export async function processUploadQualityCheck(
       plagiarismCheck: plagiarismResult,
       explicitCheck,
       loudnessSuggestion,
+      preprocessing,
       reasons: [`Analysis error (${errorMsg}); sent to manual review queue.`],
       processedAt,
     };
@@ -328,7 +370,8 @@ export async function processUploadQualityCheck(
     stemAnalysis,
     explicitCheck,
     loudnessSuggestion,
-    reasons,
+    preprocessing,
+    reasons: [...preprocessing.warnings, ...reasons],
     processedAt,
   };
 }

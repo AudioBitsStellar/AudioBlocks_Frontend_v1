@@ -99,3 +99,24 @@ Behavior:
 - An upload with zero stems is rejected as invalid input.
 
 Tests live in `tests/lib/stemAnalysis.test.ts` with an injected per-stem analyzer, so no network is involved.
+
+## 🧹 Audio Preprocessing Before AI Analysis (#406)
+
+`lib/audioPreprocessing.ts` runs inside `processUploadQualityCheck` **after** the
+exemption check and **before** plagiarism screening and the NVIDIA model call.
+
+| Step | What it does |
+|------|--------------|
+| Metadata normalization | Trims title/artist/genre/lyrics, strips control characters, collapses whitespace, and caps lyrics at `MAX_LYRICS_CHARS` (4000) so prompts stay bounded. |
+| Container sniffing | Identifies WAV, MP3, FLAC, OGG and M4A from magic bytes. Unknown containers only produce a warning. |
+| WAV decoding | For PCM WAV, reads sample rate, channels, bit depth and duration from the header; for 16-bit PCM also measures peak and RMS level (dBFS). |
+| Duration | Uses the caller's `durationSeconds`, else the decoded WAV duration. Must be `> 0` and `≤ 30 min`. |
+
+**Verdict:** `preprocessAudio` returns `ok: false` with a `rejectReason` only for uploads that cannot be meaningfully analysed:
+- empty audio;
+- digitally silent audio (peak below `-60 dBFS`);
+- an invalid duration.
+
+The pipeline then returns `status: 'rejected'` **without calling the AI model**, which saves an NVIDIA request, and records a `failed` analytics outcome. Everything else, such as a full-scale peak that suggests clipping, truncated lyrics or an unknown container, is added to `warnings` and surfaced at the front of the result's `reasons`.
+
+The full `PreprocessedAudio` object is returned on the pipeline result as `preprocessing`.
