@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ListFilter, Music, Search, UsersRound } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useOwnedCollection } from '@/hooks/useOwnedCollection';
 
@@ -35,6 +36,8 @@ const CollectionsPage = () => {
 
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isPageLoading, setIsPageLoading] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const songs: OwnedNFT[] = useMemo(() => {
     if (!address || ownedNfts.length === 0) return [] as OwnedNFT[];
@@ -61,10 +64,27 @@ const CollectionsPage = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
+    setIsPageLoading(true);
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    setTimeout(() => setIsPageLoading(false), 300);
+  }, []);
+
+  const loadMore = useCallback(() => {
+    if (currentPage < totalPages) {
+      setIsPageLoading(true);
+      setCurrentPage((prev) => prev + 1);
+      setTimeout(() => setIsPageLoading(false), 300);
+    }
+  }, [currentPage, totalPages]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    onLoadMore: loadMore,
+    hasMore: currentPage < totalPages,
+    isLoading: isPageLoading,
+    enabled: isConnected && !isLoading && songs.length > 0,
+  });
 
   const statCards = [
     {
@@ -184,47 +204,68 @@ const CollectionsPage = () => {
           </div>
         )}
 
-      {isConnected && !isLoading && !backendLoading && paginatedSongs.length > 0 && (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {paginatedSongs.map((song) => (
-              <div key={song.songId.toString()} className="hover:bg-surface-hover p-3 rounded-lg">
-                <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
-                  <Image
-                    alt={`Song #${song.songId}`}
-                    className="w-full h-full object-cover"
-                    height={300}
-                    src={ipfsImage(song.songCID)}
-                    width={300}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/audio.jpg';
-                    }}
-                  />
+      {isConnected && !isLoading && !backendLoading && (
+        <div ref={scrollContainerRef} className="space-y-6">
+          {isPageLoading && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={`loading-${i}`} className="p-3 rounded-lg">
+                  <Skeleton className="w-full aspect-square rounded-md mb-3" />
+                  <Skeleton className="h-4 w-3/4 mb-1" />
+                  <Skeleton className="h-3 w-1/2" />
                 </div>
-                <p className="text-sm font-semibold">Song #{song.songId.toString()}</p>
-                <p className="text-xs text-gray-400">
-                  {song.artistAddress.slice(0, 6)}…{song.artistAddress.slice(-4)}
-                </p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">
-                    {song.totalStreams.toString()} streams
-                  </span>
-                  <button className="px-3 py-1 text-xs bg-surface border border-border-dark rounded-full hover:bg-[#333]">
-                    Sell Now
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
-          <div className="mt-8 pb-4">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </div>
-        </>
+          {!isPageLoading && paginatedSongs.length > 0 && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {paginatedSongs.map((song) => (
+                  <div
+                    key={song.songId.toString()}
+                    className="hover:bg-surface-hover p-3 rounded-lg"
+                  >
+                    <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
+                      <Image
+                        alt={`Song #${song.songId}`}
+                        className="w-full h-full object-cover"
+                        height={300}
+                        src={ipfsImage(song.songCID)}
+                        width={300}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/audio.jpg';
+                        }}
+                      />
+                    </div>
+                    <p className="text-sm font-semibold">Song #{song.songId.toString()}</p>
+                    <p className="text-xs text-gray-400">
+                      {song.artistAddress.slice(0, 6)}…{song.artistAddress.slice(-4)}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-xs text-gray-400">
+                        {song.totalStreams.toString()} streams
+                      </span>
+                      <button className="px-3 py-1 text-xs bg-surface border border-border-dark rounded-full hover:bg-[#333]">
+                        Sell Now
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 pb-4">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+
+              <div ref={sentinelRef} className="h-4" />
+            </>
+          )}
+        </div>
       )}
     </div>
   );

@@ -14,7 +14,11 @@ const fallbackCategories = [
   { name: 'Jazz', image: '/dashboard/category5.jpg' },
 ];
 
-const CategorySection = memo(function CategorySection() {
+type Props = {
+  activeGenre?: string;
+};
+
+const CategorySection = memo(function CategorySection({ activeGenre = 'All' }: Props) {
   const { data: categories, isLoading, isError } = useGetExploreCategories();
   const items = isError || !categories || categories.length === 0 ? fallbackCategories : categories;
 
@@ -44,26 +48,31 @@ const CategorySection = memo(function CategorySection() {
         </div>
       ) : (
         <div className="grid grid-cols-3 md:grid-cols-5 overflow-x-auto gap-4 mt-5 scrollbar-hide">
-          {items.map((category, index) => (
-            <div
-              key={`${category.name}-${index}`}
-              className="relative md:min-w-[170px] h-[60px] rounded-xl overflow-hidden shrink-0 group"
-            >
-              <Image
-                fill
-                alt={category.name}
-                className="object-cover transition group-hover:scale-105"
-                src={category.image}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src =
-                    fallbackCategories[index]?.image ?? '/audio.jpg';
-                }}
-              />
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                <p className="text-white font-medium text-sm">{category.name}</p>
+          {items.map((category, index) => {
+            const isActive = activeGenre === category.name;
+            return (
+              <div
+                key={`${category.name}-${index}`}
+                className={`relative md:min-w-[170px] h-[60px] rounded-xl overflow-hidden shrink-0 group ${
+                  isActive ? 'ring-2 ring-brand ring-offset-2 ring-offset-black' : ''
+                }`}
+              >
+                <Image
+                  fill
+                  alt={category.name}
+                  className="object-cover transition group-hover:scale-105"
+                  src={category.image}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src =
+                      fallbackCategories[index]?.image ?? '/audio.jpg';
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <p className="text-white font-medium text-sm">{category.name}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>
