@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
+import { Search } from 'lucide-react';
 import Artists from '@/components/common/dashboard/Artists';
 import CategorySection from '@/components/common/dashboard/CategorySection';
 import Collections from '@/components/common/dashboard/Collections';
@@ -11,9 +10,10 @@ import EventSection from '@/components/common/dashboard/EventSection';
 import Merch from '@/components/common/dashboard/Merch';
 import RecentlyPlayed from '@/components/common/dashboard/RecentlyPlayed';
 import DataErrorBoundary from '@/components/common/DataErrorBoundary';
+import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
 import { ProfileCompletion } from '@/components/dashboard/ProfileCompletion';
-import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
 const genreFilters = ['All', 'Pop', 'Contemporary', 'Rock', 'Afro', 'Jazz'];
 
@@ -76,7 +76,7 @@ const ExplorePage = () => {
       </DataErrorBoundary>
 
       <DataErrorBoundary name="Categories">
-        <CategorySection />
+        <CategorySection activeGenre={activeGenre} />
       </DataErrorBoundary>
 
       <DataErrorBoundary name="Collections">
