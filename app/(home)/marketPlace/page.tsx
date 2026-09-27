@@ -3,16 +3,31 @@ import NatureDepthSlider from '../../../components/common/NatureDepth';
 import NftCollections from '../../../components/common/NftCollections';
 import type { Metadata } from 'next';
 
+const TITLE = 'Marketplace | AudioBlocks';
+const DESCRIPTION =
+  'Explore and purchase unique audio-inspired NFTs, sound packs, and digital art on the AudioBlocks marketplace.';
+/** Route path is case-sensitive: the folder is `marketPlace`. */
+const PATH = '/marketPlace';
+
+// Relative URLs resolve against `metadataBase` from app/layout.tsx (#12).
 export const metadata: Metadata = {
-  title: 'Marketplace | AudioBlocks',
-  description:
-    'Explore and purchase unique audio-inspired NFTs, sound packs, and digital art on the AudioBlocks marketplace.',
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: PATH },
   openGraph: {
-    title: 'Marketplace | AudioBlocks',
-    description:
-      'Explore and purchase unique audio-inspired NFTs, sound packs, and digital art on the AudioBlocks marketplace.',
+    title: TITLE,
+    description: DESCRIPTION,
     type: 'website',
     siteName: 'AudioBlocks',
+    url: PATH,
+    // Without an image, shared marketplace links unfurl with no preview.
+    images: [{ url: '/logo.png', width: 4096, height: 2216, alt: 'AudioBlocks Marketplace' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ['/logo.png'],
   },
 };
 
