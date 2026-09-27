@@ -26,6 +26,7 @@ const assessment = await analyzeSongQuality(
 
 - The API key is a **per-call parameter**, never a module constant, so it can be kept server-side and out of the client bundle.
 - Raw audio is never uploaded; only song metadata is sent (see `docs/THIRD_PARTY_AI_SECURITY_REVIEW.md`).
+- ⚠️ Because only metadata is sent to a text-only model, the current verdict can't detect audio defects (clipping, noise, low bitrate). The #401 spike (`docs/spikes/NVIDIA_NIM_AUDIO_MODELS.md`) evaluates the NVIDIA NIM audio models and recommends computing audio features before the model call.
 - The model answer is expected to be JSON but is parsed leniently (markdown code fences and prose are tolerated); anything unparsable raises `SongQualityError`.
 
 ---
