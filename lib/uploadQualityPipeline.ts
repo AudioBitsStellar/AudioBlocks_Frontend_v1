@@ -7,9 +7,16 @@
  * 2. Audio preprocessing — metadata normalization, container/level checks (`lib/audioPreprocessing.ts`, #406).
  * 2b. Plagiarism & duplicate detection (`lib/plagiarismDetection.ts`).
  * 3. Queue monitoring & heartbeat registration (`lib/analysisQueueMonitor.ts`).
- * 4. NVIDIA AI quality assessment for single track or stems (`lib/songQualityFilter.ts`, `lib/stemAnalysis.ts`).
+ * 4. NVIDIA AI quality assessment for single track or stems (`lib/songQualityFilter.ts`, `lib/stemAnalysis.ts`),
+ *    with cost/usage tracking for the NVIDIA call (`lib/nvidiaUsageTracking.ts`, #424).
  * 5. Configurable genre quality threshold evaluation (`lib/qualityThresholds.ts`).
  * 6. Platform analytics logging (`lib/qualityAnalytics.ts`).
+ * 7. Anything short of a clean approval is sent to the admin review queue
+ *    (`lib/flaggedTrackReview.ts`, #418) instead of being final on the spot.
+ *
+ * Rate limiting NVIDIA calls (#423, `lib/nvidiaRateLimiter.ts`) and the
+ * re-upload flow after a failed check (#421, `lib/reUploadFlow.ts`) compose
+ * around this pipeline rather than living inside it — see those modules.
  */
 
 import { canSkipQualityCheck, type QualityCheckSubject } from './qualityChecks';
@@ -24,7 +31,7 @@ import {
   type SongQualityAssessment,
   type SongQualityOptions,
 } from './songQualityFilter';
-import { analyzeStemUpload, type StemUploadAnalysis, type AudioStem } from './stemAnalysis';
+import { analyzeStemUpload, type MultiTrackAnalysis, type StemUpload } from './stemAnalysis';
 import { getGenreThreshold, evaluateQualityScoreAgainstGenre } from './qualityThresholds';
 import { recordQualityCheckResult } from './qualityAnalytics';
 import { AnalysisQueueMonitor } from './analysisQueueMonitor';
@@ -34,6 +41,8 @@ import {
   analyzeLoudnessAndSuggest,
   type LoudnessNormalizationSuggestion,
 } from './loudnessNormalization';
+import { recordNvidiaUsage } from './nvidiaUsageTracking';
+import { flagTrackForReview } from './flaggedTrackReview';
 
 export type PipelineVerdict = 'approved' | 'review' | 'rejected' | 'skipped';
 
@@ -47,7 +56,7 @@ export interface UploadQualityPipelineInput {
   audioBuffer?: ArrayBuffer | Uint8Array | string;
   audioHash?: string;
   spectralFeatures?: number[];
-  stems?: AudioStem[];
+  stems?: StemUpload[];
   subject?: QualityCheckSubject | null;
   integratedLufs?: number;
   truePeakDbtp?: number;
@@ -72,7 +81,7 @@ export interface UploadQualityPipelineResult {
   exempt: boolean;
   plagiarismCheck?: PlagiarismCheckResult;
   assessment?: SongQualityAssessment;
-  stemAnalysis?: StemUploadAnalysis;
+  stemAnalysis?: MultiTrackAnalysis;
   explicitCheck?: ExplicitDetectionResult;
   loudnessSuggestion?: LoudnessNormalizationSuggestion;
   /** Result of the pre-AI preprocessing step (#406). */
@@ -193,6 +202,20 @@ export async function processUploadQualityCheck(
         recordedAt: processedAt,
       });
 
+      const reasons = [`Rejected by plagiarism detector: ${plagiarismResult.reasons.join(' ')}`];
+      // #418: a rejection still goes to the admin review queue rather than
+      // being final on the spot — a plagiarism false positive needs a human
+      // to overturn it, not a re-run of the same detector.
+      flagTrackForReview({
+        trackId: input.trackId,
+        title: input.title,
+        artist: input.artist,
+        genre,
+        score: 0,
+        reasons,
+        source: 'rejected',
+      });
+
       return {
         trackId: input.trackId,
         status: 'rejected',
@@ -205,7 +228,7 @@ export async function processUploadQualityCheck(
         explicitCheck,
         loudnessSuggestion,
         preprocessing,
-        reasons: [`Rejected by plagiarism detector: ${plagiarismResult.reasons.join(' ')}`],
+        reasons,
         processedAt,
       };
     }
@@ -227,7 +250,7 @@ export async function processUploadQualityCheck(
   };
 
   let assessment: SongQualityAssessment | undefined;
-  let stemAnalysis: StemUploadAnalysis | undefined;
+  let stemAnalysis: MultiTrackAnalysis | undefined;
   let rawScore = 0;
   let reasons: string[] = [];
 
@@ -244,10 +267,10 @@ export async function processUploadQualityCheck(
         )
       );
 
-      rawScore = stemAnalysis.score;
-      if (stemAnalysis.verdict === 'rejected') {
+      rawScore = stemAnalysis.overall.score;
+      if (stemAnalysis.overall.verdict === 'rejected') {
         reasons.push('One or more stems failed acoustic quality inspection.');
-      } else if (stemAnalysis.verdict === 'review') {
+      } else if (stemAnalysis.overall.verdict === 'review') {
         reasons.push('Multi-track stem assessment flagged for manual review.');
       }
     } else {
@@ -264,6 +287,15 @@ export async function processUploadQualityCheck(
 
       rawScore = assessment.score;
       reasons.push(...assessment.reasons);
+
+      // #424: turn the token usage NVIDIA reported into an estimated cost.
+      if (assessment.usage) {
+        recordNvidiaUsage({
+          trackId: input.trackId,
+          model: assessment.model,
+          ...assessment.usage,
+        });
+      }
     }
 
     if (queueMonitor) {
@@ -281,6 +313,17 @@ export async function processUploadQualityCheck(
     });
 
     const errorMsg = err instanceof Error ? err.message : 'Quality check service unavailable';
+    const reasons = [`Analysis error (${errorMsg}); sent to manual review queue.`];
+    flagTrackForReview({
+      trackId: input.trackId,
+      title: input.title,
+      artist: input.artist,
+      genre,
+      score: 0,
+      reasons,
+      source: 'review',
+    });
+
     return {
       trackId: input.trackId,
       status: 'review',
@@ -293,7 +336,7 @@ export async function processUploadQualityCheck(
       explicitCheck,
       loudnessSuggestion,
       preprocessing,
-      reasons: [`Analysis error (${errorMsg}); sent to manual review queue.`],
+      reasons,
       processedAt,
     };
   }
@@ -317,11 +360,11 @@ export async function processUploadQualityCheck(
         `Quality score (${rawScore}/100) is borderline for ${genre} threshold (${Math.round(genreThreshold * 100)}/100).`
       );
     }
-  } else if (assessment?.verdict === 'rejected' || stemAnalysis?.verdict === 'rejected') {
+  } else if (assessment?.verdict === 'rejected' || stemAnalysis?.overall.verdict === 'rejected') {
     finalStatus = 'rejected';
   } else if (
     assessment?.verdict === 'review' ||
-    stemAnalysis?.verdict === 'review' ||
+    stemAnalysis?.overall.verdict === 'review' ||
     plagiarismResult?.verdict === 'suspicious'
   ) {
     finalStatus = 'review';
@@ -343,7 +386,9 @@ export async function processUploadQualityCheck(
     queueMonitor.complete(input.trackId);
   }
 
-  // 7. If approved, register fingerprint for future duplicate screening
+  // 7. If approved, register fingerprint for future duplicate screening.
+  // Otherwise (rejected or borderline), send it to the admin review queue
+  // (#418) — the automated verdict is not the last word.
   if (finalStatus === 'approved') {
     const fp = generateAudioFingerprint({
       trackId: input.trackId,
@@ -355,6 +400,18 @@ export async function processUploadQualityCheck(
       spectralFeatures: input.spectralFeatures,
     });
     registerTrackFingerprint(fp);
+  } else {
+    flagTrackForReview({
+      trackId: input.trackId,
+      title: input.title,
+      artist: input.artist,
+      genre,
+      score: rawScore,
+      reasons,
+      // finalStatus is never 'skipped' here (that path already returned in
+      // step 1) or 'approved' (excluded by the enclosing branch).
+      source: finalStatus === 'rejected' ? 'rejected' : 'review',
+    });
   }
 
   return {
