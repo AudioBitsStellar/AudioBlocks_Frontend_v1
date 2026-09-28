@@ -95,6 +95,65 @@ describe('apiClient', () => {
     expect(fetch).toHaveBeenCalledTimes(4); // 1 initial + 3 retries
   });
 
+  it('does not retry on 4xx errors (except 401 and 429)', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 403,
+      headers: new Headers(),
+    } as unknown as Response);
+
+    const promise = apiClient.get('/test');
+
+    await expect(promise).rejects.toThrow(ApiError);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries on 502 errors with exponential backoff', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        headers: new Headers(),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({ recovered: true }),
+      } as unknown as Response);
+
+    const promise = apiClient.get('/test');
+
+    await vi.runAllTimersAsync();
+
+    const response = await promise;
+    expect(response.data).toEqual({ recovered: true });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries on 503 errors with exponential backoff', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        headers: new Headers(),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({ recovered: true }),
+      } as unknown as Response);
+
+    const promise = apiClient.get('/test');
+
+    await vi.runAllTimersAsync();
+
+    const response = await promise;
+    expect(response.data).toEqual({ recovered: true });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('retries on 500 errors with exponential backoff', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: false,
