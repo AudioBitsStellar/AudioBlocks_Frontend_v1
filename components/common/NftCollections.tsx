@@ -117,7 +117,7 @@ function matchesPrice(price: string, min: string, max: string): boolean {
 
 function Card({ item }: { item: CollectionItem }) {
   return (
-    <div className="flex flex-col bg-surface border border-border-dark rounded-xl overflow-hidden transition-all duration-200 hover:bg-surface-hover hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98]">
+    <div className="flex flex-col min-w-[280px] bg-surface border border-border-dark rounded-xl overflow-hidden transition-all duration-200 hover:bg-surface-hover hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98]">
       <div className="relative aspect-square overflow-hidden">
         <Image
           fill
@@ -190,7 +190,7 @@ export default function NftCollection() {
   };
 
   return (
-    <div className="min-h-screen max-w-11/12 mx-auto bg-black px-4 sm:px-8 py-8 sm:py-12">
+    <div className="min-h-screen max-w-11/12 mx-auto bg-black px-4 sm:px-8 py-8 sm:py-12 overflow-x-hidden">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12">
         <h1
           className={`${inter.className} capitalize text-3xl sm:text-4xl md:text-[48px] font-semibold leading-tight tracking-normal`}
@@ -284,7 +284,10 @@ export default function NftCollection() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          <div
+            className="grid gap-4 sm:gap-6"
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
+          >
             {paginatedItems.map((item) => (
               <Card key={item.id} item={item} />
             ))}
