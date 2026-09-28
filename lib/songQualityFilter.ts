@@ -6,14 +6,18 @@
  * integration point with the NVIDIA API — callers never talk to it directly,
  * and the API key is always supplied by the caller so it never ends up in the
  * client bundle.
- * 
- * Enhanced features:
- * - Caching support to avoid redundant API calls (#422)
- * - Comprehensive logging for the AI analysis pipeline (#427)
- * - Fallback behavior when NVIDIA API is unavailable (#425)
+ *
+ * Two operational concerns are opt-in here, guarding/observing this one
+ * integration point instead of every call site duplicating them:
+ * - `options.rateLimiter` (#423, `lib/nvidiaRateLimiter.ts`) — refuses
+ *   locally, before spending an HTTP round trip, once the caller-configured
+ *   request budget for the window is used up.
+ * - Token usage NVIDIA reports on a successful response is recorded via
+ *   `options.onUsage` for cost tracking (#424, `lib/nvidiaUsageTracking.ts`).
  */
 
-import { getQualityCache } from './qualityAnalysisCache';
+import type { NvidiaRateLimiter } from './nvidiaRateLimiter';
+import type { NvidiaTokenUsage } from './nvidiaUsageTracking';
 
 export interface SongQualityInput {
   title: string;
@@ -31,6 +35,8 @@ export interface SongQualityAssessment {
   verdict: QualityVerdict;
   reasons: string[];
   model: string;
+  /** Token usage NVIDIA reported for this call, when the response included it (#424). */
+  usage?: NvidiaTokenUsage;
 }
 
 export interface SongQualityOptions {
@@ -40,18 +46,18 @@ export interface SongQualityOptions {
   model?: string;
   /** Injectable fetch for testing; defaults to the global fetch. */
   fetchImpl?: typeof fetch;
-  /** Enable caching of quality analysis results (#422) */
-  enableCache?: boolean;
-  /** Cache key suffix for metadata-based cache invalidation */
-  metadataHash?: string;
-  /** Enable detailed logging for debugging (#427) */
-  enableLogging?: boolean;
-  /** Logger function (defaults to console.log) */
-  logger?: (message: string, data?: unknown) => void;
-  /** Enable fallback behavior when API is unavailable (#425) */
-  enableFallback?: boolean;
-  /** Fallback assessment to return when API fails */
-  fallbackAssessment?: Partial<SongQualityAssessment>;
+  /**
+   * Checked immediately before the request (#423). When it denies the call,
+   * `analyzeSongQuality` throws `SongQualityError` with status 429 instead
+   * of making the request.
+   */
+  rateLimiter?: Pick<NvidiaRateLimiter, 'tryAcquire'>;
+  /**
+   * Called with the token usage NVIDIA reported, right after a successful
+   * response (#424). Never called on an error or when the response omits
+   * `usage`. Typically `recordNvidiaUsage` from `lib/nvidiaUsageTracking.ts`.
+   */
+  onUsage?: (usage: NvidiaTokenUsage) => void;
 }
 
 /** Error raised when the NVIDIA API call fails or returns an unusable answer. */
@@ -122,6 +128,23 @@ function normalizeReasons(value: unknown): string[] {
   return value.filter((reason): reason is string => typeof reason === 'string');
 }
 
+/** Converts NVIDIA's snake_case `usage` object; `undefined` when absent or unusable. */
+function normalizeUsage(
+  usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | null
+): NvidiaTokenUsage | undefined {
+  if (!usage) return undefined;
+  const { prompt_tokens: promptTokens, completion_tokens: completionTokens, total_tokens: totalTokens } =
+    usage;
+  if (
+    typeof promptTokens !== 'number' ||
+    typeof completionTokens !== 'number' ||
+    typeof totalTokens !== 'number'
+  ) {
+    return undefined;
+  }
+  return { promptTokens, completionTokens, totalTokens };
+}
+
 /**
  * Asks the NVIDIA API to assess the quality of a song and returns a
  * normalized assessment.
@@ -164,6 +187,16 @@ export async function analyzeSongQuality(
   const fetchImpl = options.fetchImpl ?? fetch;
   const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
   const model = options.model ?? DEFAULT_MODEL;
+
+  if (options.rateLimiter) {
+    const decision = options.rateLimiter.tryAcquire();
+    if (!decision.allowed) {
+      throw new SongQualityError(
+        `NVIDIA API rate limit exceeded; retry after ${decision.retryAfterMs ?? 0}ms`,
+        429
+      );
+    }
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -228,7 +261,11 @@ export async function analyzeSongQuality(
   }
 
   const payload = (await response.json().catch(() => null)) as
-    | { choices?: Array<{ message?: { content?: string } }>; model?: string }
+    | {
+        choices?: Array<{ message?: { content?: string } }>;
+        model?: string;
+        usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+      }
     | null;
   const content = payload?.choices?.[0]?.message?.content;
   
@@ -257,11 +294,17 @@ export async function analyzeSongQuality(
     throw new SongQualityError('NVIDIA API answer did not contain a JSON assessment');
   }
 
-  const assessment: SongQualityAssessment = {
+  const usage = normalizeUsage(payload?.usage);
+  if (usage && options.onUsage) {
+    options.onUsage(usage);
+  }
+
+  return {
     score: normalizeScore(answer.score),
     verdict: normalizeVerdict(answer.verdict),
     reasons: normalizeReasons(answer.reasons),
     model: payload?.model ?? model,
+    ...(usage ? { usage } : {}),
   };
 
   log('Successfully created assessment', { score: assessment.score, verdict: assessment.verdict });

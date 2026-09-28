@@ -5,6 +5,7 @@ import {
   SongQualityInput,
   SongQualityOptions,
 } from '../../lib/songQualityFilter';
+import { NvidiaRateLimiter } from '../../lib/nvidiaRateLimiter';
 
 /**
  * Integration test for the song quality filter (#450).
@@ -140,5 +141,80 @@ describe('songQualityFilter integration (NVIDIA API mocked)', () => {
     await expect(analyzeSongQuality(INPUT, OPTIONS)).rejects.toThrow(
       'did not contain a JSON assessment'
     );
+  });
+
+  // #423: client-side rate limiting.
+  it('refuses to call the NVIDIA API once the rate limiter denies the request', async () => {
+    const rateLimiter = new NvidiaRateLimiter({ maxRequests: 1, windowMs: 1000 });
+    vi.mocked(fetch).mockResolvedValue(
+      nvidiaChatResponse('{"score": 80, "verdict": "approved", "reasons": []}')
+    );
+
+    await analyzeSongQuality(INPUT, { ...OPTIONS, rateLimiter });
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    await expect(analyzeSongQuality(INPUT, { ...OPTIONS, rateLimiter })).rejects.toMatchObject({
+      name: 'SongQualityError',
+      status: 429,
+    });
+    // The denied call must never have reached the network.
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('proceeds normally when the rate limiter allows the request', async () => {
+    const rateLimiter = new NvidiaRateLimiter({ maxRequests: 5, windowMs: 1000 });
+    vi.mocked(fetch).mockResolvedValueOnce(
+      nvidiaChatResponse('{"score": 80, "verdict": "approved", "reasons": []}')
+    );
+
+    const assessment = await analyzeSongQuality(INPUT, { ...OPTIONS, rateLimiter });
+    expect(assessment.verdict).toBe('approved');
+  });
+
+  // #424: cost/usage tracking.
+  it('includes NVIDIA-reported token usage on the assessment and calls onUsage', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        model: 'nvidia/llama-3.1-nemotron-70b-instruct',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: '{"score": 80, "verdict": "approved", "reasons": []}',
+            },
+          },
+        ],
+        usage: { prompt_tokens: 120, completion_tokens: 30, total_tokens: 150 },
+      }),
+    } as unknown as Response);
+
+    const onUsage = vi.fn();
+    const assessment = await analyzeSongQuality(INPUT, { ...OPTIONS, onUsage });
+
+    expect(assessment.usage).toEqual({
+      promptTokens: 120,
+      completionTokens: 30,
+      totalTokens: 150,
+    });
+    expect(onUsage).toHaveBeenCalledWith({
+      promptTokens: 120,
+      completionTokens: 30,
+      totalTokens: 150,
+    });
+  });
+
+  it('omits usage and never calls onUsage when the response has no usage field', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      nvidiaChatResponse('{"score": 80, "verdict": "approved", "reasons": []}')
+    );
+    const onUsage = vi.fn();
+
+    const assessment = await analyzeSongQuality(INPUT, { ...OPTIONS, onUsage });
+
+    expect(assessment.usage).toBeUndefined();
+    expect(onUsage).not.toHaveBeenCalled();
   });
 });
