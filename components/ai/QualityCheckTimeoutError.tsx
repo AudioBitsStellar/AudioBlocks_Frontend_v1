@@ -45,9 +45,7 @@ export default function QualityCheckTimeoutError({
       <div className="flex items-start gap-3">
         <Hourglass className="text-orange-400 mt-0.5" size={18} aria-hidden="true" />
         <div>
-          <h3 className="text-sm font-semibold text-orange-300">
-            Quality check timed out
-          </h3>
+          <h3 className="text-sm font-semibold text-orange-300">Quality check timed out</h3>
           <p className="text-xs text-foreground/70 mt-0.5">
             The AI quality check for{' '}
             {trackTitle ? (
@@ -57,8 +55,8 @@ export default function QualityCheckTimeoutError({
             ) : (
               'this track '
             )}
-            is taking longer than expected. You can retry it now or leave the
-            track unreviewed for the moment.
+            is taking longer than expected. You can retry it now or leave the track unreviewed for
+            the moment.
           </p>
         </div>
       </div>
