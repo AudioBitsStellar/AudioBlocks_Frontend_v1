@@ -12,30 +12,66 @@
  * 6. Platform analytics logging (`lib/qualityAnalytics.ts`).
  */
 
-import { canSkipQualityCheck, type QualityCheckSubject } from './qualityChecks';
+import { AnalysisQueueMonitor } from './analysisQueueMonitor';
+import { preprocessAudio, type PreprocessedAudio } from './audioPreprocessing';
+import { detectExplicitContent, type ExplicitDetectionResult } from './explicitContentDetection';
+import {
+  analyzeLoudnessAndSuggest,
+  type LoudnessNormalizationSuggestion,
+} from './loudnessNormalization';
 import {
   checkPlagiarism,
   registerTrackFingerprint,
   generateAudioFingerprint,
   type PlagiarismCheckResult,
 } from './plagiarismDetection';
+import { recordQualityCheckResult } from './qualityAnalytics';
+import { canSkipQualityCheck, type QualityCheckSubject } from './qualityChecks';
+import { getGenreThreshold, evaluateQualityScoreAgainstGenre } from './qualityThresholds';
 import {
   analyzeSongQuality,
   type SongQualityAssessment,
   type SongQualityOptions,
 } from './songQualityFilter';
 import { analyzeStemUpload, type StemUploadAnalysis, type AudioStem } from './stemAnalysis';
-import { getGenreThreshold, evaluateQualityScoreAgainstGenre } from './qualityThresholds';
-import { recordQualityCheckResult } from './qualityAnalytics';
-import { AnalysisQueueMonitor } from './analysisQueueMonitor';
-import { detectExplicitContent, type ExplicitDetectionResult } from './explicitContentDetection';
-import { preprocessAudio, type PreprocessedAudio } from './audioPreprocessing';
-import {
-  analyzeLoudnessAndSuggest,
-  type LoudnessNormalizationSuggestion,
-} from './loudnessNormalization';
 
 export type PipelineVerdict = 'approved' | 'review' | 'rejected' | 'skipped';
+
+/**
+ * Classifies the type of Mastra agent / NVIDIA API failure so the UI can
+ * render the appropriate MastraAgentFallback state (#426).
+ *
+ * - 'timeout'     — AbortError: the NVIDIA API call exceeded REQUEST_TIMEOUT_MS.
+ * - 'api-error'   — Non-OK HTTP response (4xx / 5xx) from the NVIDIA endpoint.
+ * - 'parse-error' — The model returned an answer but no valid JSON could be extracted.
+ * - 'unknown'     — Any other unexpected error inside the Mastra agent.
+ */
+export type MastraAgentErrorType = 'timeout' | 'api-error' | 'parse-error' | 'unknown';
+
+/**
+ * Classifies a caught error thrown by `analyzeSongQuality` or `analyzeStemUpload`
+ * into one of the four `MastraAgentErrorType` categories.
+ *
+ * @internal exported for unit-testing only — callers should rely on the
+ * `mastraErrorType` field of `UploadQualityPipelineResult` instead.
+ */
+export function classifyMastraError(err: unknown): MastraAgentErrorType {
+  if (err instanceof Error) {
+    if (err.name === 'AbortError' || err.message.includes('timed out')) {
+      return 'timeout';
+    }
+    if (err.message.includes('failed with status') || err.message.includes('API request failed')) {
+      return 'api-error';
+    }
+    if (
+      err.message.includes('did not contain a JSON') ||
+      err.message.includes('unexpected response shape')
+    ) {
+      return 'parse-error';
+    }
+  }
+  return 'unknown';
+}
 
 export interface UploadQualityPipelineInput {
   trackId: string;
@@ -77,6 +113,14 @@ export interface UploadQualityPipelineResult {
   loudnessSuggestion?: LoudnessNormalizationSuggestion;
   /** Result of the pre-AI preprocessing step (#406). */
   preprocessing?: PreprocessedAudio;
+  /**
+   * Set when the Mastra AI agent (NVIDIA-backed quality check) encountered an
+   * error. Populated so the frontend can render the appropriate
+   * `MastraAgentFallback` state (#426).
+   */
+  mastraErrorType?: MastraAgentErrorType;
+  /** Raw error message from the Mastra agent failure (sanitised before display). */
+  mastraErrorDetail?: string;
   reasons: string[];
   processedAt: number;
 }
@@ -229,7 +273,7 @@ export async function processUploadQualityCheck(
   let assessment: SongQualityAssessment | undefined;
   let stemAnalysis: StemUploadAnalysis | undefined;
   let rawScore = 0;
-  let reasons: string[] = [];
+  const reasons: string[] = [];
 
   try {
     if (input.stems && input.stems.length > 0) {
@@ -281,6 +325,8 @@ export async function processUploadQualityCheck(
     });
 
     const errorMsg = err instanceof Error ? err.message : 'Quality check service unavailable';
+    // Classify the error so the UI can render the right MastraAgentFallback state (#426).
+    const mastraErrorType = classifyMastraError(err);
     return {
       trackId: input.trackId,
       status: 'review',
@@ -293,6 +339,8 @@ export async function processUploadQualityCheck(
       explicitCheck,
       loudnessSuggestion,
       preprocessing,
+      mastraErrorType,
+      mastraErrorDetail: errorMsg,
       reasons: [`Analysis error (${errorMsg}); sent to manual review queue.`],
       processedAt,
     };
