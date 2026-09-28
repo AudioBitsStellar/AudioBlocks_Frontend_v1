@@ -8,9 +8,7 @@ import QualityCheckTimeoutError from '@/components/ai/QualityCheckTimeoutError';
 
 describe('QualityCheckTimeoutError', () => {
   it('renders the timeout alert with the track title', () => {
-    render(
-      <QualityCheckTimeoutError trackTitle="Midnight Signal" onRetry={() => {}} />
-    );
+    render(<QualityCheckTimeoutError trackTitle="Midnight Signal" onRetry={() => {}} />);
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText('Midnight Signal')).toBeInTheDocument();
@@ -25,9 +23,7 @@ describe('QualityCheckTimeoutError', () => {
 
   it('fires onRetry and shows the retrying state', () => {
     const onRetry = vi.fn();
-    const { rerender } = render(
-      <QualityCheckTimeoutError onRetry={onRetry} />
-    );
+    const { rerender } = render(<QualityCheckTimeoutError onRetry={onRetry} />);
 
     fireEvent.click(screen.getByRole('button', { name: /retry check/i }));
     expect(onRetry).toHaveBeenCalledTimes(1);
@@ -44,9 +40,7 @@ describe('QualityCheckTimeoutError', () => {
 
   it('fires onSkip and disables it while retrying', () => {
     const onSkip = vi.fn();
-    const { rerender } = render(
-      <QualityCheckTimeoutError onRetry={() => {}} onSkip={onSkip} />
-    );
+    const { rerender } = render(<QualityCheckTimeoutError onRetry={() => {}} onSkip={onSkip} />);
 
     fireEvent.click(screen.getByRole('button', { name: /skip for now/i }));
     expect(onSkip).toHaveBeenCalledTimes(1);
