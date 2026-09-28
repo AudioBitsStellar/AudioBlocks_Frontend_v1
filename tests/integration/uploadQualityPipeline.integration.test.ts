@@ -9,13 +9,13 @@ import {
 } from '../../lib/plagiarismDetection';
 import {
   resetGenreThresholds,
-  setGenreThreshold,
 } from '../../lib/qualityThresholds';
 import {
   getQualityCheckStats,
   resetQualityAnalytics,
 } from '../../lib/qualityAnalytics';
 import { AnalysisQueueMonitor } from '../../lib/analysisQueueMonitor';
+import { getFlaggedTrack, resetFlaggedTrackReview } from '../../lib/flaggedTrackReview';
 
 /**
  * Integration tests for the upload-to-quality-check pipeline (#429).
@@ -47,6 +47,7 @@ describe('Upload-to-Quality-Check Pipeline Integration (#429)', () => {
     resetPlagiarismRegistry();
     resetGenreThresholds();
     resetQualityAnalytics();
+    resetFlaggedTrackReview();
     vi.stubGlobal('fetch', vi.fn());
   });
 
@@ -276,5 +277,70 @@ describe('Upload-to-Quality-Check Pipeline Integration (#429)', () => {
 
     const stats = getQualityCheckStats();
     expect(stats.timeouts).toBe(1);
+
+    // #418: a degraded (undecidable) check goes to the admin review queue.
+    expect(getFlaggedTrack('track_offline_1')).toMatchObject({ status: 'pending', source: 'review' });
+  });
+
+  // #418: admin review queue wiring.
+  it('flags a rejected track for admin review instead of only recording analytics', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      nvidiaMockResponse('{"score": 10, "verdict": "rejected", "reasons": ["Excessive clipping"]}')
+    );
+
+    const input: UploadQualityPipelineInput = {
+      trackId: 'track_bad_1',
+      title: 'Bad Track',
+      genre: 'Rock',
+    };
+
+    const result = await processUploadQualityCheck(input);
+
+    expect(result.status).toBe('rejected');
+    expect(getFlaggedTrack('track_bad_1')).toMatchObject({
+      trackId: 'track_bad_1',
+      status: 'pending',
+      source: 'rejected',
+    });
+  });
+
+  it('does not flag an approved track for review', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      nvidiaMockResponse('{"score": 95, "verdict": "approved", "reasons": ["Great mix"]}')
+    );
+
+    const input: UploadQualityPipelineInput = {
+      trackId: 'track_good_1',
+      title: 'Good Track',
+      genre: 'Rock',
+    };
+
+    const result = await processUploadQualityCheck(input);
+
+    expect(result.status).toBe('approved');
+    expect(getFlaggedTrack('track_good_1')).toBeUndefined();
+  });
+
+  it('flags an immediate plagiarism rejection for admin review', async () => {
+    const input: UploadQualityPipelineInput = {
+      trackId: 'track_dup_1',
+      title: 'Duplicate Track',
+      genre: 'Rock',
+      audioHash: 'hash-dup-1',
+    };
+    // First upload registers the fingerprint via approval.
+    vi.mocked(fetch).mockResolvedValueOnce(
+      nvidiaMockResponse('{"score": 90, "verdict": "approved", "reasons": []}')
+    );
+    await processUploadQualityCheck(input);
+
+    // A second upload with the same hash is rejected as a duplicate before
+    // any NVIDIA call, and must still land in the review queue.
+    const dup: UploadQualityPipelineInput = { ...input, trackId: 'track_dup_2' };
+    const result = await processUploadQualityCheck(dup);
+
+    expect(result.status).toBe('rejected');
+    expect(fetch).toHaveBeenCalledTimes(1); // no second NVIDIA call for the duplicate
+    expect(getFlaggedTrack('track_dup_2')).toMatchObject({ status: 'pending', source: 'rejected' });
   });
 });
