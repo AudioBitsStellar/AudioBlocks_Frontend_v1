@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
+import { Pagination } from '@/components/ui/pagination';
 import BuyButton from './BuyButton';
 
 interface CollectionItem {
@@ -21,6 +22,8 @@ const inter = Inter({
   weight: '600',
   display: 'swap',
 });
+
+const ITEMS_PER_PAGE = 8;
 
 const musicData = [
   {
@@ -145,6 +148,7 @@ export default function NftCollection() {
   const [search, setSearch] = useState('');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const tabs = ['All', 'Latest', 'Tickets', 'Merches'];
 
@@ -174,6 +178,17 @@ export default function NftCollection() {
     });
   }, [getTabData, search, priceMin, priceMax]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginatedItems = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen max-w-11/12 mx-auto bg-black px-4 sm:px-8 py-8 sm:py-12">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12">
@@ -191,7 +206,10 @@ export default function NftCollection() {
             placeholder="Search by artist or title..."
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </div>
       </div>
@@ -206,7 +224,10 @@ export default function NftCollection() {
                   ? 'bg-brand text-white'
                   : 'bg-surface text-on-muted hover:bg-surface-hover hover:text-white'
               }`}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                setActiveTab(tab);
+                setCurrentPage(1);
+              }}
             >
               {tab}
             </button>
@@ -223,7 +244,10 @@ export default function NftCollection() {
             step="0.1"
             type="number"
             value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
+            onChange={(e) => {
+              setPriceMin(e.target.value);
+              setCurrentPage(1);
+            }}
           />
           <span className="text-on-muted">-</span>
           <input
@@ -234,7 +258,10 @@ export default function NftCollection() {
             step="0.1"
             type="number"
             value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
+            onChange={(e) => {
+              setPriceMax(e.target.value);
+              setCurrentPage(1);
+            }}
           />
           <span className="text-xs text-on-muted">ETH</span>
         </div>
@@ -249,17 +276,30 @@ export default function NftCollection() {
               setSearch('');
               setPriceMin('');
               setPriceMax('');
+              setCurrentPage(1);
             }}
           >
             Clear filters
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {filtered.map((item) => (
-            <Card key={item.id} item={item} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {paginatedItems.map((item) => (
+              <Card key={item.id} item={item} />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="mt-8 pb-4">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

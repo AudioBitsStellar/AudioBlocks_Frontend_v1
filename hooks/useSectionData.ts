@@ -9,7 +9,7 @@ export interface SectionDataState<T> {
 }
 
 type UseSectionDataOptions<T> = {
-  queryKey: string[];
+  queryKey: readonly string[];
   fetchFn: () => Promise<T[]>;
   staleTime?: number;
   retry?: number;
