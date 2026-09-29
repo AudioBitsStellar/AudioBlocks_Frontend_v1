@@ -1,8 +1,7 @@
 'use client';
 
 import { memo, useCallback } from 'react';
-import Image from 'next/image';
-import { Play } from 'lucide-react';
+import AudioCard from '@/components/ui/AudioCard';
 import { usePlayback } from '@/context/PlaybackContext';
 import type { Track } from '@/context/PlaybackContext';
 
@@ -32,47 +31,18 @@ const RecentlyPlayed = memo(function RecentlyPlayed() {
 type CardProps = { track: Track; playTrack: (track: Track) => void };
 
 const RecentlyPlayedCard = memo(function RecentlyPlayedCard({ track, playTrack }: CardProps) {
-  const handleClick = useCallback(() => playTrack(track), [playTrack, track]);
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        playTrack(track);
-      }
-    },
-    [playTrack, track]
-  );
+  const handlePlay = useCallback(() => playTrack(track), [playTrack, track]);
 
   return (
-    <div
-      aria-label={`Play ${track.title} by ${track.artist}`}
-      className="group relative bg-surface-elevated rounded-lg overflow-hidden cursor-pointer hover:bg-surface-hover transition"
-      role="button"
-      tabIndex={0}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="relative aspect-square">
-        <Image
-          fill
-          alt={track.title}
-          className="object-cover"
-          src={track.cover || '/placeholder-cover.svg'}
-          onError={(e) => {
-            e.currentTarget.src = '/placeholder-cover.svg';
-          }}
-        />
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-          <div className="w-12 h-12 bg-brand rounded-full flex items-center justify-center">
-            <Play className="text-white ml-1" size={20} />
-          </div>
-        </div>
-      </div>
-      <div className="p-3">
-        <h3 className="text-sm font-medium text-white truncate">{track.title}</h3>
-        <p className="text-xs text-gray-400 truncate">{track.artist}</p>
-      </div>
-    </div>
+    <AudioCard
+      artist={track.artist}
+      artworkUrl={track.cover}
+      className="bg-surface-elevated"
+      title={track.title}
+      variant="standard"
+      onClick={handlePlay}
+      onPlay={handlePlay}
+    />
   );
 });
 

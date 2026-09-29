@@ -44,17 +44,17 @@ describe('PlaybackContext', () => {
     expect(result.current.currentIndex).toBe(0);
   });
 
-  it.each([
-    '{"__proto__":{"polluted":true}}',
-    '{"constructor":{"prototype":{"polluted":true}}}',
-  ])('ignores localStorage values with unsafe object keys', (unsafeValue) => {
-    localStorage.setItem('audioblocks_volume', unsafeValue);
+  it.each(['{"__proto__":{"polluted":true}}', '{"constructor":{"prototype":{"polluted":true}}}'])(
+    'ignores localStorage values with unsafe object keys',
+    (unsafeValue) => {
+      localStorage.setItem('audioblocks_volume', unsafeValue);
 
-    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+      const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
 
-    expect(result.current.volume).toBe(1);
-    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
-  });
+      expect(result.current.volume).toBe(1);
+      expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
+    }
+  );
 
   it('should throw error if usePlayback is used outside of provider', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -282,7 +282,7 @@ describe('PlaybackContext', () => {
   it('should return un-modified state for unknown action type', () => {
     // We can't dispatch an unknown action directly because of TS types.
     // We can cast the return of usePlayback to any to test the default case of the reducer.
-    const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
 
     // We know that `enqueueTrack` calls `dispatch` internally.
     // Wait, we don't have access to `dispatch` directly.
@@ -537,5 +537,83 @@ describe('PlaybackContext', () => {
     localStorage.setItem('audioblocks_gapless', 'false');
     const { result } = renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
     expect(result.current.gapless).toBe(false);
+  });
+
+  describe('uncovered transitions', () => {
+    const render = () => renderHook(() => usePlayback(), { wrapper: PlaybackProvider });
+    const extra = { id: 'extra', title: 'Extra', artist: 'X', cover: '/x.jpg' };
+
+    it('toggles autoplayBlocked and clears it on resume', () => {
+      const { result } = render();
+      act(() => result.current.setAutoplayBlocked(true));
+      expect(result.current.autoplayBlocked).toBe(true);
+      act(() => result.current.resumeAudio());
+      expect(result.current.autoplayBlocked).toBe(false);
+    });
+
+    it('next() jumps to a queued track that is already in the playlist', () => {
+      const { result } = render();
+      const target = result.current.playlist[2];
+      act(() => result.current.addToQueue(target));
+      act(() => result.current.next());
+      expect(result.current.currentIndex).toBe(2);
+      expect(result.current.playlist).toHaveLength(3);
+      expect(result.current.queue).toEqual([]);
+    });
+
+    it('advanceQueue() reuses existing playlist entries and appends new ones', () => {
+      const { result } = render();
+      act(() => result.current.addToQueue(result.current.playlist[1]));
+      act(() => result.current.addToQueue(extra));
+      act(() => result.current.advanceQueue());
+      expect(result.current.currentIndex).toBe(1);
+      act(() => result.current.advanceQueue());
+      expect(result.current.currentIndex).toBe(3);
+      expect(result.current.playlist[3]).toEqual(extra);
+      expect(result.current.isPlaying).toBe(true);
+    });
+
+    it('advanceQueue() with an empty queue advances and wraps the playlist', () => {
+      const { result } = render();
+      act(() => result.current.setCurrentIndex(2));
+      act(() => result.current.advanceQueue());
+      expect(result.current.currentIndex).toBe(0);
+    });
+
+    it('advanceQueue() with an empty queue picks a random index when shuffling', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.99);
+      const { result } = render();
+      act(() => result.current.toggleShuffle());
+      act(() => result.current.advanceQueue());
+      expect(result.current.currentIndex).toBe(2);
+    });
+
+    it('falls back to defaults when stored JSON is corrupt', () => {
+      localStorage.setItem('audioblocks_volume', '{not json');
+      localStorage.setItem('audioblocks_queue', '{not json');
+      const { result } = render();
+      expect(result.current.volume).toBe(1);
+      expect(result.current.queue).toEqual([]);
+    });
+
+    it('ignores storage write failures (quota exceeded)', () => {
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+      const { result } = render();
+      expect(() => act(() => result.current.setVolume(0.5))).not.toThrow();
+      expect(result.current.volume).toBe(0.5);
+    });
+
+    it('getRecentlyPlayed() dedupes non-consecutive plays and respects the limit', () => {
+      const { result } = render();
+      act(() => result.current.recordPlay('a', 1));
+      act(() => result.current.recordPlay('b', 1));
+      act(() => result.current.recordPlay('a', 1));
+      act(() => result.current.recordPlay('c', 1));
+      expect(result.current.history).toHaveLength(4);
+      expect(result.current.getRecentlyPlayed().map((e) => e.trackId)).toEqual(['c', 'a', 'b']);
+      expect(result.current.getRecentlyPlayed(2).map((e) => e.trackId)).toEqual(['c', 'a']);
+    });
   });
 });
