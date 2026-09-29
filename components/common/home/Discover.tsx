@@ -1,10 +1,10 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Slider from 'react-slick';
+import AudioCard from '@/components/ui/AudioCard';
 
 type Track = {
   id: string;
@@ -105,27 +105,26 @@ const Discover = () => {
           <Slider {...settings} ref={sliderRef}>
             {trackData[activeTab].map((track) => (
               <div key={track.id} className="px-3">
-                <div className="bg-[#111] hover:bg-[#181818] rounded-lg overflow-hidden p-4 transition">
-                  <Image
-                    alt={`Album artwork for ${track.title} by ${track.artist}`}
-                    className="h-48 w-full object-cover mb-4 rounded"
-                    height={200}
-                    src={track.image}
-                    width={300}
-                  />
-                  <h3 className="text-white font-semibold text-sm">{track.title}</h3>
-                  <p className="text-xs text-white/60 mb-1">{track.artist}</p>
-                  <p className="text-xs text-white/60 mb-4">{track.left}</p>
-                  <div className="flex justify-between items-center">
-                    <button
-                      aria-label={`Buy ${track.title} for ${track.price}`}
-                      className="bg-white text-black text-xs px-4 py-1.5 min-h-[44px] rounded font-semibold"
-                    >
-                      Buy Now
-                    </button>
-                    <span className="text-xs">{track.price}</span>
-                  </div>
-                </div>
+                <AudioCard
+                  actionButtons={
+                    <>
+                      <span className="text-xs">{track.price}</span>
+                      <button
+                        aria-label={`Buy ${track.title} for ${track.price}`}
+                        className="bg-white text-black text-xs px-4 py-1.5 min-h-[44px] rounded font-semibold"
+                      >
+                        Buy Now
+                      </button>
+                    </>
+                  }
+                  altText={`Album artwork for ${track.title} by ${track.artist}`}
+                  artist={track.artist}
+                  artworkUrl={track.image}
+                  className="bg-[#111]"
+                  duration={track.left}
+                  title={track.title}
+                  variant="standard"
+                />
               </div>
             ))}
           </Slider>

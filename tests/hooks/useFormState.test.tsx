@@ -1,24 +1,17 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useFormState } from '@/hooks/useFormState';
 
 // Dummy component to test the hook
 function TestForm() {
-  const {
-    values,
-    handleChange,
-    handleBlur,
-    errors,
-    touched,
-    isFormValid,
-    fieldError,
-    setAllTouched,
-  } = useFormState({
-    displayName: '',
-    bio: '',
-    website: '',
-    twitter: '',
-  });
+  const { values, handleChange, handleBlur, isFormValid, fieldError, setAllTouched } = useFormState(
+    {
+      displayName: '',
+      bio: '',
+      website: '',
+      twitter: '',
+    }
+  );
 
   return (
     <form
@@ -76,6 +69,34 @@ function TestForm() {
   );
 }
 
+function SubmitForm({ onSubmit }: { onSubmit: () => Promise<void> }) {
+  const { values, handleChange, isSubmitting, submit } = useFormState({
+    displayName: '',
+    bio: '',
+    website: '',
+    twitter: '',
+  });
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit(onSubmit).catch(() => {});
+      }}
+    >
+      <label htmlFor="name">Name</label>
+      <input
+        id="name"
+        value={values.displayName}
+        onChange={(e) => handleChange('displayName', e.target.value)}
+      />
+      <button disabled={isSubmitting} type="submit">
+        Save
+      </button>
+    </form>
+  );
+}
+
 describe('useFormState validation', () => {
   it('Empty name shows "Name is required" error after blur or submit', () => {
     render(<TestForm />);
@@ -120,18 +141,15 @@ describe('useFormState validation', () => {
     'https://user:password@example.com',
     'https://',
     ' https://example.com',
-  ])(
-    'rejects unsafe or incomplete profile URLs: %s',
-    (website) => {
-      render(<TestForm />);
-      const websiteInput = screen.getByLabelText('Website');
+  ])('rejects unsafe or incomplete profile URLs: %s', (website) => {
+    render(<TestForm />);
+    const websiteInput = screen.getByLabelText('Website');
 
-      fireEvent.change(websiteInput, { target: { value: website } });
-      fireEvent.blur(websiteInput);
+    fireEvent.change(websiteInput, { target: { value: website } });
+    fireEvent.blur(websiteInput);
 
-      expect(screen.getByTestId('error-website')).toBeInTheDocument();
-    },
-  );
+    expect(screen.getByTestId('error-website')).toBeInTheDocument();
+  });
 
   it('Valid form submits successfully (button enabled)', () => {
     render(<TestForm />);
@@ -161,5 +179,28 @@ describe('useFormState validation', () => {
 
     // Error should clear
     expect(screen.queryByTestId('error-website')).toBeNull();
+  });
+
+  it('Submit button disabled during submission and re-enabled after', async () => {
+    let resolve!: () => void;
+    const onSubmit = vi.fn(() => new Promise<void>((r) => (resolve = r)));
+    render(<SubmitForm onSubmit={onSubmit} />);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Valid Name' } });
+    const saveBtn = screen.getByRole('button', { name: 'Save' });
+
+    fireEvent.click(saveBtn);
+    await waitFor(() => expect(saveBtn).toBeDisabled());
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ displayName: 'Valid Name' }));
+
+    resolve();
+    await waitFor(() => expect(saveBtn).not.toBeDisabled());
+  });
+
+  it('Invalid form does not call onSubmit', async () => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    render(<SubmitForm onSubmit={onSubmit} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSubmit).not.toHaveBeenCalled());
+    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled();
   });
 });
