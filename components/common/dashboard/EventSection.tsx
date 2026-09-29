@@ -3,8 +3,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight, Star } from 'lucide-react';
 import Slider from 'react-slick';
+import { NextArrow, PrevArrow } from '@/components/common/collective/Members/navigation';
 import { useGetEvents } from '@/hooks/useExplore';
-import { NextArrow, PrevArrow } from '../collective/Members/navigation';
 
 const eventsSettings = {
   dots: false,
