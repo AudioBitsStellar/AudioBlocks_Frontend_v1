@@ -9,7 +9,6 @@ import {
 } from '../../lib/plagiarismDetection';
 import {
   resetGenreThresholds,
-  setGenreThreshold,
 } from '../../lib/qualityThresholds';
 import {
   getQualityCheckStats,
