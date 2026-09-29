@@ -2,18 +2,18 @@
 
 import dynamic from 'next/dynamic';
 import { useQueryClient } from '@tanstack/react-query';
-import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { RecentlyPlayed } from '@/components/common/home/RecentlyPlayed';
+import LazySection from '@/components/common/LazySection';
+import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
-import LazySection from '../../components/common/LazySection';
 
 const SectionSkeleton = ({ height }: { height: number }) => (
   <Skeleton className="w-full" style={{ height }} />
 );
 
-const Featured = dynamic(() => import('../../components/common/home/Featured'), {
+const Featured = dynamic(() => import('@/components/common/home/Featured'), {
   ssr: false,
   loading: () => <SectionSkeleton height={360} />,
 });
@@ -21,15 +21,15 @@ const SoundsSection = dynamic(() => import('@/components/common/home/SoundSectio
   ssr: false,
   loading: () => <SectionSkeleton height={420} />,
 });
-const HowItWorks = dynamic(() => import('../../components/common/home/HowItWorks'), {
+const HowItWorks = dynamic(() => import('@/components/common/home/HowItWorks'), {
   ssr: false,
   loading: () => <SectionSkeleton height={480} />,
 });
-const Discover = dynamic(() => import('../../components/common/home/Discover'), {
+const Discover = dynamic(() => import('@/components/common/home/Discover'), {
   ssr: false,
   loading: () => <SectionSkeleton height={420} />,
 });
-const Experience = dynamic(() => import('../../components/common/home/Experience'), {
+const Experience = dynamic(() => import('@/components/common/home/Experience'), {
   ssr: false,
   loading: () => <SectionSkeleton height={320} />,
 });

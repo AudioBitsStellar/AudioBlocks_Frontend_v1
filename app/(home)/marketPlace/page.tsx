@@ -1,6 +1,6 @@
+import NatureDepthSlider from '@/components/common/NatureDepth';
+import NftCollections from '@/components/common/NftCollections';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import NatureDepthSlider from '../../../components/common/NatureDepth';
-import NftCollections from '../../../components/common/NftCollections';
 import type { Metadata } from 'next';
 
 const TITLE = 'Marketplace | AudioBlocks';
