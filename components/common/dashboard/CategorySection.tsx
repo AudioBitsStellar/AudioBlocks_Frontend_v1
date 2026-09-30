@@ -25,12 +25,12 @@ const CategorySection = memo(function CategorySection({ activeGenre = 'All' }: P
   return (
     <section className="py-6">
       <div className="flex justify-between items-center pb-6 border-b">
-        <h2 className="text-2xl font-semibold text-[#A3A3A3] font-poppins leading-tight tracking-tight">
+        <h2 className="text-2xl font-semibold text-muted font-poppins leading-tight tracking-tight">
           Category
         </h2>
         <Link
           aria-label="View all categories"
-          className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
+          className="bg-[#1E181D] hover:bg-[#885FA8] text-muted hover:text-[#1E181D] rounded-full p-3"
           href="#"
         >
           <ArrowUpRight className="w-5 h-5" />
@@ -67,7 +67,7 @@ const CategorySection = memo(function CategorySection({ activeGenre = 'All' }: P
                       fallbackCategories[index]?.image ?? '/audio.jpg';
                   }}
                 />
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
                   <p className="text-white font-medium text-sm">{category.name}</p>
                 </div>
               </div>
