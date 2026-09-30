@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { MotionConfig } from 'framer-motion';
 import Script from 'next/script';
 import { Toaster } from 'sonner';
 import './globals.css';
@@ -47,30 +48,36 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <PrivyAuthProvider>
-          <Provider>
-            <Suspense fallback={null}>
-              <RouteProgress />
-            </Suspense>
-            <SWRegister />
-            <EnvCheck />
-            <AccessibilityAnnouncer />
-            <a
-              className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:font-semibold"
-              href="#main-content"
-            >
-              Skip to main content
-            </a>
-            <Toaster closeButton position="bottom-right" />
-            {children}
-            {/* Analytics script loaded after user interaction to reduce main thread blocking */}
-            <Script
-              id="analytics-script"
-              src="https://www.google-analytics.com/analytics.js"
-              strategy="lazyOnload"
-            />
-          </Provider>
-        </PrivyAuthProvider>
+        {/* Issue #166: framer-motion animates via JS/WAAPI, not CSS, so the
+            prefers-reduced-motion rules in globals.css don't reach it on
+            their own. reducedMotion="user" makes every motion.* component
+            in the app honor the OS preference automatically. */}
+        <MotionConfig reducedMotion="user">
+          <PrivyAuthProvider>
+            <Provider>
+              <Suspense fallback={null}>
+                <RouteProgress />
+              </Suspense>
+              <SWRegister />
+              <EnvCheck />
+              <AccessibilityAnnouncer />
+              <a
+                className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:font-semibold"
+                href="#main-content"
+              >
+                Skip to main content
+              </a>
+              <Toaster closeButton position="bottom-right" />
+              {children}
+              {/* Analytics script loaded after user interaction to reduce main thread blocking */}
+              <Script
+                id="analytics-script"
+                src="https://www.google-analytics.com/analytics.js"
+                strategy="lazyOnload"
+              />
+            </Provider>
+          </PrivyAuthProvider>
+        </MotionConfig>
       </body>
     </html>
   );
