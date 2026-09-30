@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node api.js && next dev",
+    "build": "node api.js && next build",
+    "start": "node api.js && next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "npm run format:check && vitest run",
@@ -24,7 +24,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@dynamic-labs/ethereum": "^4.23.0",
+    "@dynamic-labs/ethereum": "^5.9.1",
     "@dynamic-labs/sdk-api": "^0.0.720",
     "@dynamic-labs/sdk-react-core": "^4.23.0",
     "@dynamic-labs/wagmi-connector": "^4.23.0",

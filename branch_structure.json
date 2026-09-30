@@ -1,0 +1,33 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "dependabot/npm_and_yarn/dynamic-labs/ethereum-5.4.1",
+    "dependabot/npm_and_yarn/framer-motion-13.1.1",
+    "dependabot/npm_and_yarn/next-16.3.3",
+    "dependabot/npm_and_yarn/tanstack/react-query-5.102.8",
+    "dependabot/npm_and_yarn/typescript-7.0.2",
+    "dependabot/npm_and_yarn/vitejs/plugin-react-6.1.1",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "dependabot/npm_and_yarn/dynamic-labs/ethereum-5.4.1": "main",
+    "dependabot/npm_and_yarn/framer-motion-13.1.1": "main",
+    "dependabot/npm_and_yarn/next-16.3.3": "main",
+    "dependabot/npm_and_yarn/tanstack/react-query-5.102.8": "main",
+    "dependabot/npm_and_yarn/typescript-7.0.2": "main",
+    "dependabot/npm_and_yarn/vitejs/plugin-react-6.1.1": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "dependabot/npm_and_yarn/dynamic-labs/ethereum-5.4.1",
+    "dependabot/npm_and_yarn/framer-motion-13.1.1",
+    "dependabot/npm_and_yarn/next-16.3.3",
+    "dependabot/npm_and_yarn/tanstack/react-query-5.102.8",
+    "dependabot/npm_and_yarn/typescript-7.0.2",
+    "dependabot/npm_and_yarn/vitejs/plugin-react-6.1.1",
+    "origin"
+  ]
+}
