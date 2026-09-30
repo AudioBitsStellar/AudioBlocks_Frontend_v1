@@ -47,3 +47,12 @@ html, body {
   color: var(--foreground);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+/* Issue #163: baseline visible focus indicator for every focusable element,
+   so anything not already given an explicit focus-visible style (many
+   components already use Tailwind's `focus-visible:` utility) still gets
+   one instead of silently relying on (or losing) the browser default. */
+:focus-visible {
+  outline: 2px solid #d2045b;
+  outline-offset: 2px;
+}
