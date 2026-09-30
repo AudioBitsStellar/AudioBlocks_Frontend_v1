@@ -78,7 +78,7 @@ export function SectionWrapper<T extends { id: string }>({
         {viewAllHref && (
           <Link
             aria-label={`View all ${title}`}
-            className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
+            className="bg-[#1E181D] hover:bg-[#885FA8] text-muted hover:text-[#1E181D] rounded-full p-3"
             href={viewAllHref}
           >
             <ArrowUpRight className="w-5 h-5" />

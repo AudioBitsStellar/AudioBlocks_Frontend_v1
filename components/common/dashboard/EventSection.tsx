@@ -38,11 +38,11 @@ const EventSection = () => {
     <div>
       <section>
         <div className="flex justify-between items-center pb-6 border-b">
-          <h2 className="text-2xl font-semibold text-[#A3A3A3] font-poppins leading-tight tracking-tight">
+          <h2 className="text-2xl font-semibold text-muted font-poppins leading-tight tracking-tight">
             Event
           </h2>
           <Link
-            className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
+            className="bg-[#1E181D] hover:bg-[#885FA8] text-muted hover:text-[#1E181D] rounded-full p-3"
             href="#"
           >
             <ArrowUpRight className="w-5 h-5" />
@@ -56,7 +56,7 @@ const EventSection = () => {
             Failed to load events. Please try again later.
           </p>
         ) : !events || events.length === 0 ? (
-          <p className="py-8 text-center text-sm text-[#A3A3A3]">No upcoming events yet.</p>
+          <p className="py-8 text-center text-sm text-muted">No upcoming events yet.</p>
         ) : (
           <div className="relative py-12 overflow-hidden">
             <Slider

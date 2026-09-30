@@ -105,11 +105,11 @@ const Comment = ({ onClose }: CommentPanelProps) => {
       onKeyDown={handleKeyDown}
     >
       <div className="flex items-center border-b pb-3 justify-between mb-4">
-        <h2 className="text-[#A3A3A3] text-lg font-bold">Comments</h2>
+        <h2 className="text-muted text-lg font-bold">Comments</h2>
         <button
           ref={closeButtonRef}
           aria-label="Close comments"
-          className="text-[#A3A3A3] cursor-pointer hover:text-red-400"
+          className="text-muted cursor-pointer hover:text-red-400"
           onClick={onClose}
         >
           <X size={15} />
