@@ -81,12 +81,23 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let refreshPromise: Promise<string> | null = null;
 
+/**
+ * Clears the locally stored session: removes the access and refresh cookies
+ * and notifies the server-side session endpoint, e.g. on logout or after a
+ * failed token refresh.
+ */
 export function clearSession() {
   Cookies.remove(AUTH.COOKIE_NAME);
   Cookies.remove(AUTH.REFRESH_COOKIE_NAME);
   void fetch('/api/session', { method: 'DELETE' });
 }
 
+/**
+ * Exchanges the current refresh cookie for a new access token. Concurrent
+ * callers share a single in-flight request via `refreshPromise`.
+ *
+ * @returns The newly issued access token.
+ */
 export async function refreshAccessToken(): Promise<string> {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
