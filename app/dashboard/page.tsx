@@ -8,6 +8,7 @@ import CategorySection from '@/components/common/dashboard/CategorySection';
 import Collections from '@/components/common/dashboard/Collections';
 import EventSection from '@/components/common/dashboard/EventSection';
 import Merch from '@/components/common/dashboard/Merch';
+import PersonalizationRow from '@/components/common/dashboard/PersonalizationRow';
 import RecentlyPlayed from '@/components/common/dashboard/RecentlyPlayed';
 import DataErrorBoundary from '@/components/common/DataErrorBoundary';
 import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
@@ -77,6 +78,10 @@ const ExplorePage = () => {
       */}
       <DataErrorBoundary name="Recently Played">
         <RecentlyPlayed />
+      </DataErrorBoundary>
+
+      <DataErrorBoundary name="For You">
+        <PersonalizationRow />
       </DataErrorBoundary>
 
       <DataErrorBoundary name="Categories">

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useToast } from './ToastContext';
 
-export type TransactionType = 'buy' | 'stake' | 'vote';
+export type TransactionType = 'buy' | 'sell' | 'list' | 'cancel_listing' | 'bid' | 'transfer' | 'mint';
 export type TransactionStatus = 'pending' | 'confirmed' | 'failed';
 
 export interface Transaction {
@@ -20,6 +20,13 @@ export interface Transaction {
   type: TransactionType;
   status: TransactionStatus;
   timestamp: number;
+  amount?: string;
+  counterparty?: string;
+  item?: {
+    id: string;
+    title: string;
+    cover?: string;
+  };
 }
 
 interface TransactionContextValue {
