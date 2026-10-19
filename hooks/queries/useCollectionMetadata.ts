@@ -4,6 +4,14 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWallet } from '@/context/WalletContext';
 import apiClient, { NotFoundError } from '@/lib/apiClient';
+import { getIpfsUrl } from '@/lib/stellarExplorer';
+import {
+  isCollectionRelease,
+  releaseToCollectionMetadata,
+  type CollectionMetadata,
+  type CollectionRelease,
+  type IpfsCollectionMetadata,
+} from '@/lib/mappers/collection';
 
 export const COLLECTION_METADATA_STALE_TIME = 60 * 1000;
 
@@ -12,69 +20,46 @@ export const collectionMetadataKeys = {
   detail: (id: string) => ['collection-metadata', id] as const,
 };
 
-export interface CollectionMetadata {
-  id: string;
-  name: string;
-  description: string;
-  artwork: string;
-  trackCount: number;
-  totalPlays: number;
-  owner: string;
+export type { CollectionMetadata } from '@/lib/mappers/collection';
+
+/** Fetches pinned NFT metadata JSON via the configured IPFS gateway; null on any failure. */
+async function fetchIpfsMetadata(
+  cid: string,
+  signal?: AbortSignal
+): Promise<IpfsCollectionMetadata | null> {
+  const url = getIpfsUrl(cid);
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { signal });
+    if (!res.ok) return null;
+    return (await res.json()) as IpfsCollectionMetadata;
+  } catch {
+    return null;
+  }
 }
 
-const mockMetadata: Record<string, CollectionMetadata> = {
-  'col-1': {
-    id: 'col-1',
-    name: 'Afrobeats Essentials',
-    description: 'A curated collection of essential afrobeats tracks.',
-    artwork: '/AFRO.jpg',
-    trackCount: 12,
-    totalPlays: 48210,
-    owner: '0xabc123',
-  },
-  'col-2': {
-    id: 'col-2',
-    name: 'Chill Vibes',
-    description: 'Laid-back instrumentals and soft grooves.',
-    artwork: '/tech.jpg',
-    trackCount: 8,
-    totalPlays: 19340,
-    owner: '0xdef456',
-  },
-};
-
-function normalizeMetadata(id: string, data: Partial<CollectionMetadata>): CollectionMetadata {
-  return {
-    id: data.id ?? id,
-    name: data.name ?? '',
-    description: data.description ?? '',
-    artwork: data.artwork ?? '',
-    trackCount: data.trackCount ?? 0,
-    totalPlays: data.totalPlays ?? 0,
-    owner: data.owner ?? '',
-  };
-}
-
+/**
+ * Collection metadata for an EP/album release (#560): the release from
+ * `/api/releases/:id`, overlaid with its pinned IPFS metadata when the
+ * release carries a `metadataCid`. Returns null when the release is missing
+ * or the releases router is not mounted yet (AudioBlock_Backend#752).
+ */
 export async function fetchCollectionMetadata(
   id: string,
   signal?: AbortSignal
 ): Promise<CollectionMetadata | null> {
+  let release: CollectionRelease | undefined;
   try {
-    const res = await apiClient.get(`/api/collections/${id}/metadata`, { signal });
-    const data = res.data as CollectionMetadata | null;
-    if (!data) return null;
-    return normalizeMetadata(id, data);
+    const res = await apiClient.get(`/api/releases/${encodeURIComponent(id)}`, { signal });
+    release = (res.data as { data?: CollectionRelease } | null)?.data;
   } catch (error) {
-    if (error instanceof NotFoundError) {
-      return null;
-    }
-    // Dev/offline fallback for known mock collections so UI can still render.
-    if (id in mockMetadata) {
-      return mockMetadata[id];
-    }
-    // Graceful fallback when collection is missing or the endpoint is unreachable.
-    return null;
+    if (error instanceof NotFoundError) return null;
+    throw error;
   }
+  if (!release || !isCollectionRelease(release)) return null;
+
+  const ipfs = release.metadataCid ? await fetchIpfsMetadata(release.metadataCid, signal) : null;
+  return releaseToCollectionMetadata(release, ipfs, getIpfsUrl);
 }
 
 /**
