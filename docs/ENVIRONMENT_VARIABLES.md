@@ -54,7 +54,8 @@ See `docs/PRIVY_SETUP.md` for the full setup guide.
 | `NEXT_PUBLIC_LOG_LEVEL` | string | `"info"` | Logging level: `debug`, `info`, `warn`, `error` |
 | `NEXT_PUBLIC_ENABLE_DEVTOOLS` | boolean | `"false"` | Enable React Query DevTools | `"true"` |
 | `NEXT_PUBLIC_CACHE_TTL` | number | `300000` | Cache time-to-live in milliseconds | `600000` |
-| `NEXT_PUBLIC_ANALYTICS_ENABLED` | boolean | `"true"` | Enable analytics tracking | `"false"` |
+| `NEXT_PUBLIC_ANALYTICS_ENABLED` | boolean | `"true"` | Enable analytics tracking. Even when enabled, analytics load only after the visitor accepts the consent banner (#597) | `"false"` |
+| `NEXT_PUBLIC_ARTIST_DASHBOARD_URL` | string | unset | Link to the artist dashboard app, shown to artists after onboarding (#596). The CTA is hidden when unset | `https://artists.audioblocks.dev` |
 
 ## Setup Instructions
 

@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import Script from 'next/script';
+import { useAnalyticsConsent } from '@/hooks/useAnalyticsConsent';
 import { isAnalyticsEnabled } from '@/lib/analytics';
 
 const interactionEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll'] as const;
 
+/**
+ * Loads the analytics script only after the visitor accepts analytics (#597)
+ * and then waits for their first interaction, so it never competes with the
+ * initial page load. Rejecting or revoking consent unmounts the script.
+ */
 export default function AnalyticsScript() {
   const [hasInteracted, setHasInteracted] = useState(false);
-  const analyticsEnabled = isAnalyticsEnabled();
+  const consent = useAnalyticsConsent();
+  const analyticsEnabled = isAnalyticsEnabled() && consent === 'accepted';
 
   useEffect(() => {
     if (!analyticsEnabled) return;

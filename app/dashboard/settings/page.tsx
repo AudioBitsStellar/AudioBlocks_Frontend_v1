@@ -3,6 +3,7 @@
 import { useUserPreferences } from '@/context/UserPreferencesContext';
 import type { AudioQuality } from '@/context/UserPreferencesContext';
 import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
+import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import Link from 'next/link';
 import { Mail, Wallet, Trash2 } from 'lucide-react';
@@ -258,6 +259,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
+      <PrivacyDataSection />
     </div>
   );
 }
