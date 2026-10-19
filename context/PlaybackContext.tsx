@@ -12,8 +12,12 @@ import {
   useSyncExternalStore,
   ReactNode,
 } from 'react';
-import { demoOr } from '@/lib/fixtures';
-import { demoPlaylist } from '@/lib/fixtures/playback';
+import {
+  createSleepTimer,
+  sleepFadeFactor,
+  type SleepTimer,
+  type SleepTimerOption,
+} from '@/lib/sleepTimer';
 import { isTrackAvailable, shuffleTracks } from '@/lib/tracks';
 
 export type Track = {
@@ -80,6 +84,10 @@ export type PlaybackState = {
    * the current one plays so track changes have no audible gap.
    */
   gapless: boolean;
+  /** Sleep timer (#589). Kept in memory only, so it survives route changes but not reloads. */
+  sleepTimer: SleepTimer | null;
+  /** Volume multiplier while a sleep timer fades out (1 = no fade). */
+  sleepFade: number;
 };
 
 type PlaybackAction =
@@ -116,7 +124,12 @@ type PlaybackAction =
   // Audio normalization (#328)
   | { type: 'SET_NORMALIZE_AUDIO'; enabled: boolean }
   // Gapless playback (#329)
-  | { type: 'SET_GAPPLESS'; enabled: boolean };
+  | { type: 'SET_GAPPLESS'; enabled: boolean }
+  // Sleep timer (#589)
+  | { type: 'SET_SLEEP_TIMER'; timer: SleepTimer }
+  | { type: 'CLEAR_SLEEP_TIMER' }
+  | { type: 'SET_SLEEP_FADE'; factor: number }
+  | { type: 'SLEEP_EXPIRED' };
 
 export type PlaybackContextValue = PlaybackState & {
   playTrack: (track: Track) => void;
@@ -160,6 +173,12 @@ export type PlaybackContextValue = PlaybackState & {
   // Gapless playback (#329)
   /** Toggle seamless (gapless) transitions between tracks. */
   setGapless: (enabled: boolean) => void;
+  // Sleep timer (#589)
+  /** Start a sleep timer, replacing any active one. */
+  setSleepTimer: (option: SleepTimerOption) => void;
+  cancelSleepTimer: () => void;
+  /** Pause playback because the sleep timer ended. Clears the timer. */
+  expireSleepTimer: () => void;
 };
 
 /**
@@ -177,6 +196,8 @@ export type PlaybackActions = {
 const defaultPlaylist: Track[] = demoOr(demoPlaylist, []);
 
 const HISTORY_MAX = 200;
+/** How often the sleep timer checks the clock and updates the fade. */
+const SLEEP_TICK_MS = 250;
 
 // ── localStorage helpers ──────────────────────────────────────────────────
 
@@ -250,6 +271,8 @@ const initialState: PlaybackState = {
   isCrossfading: false,
   normalizeAudio: true,
   gapless: true,
+  sleepTimer: null,
+  sleepFade: 1,
 };
 
 // ── Reducer ───────────────────────────────────────────────────────────────
@@ -432,6 +455,20 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
     case 'SET_GAPPLESS':
       return { ...state, gapless: action.enabled };
 
+    // ── Sleep timer (#589) ──────────────────────────────────────────────
+
+    case 'SET_SLEEP_TIMER':
+      return { ...state, sleepTimer: action.timer, sleepFade: 1 };
+    case 'CLEAR_SLEEP_TIMER':
+      return state.sleepTimer === null && state.sleepFade === 1
+        ? state
+        : { ...state, sleepTimer: null, sleepFade: 1 };
+    case 'SET_SLEEP_FADE':
+      // Ticks arrive several times a second; skip identical values to avoid re-renders.
+      return state.sleepFade === action.factor ? state : { ...state, sleepFade: action.factor };
+    case 'SLEEP_EXPIRED':
+      return { ...state, isPlaying: false, sleepTimer: null, sleepFade: 1 };
+
     default:
       return state;
   }
@@ -494,6 +531,20 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
   const [state, dispatch] = useReducer(reducer, hydratedState);
 
+  // Sleep timer (#589): check the clock while a timed sleep runs, and fade volume near the end.
+  const sleepTimer = state.sleepTimer;
+  useEffect(() => {
+    if (sleepTimer?.kind !== 'duration') return;
+    const tick = () => {
+      const remaining = sleepTimer.endsAt - Date.now();
+      if (remaining <= 0) dispatch({ type: 'SLEEP_EXPIRED' });
+      else dispatch({ type: 'SET_SLEEP_FADE', factor: sleepFadeFactor(remaining) });
+    };
+    tick();
+    const id = setInterval(tick, SLEEP_TICK_MS);
+    return () => clearInterval(id);
+  }, [sleepTimer]);
+
   // Persist queue, history, volume, and mute state to localStorage on change.
   useEffect(() => {
     saveToStorage(QUEUE_STORAGE_KEY, state.queue);
@@ -528,9 +579,32 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const historyRef = useRef(state.history);
   historyRef.current = state.history;
 
-  // The actions object is created once from `dispatch`, so its identity (and
-  // that of every function in it) never changes.
-  const actions = useMemo<PlaybackActions>(
+  // Crossfade (#115)
+  const setCrossfadeDuration = useCallback((duration: number) => {
+    dispatch({ type: 'SET_CROSSFADE_DURATION', duration });
+  }, []);
+  const setCrossfading = useCallback((isCrossfading: boolean) => {
+    dispatch({ type: 'SET_CROSSFADING', isCrossfading });
+  }, []);
+
+  // Audio normalization (#328)
+  const setNormalizeAudio = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_NORMALIZE_AUDIO', enabled });
+  }, []);
+
+  // Gapless playback (#329)
+  const setGapless = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_GAPPLESS', enabled });
+  }, []);
+
+  // Sleep timer (#589)
+  const setSleepTimer = useCallback((option: SleepTimerOption) => {
+    dispatch({ type: 'SET_SLEEP_TIMER', timer: createSleepTimer(option, Date.now()) });
+  }, []);
+  const cancelSleepTimer = useCallback(() => dispatch({ type: 'CLEAR_SLEEP_TIMER' }), []);
+  const expireSleepTimer = useCallback(() => dispatch({ type: 'SLEEP_EXPIRED' }), []);
+
+  const value = useMemo<PlaybackContextValue>(
     () => ({
       play: () => dispatch({ type: 'PLAY' }),
       pause: () => dispatch({ type: 'PAUSE' }),
@@ -580,9 +654,33 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       // Audio normalization (#328)
       setNormalizeAudio: (enabled) => dispatch({ type: 'SET_NORMALIZE_AUDIO', enabled }),
       // Gapless playback (#329)
-      setGapless: (enabled) => dispatch({ type: 'SET_GAPPLESS', enabled }),
+      setGapless,
+      // Sleep timer (#589)
+      setSleepTimer,
+      cancelSleepTimer,
+      expireSleepTimer,
     }),
-    []
+    [
+      state,
+      addToRecentlyPlayed,
+      setAutoplayBlocked,
+      resumeAudio,
+      addToQueue,
+      removeFromQueue,
+      reorderQueue,
+      clearQueue,
+      advanceQueue,
+      recordPlay,
+      clearHistory,
+      getRecentlyPlayed,
+      setCrossfadeDuration,
+      setCrossfading,
+      setNormalizeAudio,
+      setGapless,
+      setSleepTimer,
+      cancelSleepTimer,
+      expireSleepTimer,
+    ]
   );
 
   // External store behind `usePlaybackSelector`. Subscribers re-render only when

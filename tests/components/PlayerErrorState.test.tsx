@@ -89,6 +89,8 @@ const createMockContext = (overrides: Partial<PlaybackContextValue> = {}): Playb
     isCrossfading: false,
     normalizeAudio: false,
     gapless: false,
+    sleepTimer: null,
+    sleepFade: 1,
     play: vi.fn(),
     pause: vi.fn(),
     next: vi.fn(),

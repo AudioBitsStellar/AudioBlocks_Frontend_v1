@@ -10,6 +10,7 @@ const { sources } = vi.hoisted(() => ({
     options: { prefetch?: boolean; onReady?: () => void };
     destroy: ReturnType<typeof vi.fn>;
     resume: ReturnType<typeof vi.fn>;
+    setMaxBitrate: ReturnType<typeof vi.fn>;
   }[],
 }));
 vi.mock('@/lib/hlsPlayer', () => ({
@@ -21,6 +22,7 @@ vi.mock('@/lib/hlsPlayer', () => ({
       options,
       destroy: vi.fn(() => audio.removeAttribute('src')),
       resume: vi.fn(),
+      setMaxBitrate: vi.fn(),
     };
     sources.push(source);
     return source;

@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { Inter } from 'next/font/google';
-import Image from 'next/image';
 import { Search } from 'lucide-react';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Pagination } from '@/components/ui/pagination';
 import { demoOr } from '@/lib/fixtures';
 import {
@@ -42,12 +42,12 @@ function Card({ item }: { item: CollectionItem }) {
   return (
     <div className="flex flex-col min-w-[280px] bg-surface border border-border-dark rounded-xl overflow-hidden transition-all duration-200 hover:bg-surface-hover hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98]">
       <div className="relative aspect-square overflow-hidden">
-        <Image
+        <ArtworkImage
           fill
-          alt={item.songName || item.eventName || item.itemName || 'Collection item'}
           className="object-cover"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           src={item.image || '/placeholder.svg'}
+          title={item.songName || item.eventName || item.itemName || 'Collection item'}
         />
       </div>
       <div className="flex flex-col gap-1.5 p-4 flex-1">

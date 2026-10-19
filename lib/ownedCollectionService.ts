@@ -1,6 +1,6 @@
+import { unwrapList } from './api/unwrap';
 import apiClient from './apiClient';
 import { API_ENDPOINTS } from './constants';
-import { unwrapList } from './api/unwrap';
 
 export interface OwnedCollectionItem {
   songId: number;
@@ -9,6 +9,12 @@ export interface OwnedCollectionItem {
   totalStreams: number;
   totalLikes: number;
   createdAt: number;
+  /** Song title, when the backend or indexer provides it. */
+  title?: string | null;
+  /** Artist display name, when available. */
+  artistName?: string | null;
+  /** Artwork URL, when available. */
+  coverUrl?: string | null;
 }
 
 export async function getOwnedCollection(address: string): Promise<OwnedCollectionItem[]> {

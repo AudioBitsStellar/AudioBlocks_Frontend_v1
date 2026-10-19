@@ -5,33 +5,76 @@ import { usePathname } from 'next/navigation';
 
 const STORAGE_KEY = 'audioblocks_scroll_positions';
 
-function getPositions(): Record<string, number> {
+/** Most scroll positions kept in `sessionStorage`; the least recently saved are dropped first. */
+export const MAX_SCROLL_ENTRIES = 50;
+
+interface StoredPosition {
+  /** Vertical scroll offset in pixels. */
+  y: number;
+  /** When the position was saved (ms since epoch); 0 for entries migrated from the old format. */
+  t: number;
+}
+
+const isValidOffset = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0;
+
+/**
+ * Reads the stored positions, keeping only well-formed entries. Bare numbers
+ * from the earlier `{ [key]: number }` format are accepted; anything else
+ * (strings, negative or non-finite numbers, nested junk) is dropped.
+ */
+function getPositions(): Record<string, StoredPosition> {
   if (typeof sessionStorage === 'undefined') return {};
+  let raw: unknown;
   try {
-    return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
+    raw = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
   } catch {
     return {};
   }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+
+  const positions: Record<string, StoredPosition> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (isValidOffset(value)) {
+      positions[key] = { y: value, t: 0 };
+    } else if (value && typeof value === 'object') {
+      const { y, t } = value as Partial<StoredPosition>;
+      if (isValidOffset(y)) positions[key] = { y, t: isValidOffset(t) ? t : 0 };
+    }
+  }
+  return positions;
 }
 
-function savePosition(path: string, scrollY: number) {
-  const positions = getPositions();
-  positions[path] = scrollY;
+/** Drops the oldest entries until at most `MAX_SCROLL_ENTRIES` remain. */
+function prune(positions: Record<string, StoredPosition>): Record<string, StoredPosition> {
+  const entries = Object.entries(positions);
+  if (entries.length <= MAX_SCROLL_ENTRIES) return positions;
+  // Stable sort: entries with the same timestamp keep their insertion order.
+  entries.sort((a, b) => a[1].t - b[1].t);
+  return Object.fromEntries(entries.slice(entries.length - MAX_SCROLL_ENTRIES));
+}
+
+function writePositions(positions: Record<string, StoredPosition>) {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
   } catch {
     // Quota exceeded — silently ignore.
   }
+}
+
+function savePosition(path: string, scrollY: number) {
+  if (!isValidOffset(scrollY)) return;
+  const positions = getPositions();
+  // Re-insert so the entry is the most recent one, both by `t` and by key order.
+  delete positions[path];
+  positions[path] = { y: scrollY, t: Date.now() };
+  writePositions(prune(positions));
 }
 
 function clearPosition(path: string) {
   const positions = getPositions();
   delete positions[path];
-  try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
-  } catch {
-    // Quota exceeded — silently ignore.
-  }
+  writePositions(positions);
 }
 
 export function useScrollRestoration(key?: string) {
@@ -54,8 +97,8 @@ export function useScrollRestoration(key?: string) {
     if (restoredKeyRef.current === storageKey) return;
     restoredKeyRef.current = storageKey;
 
-    const saved = getPositions()[storageKey];
-    if (typeof saved !== 'number' || saved <= 0) return;
+    const saved = getPositions()[storageKey]?.y;
+    if (saved === undefined || saved <= 0) return;
 
     let frame = 0;
     let attempts = 0;
@@ -64,7 +107,8 @@ export function useScrollRestoration(key?: string) {
     const restore = () => {
       if (typeof window === 'undefined') return;
 
-      const pageCanReachSavedPosition = document.documentElement.scrollHeight >= saved + window.innerHeight;
+      const pageCanReachSavedPosition =
+        document.documentElement.scrollHeight >= saved + window.innerHeight;
       if (pageCanReachSavedPosition || attempts >= maxAttempts) {
         window.scrollTo(0, saved);
         return;

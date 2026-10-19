@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { attachAudioSource } from '@/lib/hlsPlayer';
+import { attachAudioSource, selectLevelCap } from '@/lib/hlsPlayer';
 const { instances } = vi.hoisted(() => ({
   instances: [] as {
     config: Record<string, unknown>;
@@ -80,5 +80,65 @@ describe('HLS source lifecycle', () => {
     hls.handlers.error('error', { fatal: true, type: 'network' });
     expect(onError).toHaveBeenCalledOnce();
     expect(hls.destroy).toHaveBeenCalledOnce();
+  });
+});
+
+describe('bitrate ceiling (#590)', () => {
+  const LADDER = [{ bitrate: 64_000 }, { bitrate: 128_000 }, { bitrate: 256_000 }];
+
+  it('picks the highest level at or under the ceiling', () => {
+    expect(selectLevelCap([64_000, 128_000, 256_000], 64)).toBe(0);
+    expect(selectLevelCap([64_000, 128_000, 256_000], 200)).toBe(1);
+    expect(selectLevelCap([64_000, 128_000, 256_000], 256)).toBe(2);
+  });
+
+  it('falls back to the lowest level when none fit, and to -1 when uncapped', () => {
+    expect(selectLevelCap([96_000, 192_000], 64)).toBe(0);
+    expect(selectLevelCap([64_000, 128_000], undefined)).toBe(-1);
+    expect(selectLevelCap([], 64)).toBe(-1);
+  });
+
+  it('caps a manifest so hls.js never auto-selects above the data saver level', async () => {
+    const source = attachAudioSource(document.createElement('audio'), '/api/song/stream/one', {
+      maxBitrateKbps: 64,
+    });
+    await flush();
+    const hls = instances[0] as unknown as Record<string, unknown> & {
+      levels: unknown[];
+      handlers: Record<string, () => void>;
+    };
+    hls.levels = LADDER;
+    hls.handlers.manifest();
+    expect(hls.autoLevelCapping).toBe(0);
+    expect(hls.startLevel).toBe(0);
+    source.destroy();
+  });
+
+  it('re-applies a new ceiling to a playing source', async () => {
+    const source = attachAudioSource(document.createElement('audio'), '/api/song/stream/one', {
+      maxBitrateKbps: 64,
+    });
+    await flush();
+    const hls = instances[0] as unknown as Record<string, unknown> & {
+      levels: unknown[];
+      handlers: Record<string, () => void>;
+    };
+    hls.levels = LADDER;
+    hls.handlers.manifest();
+
+    source.setMaxBitrate(256);
+    expect(hls.autoLevelCapping).toBe(2);
+
+    source.setMaxBitrate(undefined);
+    expect(hls.autoLevelCapping).toBe(-1);
+    source.destroy();
+  });
+
+  it('leaves native HLS playback alone, since the browser picks the rendition', () => {
+    const audio = document.createElement('audio');
+    vi.spyOn(audio, 'canPlayType').mockReturnValue('probably');
+    const source = attachAudioSource(audio, 'https://audio.example/a.m3u8', { maxBitrateKbps: 64 });
+    expect(() => source.setMaxBitrate(64)).not.toThrow();
+    source.destroy();
   });
 });

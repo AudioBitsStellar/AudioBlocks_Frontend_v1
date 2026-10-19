@@ -1,13 +1,14 @@
 'use client';
 
 import { use, useMemo } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Download } from 'lucide-react';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { shortenId } from '@/lib/stellarExplorer';
 
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 
@@ -49,7 +50,14 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
       </Link>
       <div className="flex flex-col md:flex-row gap-8">
         <div className="relative w-full md:w-80 h-80 rounded-xl overflow-hidden shrink-0">
-          <Image fill alt={song.songCID} className="object-cover" src={ipfsImage(song.songCID)} />
+          <ArtworkImage
+            fill
+            alt={`Cover art for ${shortenId(song.songCID, 8, 4)}`}
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 320px"
+            src={ipfsImage(song.songCID)}
+            title={shortenId(song.songCID, 8, 4)}
+          />
         </div>
         <div className="flex-1 space-y-4">
           <h1 className="text-2xl font-bold text-white">Collection Detail</h1>
