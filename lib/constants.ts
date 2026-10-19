@@ -124,6 +124,13 @@ export const API_ENDPOINTS = {
 
   // Profile
   USER_PROFILE: '/api/user/profile',
+  // Role chosen during onboarding (#596). Confirm the path against the backend.
+  USER_ACCOUNT_TYPE: '/api/user/account-type',
+
+  // Account privacy: GDPR deletion with grace period and data export (#598).
+  // Confirm these paths against the backend account routes (#503) before release.
+  ACCOUNT_DELETION: '/api/account/deletion',
+  ACCOUNT_EXPORT: '/api/account/export',
 
   // Explore
   MERCH: '/api/merch',
