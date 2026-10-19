@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { GripVertical, Play, Trash2, Loader2, Shield } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
 import CollaboratorsPanel from '@/components/playlist/CollaboratorsPanel';
+import { FollowedPlaylistsList } from '@/components/playlist/FollowedPlaylistsList';
 import { useQuery } from '@tanstack/react-query';
 
 interface Track {
@@ -81,6 +82,8 @@ const Playlist = () => {
           </p>
         </div>
       </div>
+
+      <FollowedPlaylistsList className="mb-6" />
 
       {loading ? (
         <div className="rounded-lg border border-border-dark p-8 text-center text-on-muted flex items-center justify-center gap-3">

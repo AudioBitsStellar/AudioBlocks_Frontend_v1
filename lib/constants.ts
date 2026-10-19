@@ -146,6 +146,13 @@ export const API_ENDPOINTS = {
   // comment reports use the mounted POST /api/comments/:id/report route.
   SONG_REPORT: (songId: string | number) => `/api/song/${songId}/report`,
   COMMENT_REPORT: (commentId: string | number) => `/api/comments/${commentId}/report`,
+
+  // Playlists (#579 follow, #580 smart playlists). Follow routes are the mounted
+  // /api/playlists/:id/follow variants, not the unmounted /api/playlists/follow ones.
+  PLAYLISTS: '/api/playlists',
+  PLAYLIST: (playlistId: string) => `/api/playlists/${playlistId}`,
+  PLAYLIST_FOLLOW: (playlistId: string) => `/api/playlists/${playlistId}/follow`,
+  PLAYLISTS_FOLLOWED: '/api/playlists/followed',
 } as const;
 
 // ===== QUERY KEYS =====
