@@ -8,6 +8,7 @@ import 'slick-carousel/slick/slick-theme.css';
 import AccessibilityAnnouncer from '@/components/AccessibilityAnnouncer';
 import AnalyticsConsentBanner from '@/components/AnalyticsConsentBanner';
 import AnalyticsScript from '@/components/AnalyticsScript';
+import MswProvider from '@/components/common/MswProvider';
 import EnvCheck from '@/components/EnvCheck';
 import SWRegister from '@/components/SWRegister';
 import { ThemeScript } from '@/components/ThemeScript';
@@ -64,28 +65,30 @@ export default function RootLayout({
             their own. reducedMotion="user" makes every motion.* component
             in the app honor the OS preference automatically. */}
         <MotionConfig reducedMotion="user">
-          <PrivyAuthProvider>
-            <Provider>
-              <SentryErrorBoundary>
-                <Suspense fallback={null}>
-                  <RouteProgress />
-                </Suspense>
-                <SWRegister />
-                <EnvCheck />
-                <AccessibilityAnnouncer />
-                <a
-                  className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:font-semibold"
-                  href="#main-content"
-                >
-                  Skip to main content
-                </a>
-                <Toaster closeButton position="bottom-right" />
-                {children}
-                <AnalyticsConsentBanner />
-                <AnalyticsScript />
-              </SentryErrorBoundary>
-            </Provider>
-          </PrivyAuthProvider>
+          <MswProvider>
+            <PrivyAuthProvider>
+              <Provider>
+                <SentryErrorBoundary>
+                  <Suspense fallback={null}>
+                    <RouteProgress />
+                  </Suspense>
+                  <SWRegister />
+                  <EnvCheck />
+                  <AccessibilityAnnouncer />
+                  <a
+                    className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:font-semibold"
+                    href="#main-content"
+                  >
+                    Skip to main content
+                  </a>
+                  <Toaster closeButton position="bottom-right" />
+                  {children}
+                  <AnalyticsConsentBanner />
+                  <AnalyticsScript />
+                </SentryErrorBoundary>
+              </Provider>
+            </PrivyAuthProvider>
+          </MswProvider>
         </MotionConfig>
       </body>
     </html>

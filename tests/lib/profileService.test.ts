@@ -1,15 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '@/lib/constants';
 import { getProfile, isValidProfileUrl, updateProfile } from '@/lib/profileService';
+import { mockOwnProfileFixture } from '@/mocks/fixtures/users';
+import { server } from '@/mocks/server';
 import type { UpdateProfilePayload } from '@/lib/profileService';
 
-vi.mock('@/lib/apiClient', () => ({
-  default: { get: vi.fn(), post: vi.fn(), put: vi.fn() },
-}));
-
-const mockGet = vi.mocked(apiClient.get);
-const mockPut = vi.mocked(apiClient.put);
+const PROFILE_URL = `*${API_ENDPOINTS.USER_PROFILE}`;
 
 const payload: UpdateProfilePayload = {
   name: 'Alexia Stephen',
@@ -19,8 +17,8 @@ const payload: UpdateProfilePayload = {
 };
 
 describe('profileService', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('isValidProfileUrl', () => {
@@ -46,11 +44,7 @@ describe('profileService', () => {
 
   describe('getProfile', () => {
     it('requests the profile endpoint and unwraps `user`', async () => {
-      const user = { id: 'u1', name: 'Alexia' };
-      mockGet.mockResolvedValueOnce({ data: { user } } as never);
-
-      await expect(getProfile()).resolves.toEqual(user);
-      expect(mockGet).toHaveBeenCalledWith(API_ENDPOINTS.USER_PROFILE);
+      await expect(getProfile()).resolves.toEqual(mockOwnProfileFixture);
     });
 
     it('requests /api/users/profile and unwraps the backend `data` envelope', async () => {
@@ -62,13 +56,15 @@ describe('profileService', () => {
     });
 
     it('returns the raw body when there is no `user` wrapper', async () => {
-      mockGet.mockResolvedValueOnce({ data: { id: 'u2', name: 'Bare' } } as never);
+      server.use(http.get(PROFILE_URL, () => HttpResponse.json({ id: 'u2', name: 'Bare' })));
 
       await expect(getProfile()).resolves.toEqual({ id: 'u2', name: 'Bare' });
     });
 
     it('keeps optional fields undefined when the API omits them', async () => {
-      mockGet.mockResolvedValueOnce({ data: { user: { id: 'u3', name: 'Min' } } } as never);
+      server.use(
+        http.get(PROFILE_URL, () => HttpResponse.json({ user: { id: 'u3', name: 'Min' } }))
+      );
 
       const profile = await getProfile();
 
@@ -77,41 +73,39 @@ describe('profileService', () => {
     });
 
     it('propagates request errors', async () => {
-      mockGet.mockRejectedValueOnce(new Error('not found'));
+      server.use(http.get(PROFILE_URL, () => new HttpResponse(null, { status: 404 })));
 
-      await expect(getProfile()).rejects.toThrow('not found');
+      await expect(getProfile()).rejects.toThrow();
     });
   });
 
   describe('updateProfile', () => {
     it('puts the payload to the profile endpoint and unwraps `user`', async () => {
-      const user = { id: 'u1', ...payload };
-      mockPut.mockResolvedValueOnce({ data: { user } } as never);
+      const { name, bio, website } = payload;
 
-      await expect(updateProfile(payload)).resolves.toEqual(user);
-      expect(mockPut).toHaveBeenCalledWith(API_ENDPOINTS.USER_PROFILE, payload);
+      await expect(updateProfile(payload)).resolves.toMatchObject({ name, bio, website });
     });
 
     it('skips the website check when no website is given', async () => {
-      mockPut.mockResolvedValueOnce({ data: { id: 'u1' } } as never);
-
-      await updateProfile({ ...payload, website: '' });
-
-      expect(mockPut).toHaveBeenCalledTimes(1);
+      await expect(updateProfile({ ...payload, website: '' })).resolves.toMatchObject({
+        website: '',
+      });
     });
 
     it('rejects an invalid website without calling the API', async () => {
+      const putSpy = vi.spyOn(apiClient, 'put');
+
       await expect(
         updateProfile({ ...payload, website: 'https://user:pass@example.com' })
       ).rejects.toThrow('Website must be a valid HTTP(S) URL without credentials.');
 
-      expect(mockPut).not.toHaveBeenCalled();
+      expect(putSpy).not.toHaveBeenCalled();
     });
 
     it('propagates API errors from the update call', async () => {
-      mockPut.mockRejectedValueOnce(new Error('server error'));
+      server.use(http.put(PROFILE_URL, () => new HttpResponse(null, { status: 404 })));
 
-      await expect(updateProfile(payload)).rejects.toThrow('server error');
+      await expect(updateProfile(payload)).rejects.toThrow();
     });
   });
 });
