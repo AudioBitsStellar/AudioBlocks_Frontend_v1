@@ -141,6 +141,11 @@ export const API_ENDPOINTS = {
 
   // Collection / Owned NFTs
   OWNED_COLLECTION: (address: string) => `/api/nfts/owned/${address}`,
+
+  // Moderation reports (#578). Song reports are not mounted on the backend yet;
+  // comment reports use the mounted POST /api/comments/:id/report route.
+  SONG_REPORT: (songId: string | number) => `/api/song/${songId}/report`,
+  COMMENT_REPORT: (commentId: string | number) => `/api/comments/${commentId}/report`,
 } as const;
 
 // ===== QUERY KEYS =====
