@@ -1,8 +1,9 @@
 'use client';
 
-import { Bell, Menu, Search } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Menu, Search } from 'lucide-react';
 import ChainSwitcher from '@/components/common/ChainSwitcher';
+import NotificationBell from '@/components/notifications/NotificationBell';
+import { useIsMobile } from '@/hooks/use-mobile';
 import UserMenu from './UserMenu';
 
 interface TopNavbarProps {
@@ -43,13 +44,7 @@ const TopNavbar = ({ onMenuClick }: TopNavbarProps) => {
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        <button
-          aria-label="Notifications"
-          className="relative w-11 h-11 flex items-center justify-center"
-        >
-          <Bell className="text-white" size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+        <NotificationBell />
 
         <ChainSwitcher className="hidden sm:block" />
 

@@ -10,6 +10,7 @@ need to get set up and submit a change.
 - [Development Workflow](#development-workflow)
 - [Code Style Guidelines](#code-style-guidelines)
 - [Testing](#testing)
+- [Mocking the API (MSW)](#mocking-the-api-msw)
 - [Commit Messages](#commit-messages)
 - [Pull Request Process](#pull-request-process)
 - [Reporting Issues](#reporting-issues)
@@ -59,7 +60,8 @@ Optional but recommended:
 4. **(Optional) Run the backend** — clone and start
    [`AudioBlock_Backend`](https://github.com/AudioBitsStellar/AudioBlock_Backend)
    to enable authentication and streaming. Without it, the app renders static
-   demo data.
+   demo data, or you can mock the API — see
+   [Mocking the API (MSW)](#mocking-the-api-msw).
 
 5. **Start the development server**:
 
@@ -115,6 +117,56 @@ npm run test:e2e:ui   # Playwright in UI mode
 Add or update tests for any behavior you change. UI changes touching
 interactive components should also be checked against the accessibility
 guidelines above.
+
+## Mocking the API (MSW)
+
+[Mock Service Worker](https://mswjs.io/) answers API requests with fixtures
+shaped like the
+[`AudioBlock_Backend`](https://github.com/AudioBitsStellar/AudioBlock_Backend)
+responses, so you can develop and test without a running backend. One set of
+handlers is shared by the browser, Vitest and Playwright:
+
+```text
+mocks/
+  fixtures/   response data, typed to the backend entities / app services
+  handlers/   one file per resource; index.ts exports `handlers`
+  browser.ts  setupWorker — local development
+  server.ts   setupServer — Vitest
+```
+
+**Local development.** Add to `.env.local` and restart `npm run dev`:
+
+```bash
+NEXT_PUBLIC_API_MOCKING=enabled
+```
+
+`MswProvider` starts the worker (`public/mockServiceWorker.js`) before the app
+renders. Requests without a handler go to the network unchanged. The app's own
+`/sw.js` is not registered while mocking is on, because only one service worker
+can control a page. The worker script is regenerated on `npm install` (the
+`msw.workerDirectory` field in `package.json`); do not edit it by hand.
+
+**Vitest.** `vitest.setup.ts` starts the server for every test file, so code
+that calls `apiClient` gets the fixtures with no `vi.mock`. Override a route
+inside a test with `server.use()`; overrides are reset after each test:
+
+```ts
+import { http, HttpResponse } from 'msw';
+import { server } from '@/mocks/server';
+
+server.use(http.get('*/api/song', () => new HttpResponse(null, { status: 404 })));
+```
+
+**Playwright.** Import `test` and `expect` from `tests/e2e/fixtures/network.ts`
+instead of `@playwright/test`. Requests to `/api/**` are then answered by the
+same handlers through route interception (see
+`tests/e2e/community-leaderboard.spec.ts`).
+
+**Adding an endpoint.** Put the response data in `mocks/fixtures/`, matching the
+backend's controller output (envelope, pagination and error shape — see
+`mocks/handlers/response.ts`), add the handler under `mocks/handlers/`, and
+register it in `mocks/handlers/index.ts`. Use a leading `*` in paths
+(`'*/api/song'`) so they match whatever `NEXT_PUBLIC_API_URL` is.
 
 ## Commit Messages
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AudioCard from '@/components/AudioCard';
+import AudioCard from '@/components/ui/AudioCard';
 
 // Mock next/image
 vi.mock('next/image', () => ({
@@ -209,10 +209,13 @@ describe('AudioCard Component', () => {
       const image = screen.getByTestId('next-image');
       expect(image).toHaveAttribute('src', defaultProps.imageUrl);
 
-      // Simulate image load error
+      // Simulate image load error: #595 tries the placeholder cover first
       fireEvent.error(image);
+      const placeholder = screen.getByTestId('next-image');
+      expect(placeholder).toHaveAttribute('src', '/placeholder-cover.svg');
 
-      // Verify that it switches to the fallback div
+      // If the placeholder also fails, it switches to the gradient fallback div
+      fireEvent.error(placeholder);
       const fallback = screen.getByRole('img', {
         name: `${defaultProps.title} by ${defaultProps.artist}`,
       });
