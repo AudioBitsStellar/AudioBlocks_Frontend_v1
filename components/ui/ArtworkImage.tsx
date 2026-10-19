@@ -4,9 +4,16 @@
 // undefined, or 404 artwork URLs never produce console errors or broken-image
 // browser chrome. Gradient colors are deterministically derived from the
 // track title so the same track always renders the same placeholder.
+//
+// #595 — IPFS artwork (ipfs://, bare CIDs, gateway URLs) is tried on the
+// configured gateway, then the public gateway; other URLs (S3/CDN) load as-is.
+// Any failure then falls back to /placeholder-cover.svg, and finally the gradient.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
+import { ipfsGatewayUrls } from '@/lib/ipfs';
+
+export const PLACEHOLDER_COVER = '/placeholder-cover.svg';
 
 // ── Gradient helpers ──────────────────────────────────────────────────────────
 
@@ -47,9 +54,18 @@ export function ArtworkImage({
   fill = false,
 }: ArtworkImageProps) {
   const gradient = titleToGradient(title || 'untitled');
-  const [useFallback, setUseFallback] = useState(!src);
+  // Ordered load attempts; each onError advances to the next one.
+  const sources = useMemo(() => {
+    if (!src) return [];
+    const gatewayUrls = ipfsGatewayUrls(src);
+    return [...(gatewayUrls.length > 0 ? gatewayUrls : [src]), PLACEHOLDER_COVER];
+  }, [src]);
+  // Failures are keyed by src so a new src starts again from its first source.
+  const [failed, setFailed] = useState({ src, count: 0 });
+  const failedCount = failed.src === src ? failed.count : 0;
+  const currentSrc = sources[failedCount];
 
-  if (useFallback) {
+  if (!currentSrc) {
     return (
       <div
         aria-label={alt ?? title}
@@ -71,9 +87,9 @@ export function ArtworkImage({
       className={className}
       fill={fill}
       height={fill ? undefined : height}
-      src={src as string}
+      src={currentSrc}
       width={fill ? undefined : width}
-      onError={() => setUseFallback(true)}
+      onError={() => setFailed({ src, count: failedCount + 1 })}
     />
   );
 }

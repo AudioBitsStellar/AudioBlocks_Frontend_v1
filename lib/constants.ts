@@ -123,7 +123,7 @@ export const API_ENDPOINTS = {
   COMMUNITY_MY_VOTES: '/api/community/votes/me',
 
   // Profile
-  USER_PROFILE: '/api/user/profile',
+  USER_PROFILE: '/api/users/profile',
   // Role chosen during onboarding (#596). Confirm the path against the backend.
   USER_ACCOUNT_TYPE: '/api/user/account-type',
 
@@ -145,7 +145,10 @@ export const API_ENDPOINTS = {
   // Moderation reports (#578). Song reports are not mounted on the backend yet;
   // comment reports use the mounted POST /api/comments/:id/report route.
   SONG_REPORT: (songId: string | number) => `/api/song/${songId}/report`,
+  SONG_SEARCH: '/api/song/search',
   COMMENT_REPORT: (commentId: string | number) => `/api/comments/${commentId}/report`,
+  // #577 — GET lists grouped reactions (public); POST toggles one (auth).
+  COMMENT_REACTIONS: (commentId: string | number) => `/api/comments/${commentId}/reactions`,
 
   // Playlists (#579 follow, #580 smart playlists). Follow routes are the mounted
   // /api/playlists/:id/follow variants, not the unmounted /api/playlists/follow ones.
@@ -156,6 +159,18 @@ export const API_ENDPOINTS = {
 
   // Listening history (#581). Not mounted on the backend yet; the client falls back to local history.
   RECENTLY_PLAYED: '/api/users/me/recently-played',
+
+  // Notifications (#574). Router mount tracked in AudioBlock_Backend#746.
+  NOTIFICATIONS: '/api/notifications',
+  NOTIFICATION_READ: (notificationId: string) =>
+    `/api/notifications/${encodeURIComponent(notificationId)}/read`,
+  NOTIFICATIONS_READ_ALL: '/api/notifications/read-all',
+
+  // Song comments (#576). Song-scoped routes mount under /api/song alongside SongRoutes
+  // (AudioBlock_Backend#749); comment-scoped routes are mounted at /api/comments.
+  SONG_COMMENTS: (songId: string) => `/api/song/${encodeURIComponent(songId)}/comments`,
+  COMMENT: (commentId: string) => `/api/comments/${encodeURIComponent(commentId)}`,
+  COMMENT_REPLIES: (commentId: string) => `/api/comments/${encodeURIComponent(commentId)}/replies`,
 } as const;
 
 // ===== QUERY KEYS =====

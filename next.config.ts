@@ -2,12 +2,45 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
+type RemotePattern = Exclude<
+  NonNullable<NonNullable<NextConfig['images']>['remotePatterns']>[number],
+  URL
+>;
+
+/**
+ * #595 — builds an exact-origin pattern from an env value such as
+ * `https://cdn.example.com` or a bare host `bucket.s3.amazonaws.com`.
+ * Returns null for unset or malformed values so a bad env never widens access.
+ */
+function originPattern(value: string | undefined, pathname: string): RemotePattern | null {
+  if (!value?.trim()) return null;
+  try {
+    const raw = value.trim();
+    const url = new URL(/^[a-z]+:\/\//i.test(raw) ? raw : `https://${raw}`);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    return {
+      protocol: url.protocol === 'https:' ? 'https' : 'http',
+      hostname: url.hostname,
+      port: url.port,
+      pathname,
+    };
+  } catch {
+    return null;
+  }
+}
+
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
     // NFT artwork is resolved through the application's configured IPFS
     // gateway. Never allow arbitrary remote hosts through the image optimizer.
-    remotePatterns: [{ protocol: 'https', hostname: 'ipfs.io', pathname: '/ipfs/**' }],
+    // #595 — also allow the backend's S3/CDN media host and the configured
+    // IPFS gateway (e.g. a Pinata dedicated gateway); ipfs.io stays as fallback.
+    remotePatterns: [
+      { protocol: 'https', hostname: 'ipfs.io', pathname: '/ipfs/**' },
+      originPattern(process.env.NEXT_PUBLIC_IPFS_GATEWAY, '/ipfs/**'),
+      originPattern(process.env.NEXT_PUBLIC_MEDIA_HOST, '/**'),
+    ].filter((pattern): pattern is RemotePattern => pattern !== null),
   },
   eslint: {
     // Lint should be a separate CI check, not a deploy gate — pre-existing
