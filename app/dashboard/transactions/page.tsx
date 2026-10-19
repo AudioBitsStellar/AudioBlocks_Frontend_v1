@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, Download, RefreshCw } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useTransaction } from '@/context/TransactionContext';
 import TransactionTable from '@/components/dashboard/TransactionTable';
 import { Button } from '@/components/ui/button';
@@ -9,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import type { Transaction } from '@/context/TransactionContext';
 
-const TRANSACTION_TYPES = ['all', 'buy', 'stake', 'vote'] as const;
+const TRANSACTION_TYPES = ['all', 'buy', 'sell', 'list', 'cancel_listing', 'bid', 'transfer', 'mint'] as const;
 const TRANSACTION_STATUSES = ['all', 'pending', 'confirmed', 'failed'] as const;
 
 type TransactionTypeFilter = (typeof TRANSACTION_TYPES)[number];
@@ -18,28 +20,53 @@ type TransactionStatusFilter = (typeof TRANSACTION_STATUSES)[number];
 
 const TransactionsPage = () => {
   useScrollRestoration('transactions');
-  const { transactions, clearAllTransactions } = useTransaction();
-  
+  const { transactions: localTransactions, clearAllTransactions } = useTransaction();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TransactionTypeFilter>('all');
   const [statusFilter, setStatusFilter] = useState<TransactionStatusFilter>('all');
+  const [page, setPage] = useState(1);
+
+  const { data: backendTransactions = [], isLoading } = useQuery<Transaction[]>({
+    queryKey: ['transactions', page],
+    queryFn: async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+        const response = await fetch(`${apiUrl}/activity/onchain?page=${page}&limit=20`);
+        if (!response.ok) return [];
+        const data = await response.json();
+        return Array.isArray(data) ? data : data.transactions || [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const allTransactions = useMemo(() => {
+    const hashSet = new Set(backendTransactions.map((t) => t.hash));
+    const pendingLocal = localTransactions.filter((t) => !hashSet.has(t.hash));
+    return [...pendingLocal, ...backendTransactions].sort(
+      (a, b) => b.timestamp - a.timestamp
+    );
+  }, [localTransactions, backendTransactions]);
 
   // Filter transactions based on search and filters
   const filteredTransactions = useMemo(() => {
-    return transactions.filter((transaction) => {
+    return allTransactions.filter((transaction) => {
       // Search by transaction hash
-      const matchesSearch = searchQuery === '' || 
+      const matchesSearch = searchQuery === '' ||
         transaction.hash.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       // Filter by transaction type
       const matchesType = typeFilter === 'all' || transaction.type === typeFilter;
-      
+
       // Filter by transaction status
       const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter;
-      
+
       return matchesSearch && matchesType && matchesStatus;
     });
-  }, [transactions, searchQuery, typeFilter, statusFilter]);
+  }, [allTransactions, searchQuery, typeFilter, statusFilter]);
 
   const handleClearAll = () => {
     if (confirm('Are you sure you want to clear all transaction history? This cannot be undone.')) {

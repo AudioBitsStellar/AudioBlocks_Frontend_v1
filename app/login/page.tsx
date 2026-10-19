@@ -11,11 +11,12 @@ import ConnectWalletPrompt from '@/components/auth/ConnectWalletPrompt';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { WalletConnectButtons } from '@/components/auth/WalletConnectButtons';
 import { AUTH } from '@/lib/constants';
+import { safeReturnTo } from '@/lib/safeRedirect';
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get('returnTo') || '/dashboard';
+  const returnTo = safeReturnTo(searchParams.get('returnTo'));
 
   const { user } = useDynamicContext();
   let privyAuthenticated = false;

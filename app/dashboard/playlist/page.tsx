@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { GripVertical, Play, Trash2, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { GripVertical, Play, Trash2, Loader2, Shield } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
+import CollaboratorsPanel from '@/components/playlist/CollaboratorsPanel';
+import { useQuery } from '@tanstack/react-query';
 
 interface Track {
   id: string | number;
