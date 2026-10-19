@@ -38,16 +38,13 @@ export function WalletConnectButtons({ onLoginStart, className = '' }: WalletCon
 
   const handleMetaMask = () => {
     if (!hasInjectedWallet()) {
-      toast.error(
-        'No wallet extension detected. Install a wallet like MetaMask to continue.',
-        {
-          action: {
-            label: 'Get MetaMask',
-            onClick: () => window.open('https://metamask.io/download/', '_blank'),
-          },
-          duration: 8000,
-        }
-      );
+      toast.error('No wallet extension detected. Install a wallet like MetaMask to continue.', {
+        action: {
+          label: 'Wallet guide',
+          onClick: () => window.location.assign('/help/wallet'),
+        },
+        duration: 8000,
+      });
       return;
     }
     openWalletFlow();
@@ -58,8 +55,8 @@ export function WalletConnectButtons({ onLoginStart, className = '' }: WalletCon
       <button
         aria-label="Connect with MetaMask"
         className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#D2045B] px-6 py-2 font-semibold text-white transition hover:bg-[#b80348]"
-        onClick={handleMetaMask}
         type="button"
+        onClick={handleMetaMask}
       >
         <Wallet size={18} />
         <span>Connect MetaMask</span>
@@ -67,8 +64,8 @@ export function WalletConnectButtons({ onLoginStart, className = '' }: WalletCon
       <button
         aria-label="Connect with WalletConnect"
         className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-700 bg-[#1A1A1A] px-6 py-2 font-semibold text-white transition hover:border-gray-500"
-        onClick={openWalletFlow}
         type="button"
+        onClick={openWalletFlow}
       >
         <Smartphone size={18} />
         <span>Connect with WalletConnect</span>

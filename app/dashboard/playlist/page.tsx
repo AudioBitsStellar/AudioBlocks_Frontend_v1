@@ -118,74 +118,35 @@ const Playlist = () => {
         <div className="rounded-lg border border-border-dark p-8 text-center text-on-muted">
           Your playlist is empty.
         </div>
+      ) : !data?.data?.length ? (
+        <p>Your playlists are empty.</p>
       ) : (
-        <div aria-label="Playlist tracks" className="flex flex-col gap-2">
-          {tracks.map((track, i) => {
-            const globalIndex = playlist.findIndex(
-              (playlistTrack) => playlistTrack.url === track.url
-            );
-            const isActive = globalIndex >= 0 && globalIndex === currentIndex && isPlaying;
-
-            return (
-              <div
-                key={track.id}
-                draggable
-                className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
-                  isActive ? 'bg-surface border border-border-dark' : 'hover:bg-surface-hover'
-                } ${draggedTrackId === track.id ? 'opacity-50' : ''}`}
-                onDragEnd={() => setDraggedTrackId(null)}
-                onDragOver={(event) => event.preventDefault()}
-                onDragStart={() => setDraggedTrackId(track.id)}
-                onDrop={() => handleDrop(track.id)}
+        <ul className="grid gap-4 sm:grid-cols-2">
+          {data.data.map((playlist) => (
+            <li key={playlist.id}>
+              <Link
+                className="block rounded-xl border border-border-dark p-5"
+                href={`/dashboard/playlist/${encodeURIComponent(playlist.id)}`}
               >
-                <button
-                  aria-label={`Reorder ${track.title}`}
-                  className="cursor-grab text-on-muted hover:text-white touch-none"
-                  title="Drag to reorder"
-                  type="button"
-                >
-                  <GripVertical size={20} />
-                </button>
-
-                <button
-                  aria-label={`Play ${track.title}`}
-                  className="flex flex-1 min-w-0 items-center gap-4 text-left cursor-pointer"
-                  type="button"
-                  onClick={() => playTrack(track)}
-                >
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-brand shrink-0">
-                    <Play className="text-white ml-0.5" size={14} />
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span
-                      className={`block text-sm font-semibold truncate ${
-                        isActive ? 'text-brand' : 'text-white'
-                      }`}
-                    >
-                      {track.title}
-                    </span>
-                    <span className="block text-xs text-on-muted truncate">{track.artist}</span>
-                  </span>
-                </button>
-
-                <span className="text-xs text-on-muted shrink-0">{i + 1}</span>
-
-                <button
-                  aria-label={`Remove ${track.title} from playlist`}
-                  className="p-2 rounded-md text-on-muted hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                  title="Remove from playlist"
-                  type="button"
-                  onClick={() => handleRemove(track.id)}
-                >
-                  <Trash2 size={17} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                {playlist.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
+      <nav aria-label="Playlist pages" className="flex gap-4">
+        <button disabled={page === 1} type="button" onClick={() => setPage(page - 1)}>
+          Previous
+        </button>
+        <span>Page {page}</span>
+        <button
+          disabled={!data || page >= (data.pagination?.totalPages ?? 1)}
+          type="button"
+          onClick={() => setPage(page + 1)}
+        >
+          Next
+        </button>
+      </nav>
     </div>
   );
-};
-
-export default Playlist;
+}

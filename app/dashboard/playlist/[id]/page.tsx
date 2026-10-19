@@ -1,6 +1,5 @@
 'use client';
-
-import { use } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Play } from 'lucide-react';
@@ -86,39 +85,37 @@ function QueuedTrackDetail({ id }: { id: string }) {
   if (!track) notFound();
 
   return (
-    <div className="p-6">
-      <Link
-        className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors"
-        href="/dashboard/playlist"
-      >
-        <ArrowLeft size={16} />
-        Back to Playlist
+    <div className="mx-auto max-w-4xl space-y-4 p-4">
+      <Link className="underline" href="/dashboard/playlist">
+        Back to playlists
       </Link>
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="relative w-full md:w-64 h-64 rounded-xl overflow-hidden shrink-0 bg-surface-elevated">
-          <div
-            aria-label={`Play ${track.title}`}
-            className="w-full h-full flex items-center justify-center cursor-pointer group"
-            role="button"
-            tabIndex={0}
-            onClick={() => playTrack(track)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                playTrack(track);
-              }
-            }}
-          >
-            <div className="w-16 h-16 bg-brand rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-              <Play className="text-white ml-1" size={24} />
-            </div>
-          </div>
+      {isLoading ? (
+        <p role="status">Loading playlist…</p>
+      ) : isError ? (
+        <div role="alert">
+          Unable to load playlist.{' '}
+          <button className="underline" type="button" onClick={() => void refetch()}>
+            Retry
+          </button>
         </div>
-        <div className="flex-1 space-y-3">
-          <h1 className="text-2xl font-bold text-white">{track.title}</h1>
-          <p className="text-gray-400">{track.artist}</p>
-        </div>
-      </div>
+      ) : (
+        <>
+          <h1 className="text-3xl font-bold">{data?.name}</h1>
+          <PlayCollection tracks={tracks} />
+          {profile?.id === data?.userId && !data?.isRuleBased && unavailable.length > 0 && (
+            <button
+              className="rounded border border-border-dark px-4 py-2 disabled:opacity-40"
+              disabled={removing}
+              type="button"
+              onClick={() => void removeUnavailable()}
+            >
+              {removing ? 'Removing…' : 'Remove unavailable songs'}
+            </button>
+          )}
+          {error && <p role="alert">{error}</p>}
+          {tracks.length ? <TrackList tracks={tracks} /> : <p>This playlist is empty.</p>}
+        </>
+      )}
     </div>
   );
 }

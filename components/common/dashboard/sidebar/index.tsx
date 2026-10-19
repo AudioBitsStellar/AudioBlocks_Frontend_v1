@@ -11,6 +11,7 @@ import { filterEnabledByFlag } from '@/lib/featureFlags';
 
 const navItems = [
   { name: 'Explore', href: '/dashboard', icon: House },
+  { name: 'Library', href: '/dashboard/library', icon: ListMusic },
   { name: 'My Playlist', href: '/dashboard/playlist', icon: ListMusic },
   { name: 'Transaction History', href: '/dashboard/transactions', icon: Receipt },
   { name: 'Metrics', href: '#', icon: BarChart2 },

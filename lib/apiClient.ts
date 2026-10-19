@@ -203,7 +203,10 @@ async function fetchWithRetry(
 }
 
 async function request(endpoint: string, options: FetchOptions = {}, hasRetriedAuth = false) {
-  const url = `${NEXT_PUBLIC_API_URL}${endpoint}`;
+  const base = endpoint.startsWith('/api/')
+    ? NEXT_PUBLIC_API_URL.replace(/\/api\/?$/, '')
+    : NEXT_PUBLIC_API_URL;
+  const url = `${base}${endpoint}`;
   const token = Cookies.get(AUTH.COOKIE_NAME);
 
   const headers = new Headers(options.headers);
