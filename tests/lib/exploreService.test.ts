@@ -65,13 +65,13 @@ describe('exploreService', () => {
     it('accepts a bare array response', async () => {
       server.use(http.get(`*${endpoint}`, () => HttpResponse.json([{ id: '2' }])));
 
-      await expect(fn()).resolves.toEqual([{ id: '2' }]);
+      await expect(fn()).rejects.toBeInstanceOf(ApiShapeError);
     });
 
     it('falls back to an empty list when the body is empty', async () => {
       server.use(http.get(`*${endpoint}`, () => HttpResponse.json(null)));
 
-      await expect(fn()).resolves.toEqual([]);
+      await expect(fn()).rejects.toBeInstanceOf(ApiShapeError);
     });
 
     it('propagates request errors instead of returning an empty list', async () => {

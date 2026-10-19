@@ -89,7 +89,7 @@ describe('communityService (migrated to MSW)', () => {
         })
       );
 
-      await expect(getMyVotes()).resolves.toEqual([]);
+      await expect(getMyVotes()).rejects.toBeInstanceOf(ApiShapeError);
     });
 
     it('propagates request errors', async () => {

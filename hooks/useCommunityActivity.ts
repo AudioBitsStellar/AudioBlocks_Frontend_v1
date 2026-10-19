@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import apiClient from '@/lib/apiClient';
+import { unwrap } from '@/lib/api/unwrap';
 
 export interface CommunityActivity {
   communityId: string;
@@ -34,7 +35,7 @@ async function fetchCommunityActivity(communityId: string): Promise<CommunityAct
 
   try {
     const res = await apiClient.get(`/api/community/${communityId}/activity`);
-    const data = res.data?.data ?? res.data ?? {};
+    const data = unwrap<Partial<CommunityActivity>>(res);
     const activity: CommunityActivity = {
       communityId,
       memberCount: data.memberCount ?? 0,
