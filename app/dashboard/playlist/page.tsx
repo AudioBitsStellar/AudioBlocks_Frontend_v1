@@ -4,7 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { GripVertical, Play, Trash2, Loader2, Shield } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
 import CollaboratorsPanel from '@/components/playlist/CollaboratorsPanel';
+import { CreateSmartPlaylistDialog } from '@/components/playlist/CreateSmartPlaylistDialog';
 import { FollowedPlaylistsList } from '@/components/playlist/FollowedPlaylistsList';
+import { useHasAuthSession } from '@/hooks/useHasAuthSession';
 import { useQuery } from '@tanstack/react-query';
 
 interface Track {
@@ -22,6 +24,8 @@ const Playlist = () => {
   const [draggedTrackId, setDraggedTrackId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSmartDialogOpen, setIsSmartDialogOpen] = useState(false);
+  const signedIn = useHasAuthSession();
 
   // Fetch playlists from backend (Issue #617)
   useEffect(() => {
@@ -82,6 +86,22 @@ const Playlist = () => {
           </p>
         </div>
       </div>
+
+      {signedIn && (
+        <div className="mb-6 flex justify-end">
+          <button
+            className="px-4 py-2 rounded-lg bg-[#D2045B] text-sm font-semibold text-white hover:bg-[#b80350] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9]"
+            type="button"
+            onClick={() => setIsSmartDialogOpen(true)}
+          >
+            New smart playlist
+          </button>
+          <CreateSmartPlaylistDialog
+            open={isSmartDialogOpen}
+            onClose={() => setIsSmartDialogOpen(false)}
+          />
+        </div>
+      )}
 
       <FollowedPlaylistsList className="mb-6" />
 

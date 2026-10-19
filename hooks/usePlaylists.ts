@@ -4,12 +4,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
 import {
+  createPlaylist,
   followPlaylist,
   getPlaylist,
   listFollowedPlaylists,
   unfollowPlaylist,
 } from '@/lib/playlistService';
 import type { PlaylistSummary } from '@/lib/playlistService';
+import type { SmartPlaylistPayload } from '@/lib/smartPlaylist';
 
 export const PLAYLIST_QUERY_KEYS = {
   all: ['playlists'] as const,
@@ -72,6 +74,22 @@ export function useToggleFollowPlaylist() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: PLAYLIST_QUERY_KEYS.followed });
+    },
+  });
+}
+
+/** Creates a smart playlist from a validated rule (#580). */
+export function useCreateSmartPlaylist() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: SmartPlaylistPayload) => createPlaylist(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PLAYLIST_QUERY_KEYS.all });
+      toast.success('Smart playlist created');
+    },
+    onError: () => {
+      toast.error('Could not create the smart playlist. Please try again.');
     },
   });
 }

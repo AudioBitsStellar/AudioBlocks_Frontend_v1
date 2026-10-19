@@ -30,6 +30,12 @@ export async function listFollowedPlaylists(): Promise<PlaylistSummary[]> {
   return entries.map((entry) => entry.playlist).filter((playlist) => !!playlist?.id);
 }
 
+/** Creates a playlist. Pass `isRuleBased: true` with a rule to create a smart playlist. */
+export async function createPlaylist(payload: object): Promise<PlaylistSummary> {
+  const res = await apiClient.post(API_ENDPOINTS.PLAYLISTS, payload);
+  return res.data?.data ?? res.data;
+}
+
 export async function followPlaylist(playlistId: string): Promise<void> {
   await apiClient.post(API_ENDPOINTS.PLAYLIST_FOLLOW(playlistId));
 }
