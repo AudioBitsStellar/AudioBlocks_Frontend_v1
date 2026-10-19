@@ -25,7 +25,7 @@ export default function ReleaseDetails({ release }: { release: Release }) {
           <h1 className="break-words text-3xl font-bold sm:text-5xl">{release.title}</h1>
           <Link
             className="underline"
-            href={`/dashboard/artist/${encodeURIComponent(release.artistId)}`}
+            href={`/artist/${encodeURIComponent(release.artistId)}`}
           >
             {artist}
           </Link>

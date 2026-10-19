@@ -386,6 +386,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -875,6 +877,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -1375,6 +1379,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -1875,6 +1881,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -2364,6 +2372,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -2864,6 +2874,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -3364,6 +3376,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -3853,6 +3867,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -4353,6 +4369,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >

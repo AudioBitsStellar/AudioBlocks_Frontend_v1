@@ -87,7 +87,7 @@ export default function ArtistCard({
 
   const followers = artist.followers ?? artist.followerCount;
   const collections = artist.collections ?? artist.collectionCount;
-  const artistHref = href ?? `/dashboard/artist/${artist.id}`;
+  const artistHref = href ?? `/artist/${artist.id}`;
 
   if (variant === 'community') {
     return (

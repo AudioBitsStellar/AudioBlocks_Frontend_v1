@@ -1,9 +1,21 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { usePlayback } from '@/context/PlaybackContext';
+import { toast } from 'sonner';
+import { usePlayback, type PlaybackContextValue } from '@/context/PlaybackContext';
+import { useOptionalUserPreferences } from '@/context/UserPreferencesContext';
 import { useDataSaver } from '@/hooks/useDataSaver';
 import { getStreamUrl } from '@/lib/apiUrl';
 import { attachAudioSource, type AudioSource } from '@/lib/hlsPlayer';
+import {
+  clearResumePosition,
+  formatResumeTime,
+  getResumePosition,
+  resumeStartTime,
+  RESUME_SAVE_INTERVAL_MS,
+  saveResumePosition,
+  shouldRestorePosition,
+} from '@/lib/resumePosition';
+import { describeStreamQuality, resolveBitrateCap } from '@/lib/streamQuality';
 import { isTrackAvailable } from '@/lib/tracks';
 
 /** Only enable speculative manifests once a deployed backend counts actual playback events. */
@@ -17,6 +29,10 @@ export function canPrefetchStreams(): boolean {
 export function useQueuedAudio() {
   const playback = usePlayback();
   const dataSaver = useDataSaver();
+  // Streaming quality ceiling (#590). `undefined` means no cap.
+  const quality = useOptionalUserPreferences()?.preferences.audioQuality ?? 'auto';
+  const bitrateCap = resolveBitrateCap(quality, dataSaver);
+  const streamQuality = describeStreamQuality(quality, dataSaver);
   const deckARef = useRef<HTMLAudioElement | null>(null);
   const deckBRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -26,6 +42,7 @@ export function useQueuedAudio() {
   const ready = useRef(new Set<HTMLAudioElement>());
   const reported = useRef(new Set<HTMLAudioElement>());
   const fade = useRef<number | null>(null);
+  const lastResumeSave = useRef(0);
   const transitionStart = useRef<number | null>(null);
   const skipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const failedTracks = useRef(new Set<string>());
@@ -55,8 +72,24 @@ export function useQueuedAudio() {
   const queueKey = playback.queue
     .map((track) => `${track.id}:${track.available}:${track.url}`)
     .join('|');
-  const live = useRef({ playback, dataSaver, currentTrack, nextTrack, nextUrl, playbackSpeed });
-  live.current = { playback, dataSaver, currentTrack, nextTrack, nextUrl, playbackSpeed };
+  const live = useRef({
+    playback,
+    dataSaver,
+    currentTrack,
+    nextTrack,
+    nextUrl,
+    playbackSpeed,
+    bitrateCap,
+  });
+  live.current = {
+    playback,
+    dataSaver,
+    currentTrack,
+    nextTrack,
+    nextUrl,
+    playbackSpeed,
+    bitrateCap,
+  };
 
   useEffect(() => {
     audioRef.current = deckARef.current;
@@ -92,7 +125,44 @@ export function useQueuedAudio() {
       fade.current = null;
       live.current.playback.setCrossfading(false);
     };
-    const volume = () => (live.current.playback.isMuted ? 0 : live.current.playback.volume);
+    const volume = () =>
+      (live.current.playback.isMuted ? 0 : live.current.playback.volume) *
+      live.current.playback.sleepFade;
+    // "End of track" sleep must not start the next track early, so crossfade is off then (#589).
+    const crossfadeAllowed = (state: PlaybackContextValue) =>
+      state.crossfadeDuration > 0 && !state.repeat && state.sleepTimer?.kind !== 'end-of-track';
+    // Resume (#588) follows the track whose stream is loaded in the element, not the state track.
+    const trackIdFor = (url: string | undefined) => {
+      const track = live.current.currentTrack;
+      if (!url || !track) return undefined;
+      return (track.url || getStreamUrl(track.id)) === url ? track.id : undefined;
+    };
+    const persistResume = (element: HTMLAudioElement, force = false) => {
+      if (element !== audioRef.current || !element.duration) return;
+      const trackId = trackIdFor(loaded.current.get(element));
+      if (!trackId) return;
+      const now = Date.now();
+      if (!force && now - lastResumeSave.current < RESUME_SAVE_INTERVAL_MS) return;
+      lastResumeSave.current = now;
+      saveResumePosition(trackId, element.currentTime, element.duration, undefined, now);
+    };
+    const restoreResume = (element: HTMLAudioElement) => {
+      const trackId = trackIdFor(loaded.current.get(element));
+      if (!trackId) return;
+      const saved = getResumePosition(trackId);
+      if (!shouldRestorePosition(saved, element.duration)) return;
+      element.currentTime = resumeStartTime(saved);
+      toast(`Resumed from ${formatResumeTime(saved)}`, {
+        action: {
+          label: 'Start over',
+          onClick: () => {
+            element.currentTime = 0;
+            clearResumePosition(trackId);
+          },
+        },
+        duration: 6000,
+      });
+    };
     const configureAudio = (element: HTMLAudioElement) => {
       if (!live.current.playback.normalizeAudio && !compressors.current.has(element)) return;
       try {
@@ -137,6 +207,7 @@ export function useQueuedAudio() {
       loaded.current.set(element, url);
       const source = attachAudioSource(element, url, {
         prefetch,
+        maxBitrateKbps: live.current.bitrateCap,
         onReady: () => {
           ready.current.add(element);
           if (element === audioRef.current && live.current.playback.isPlaying) play(element);
@@ -194,8 +265,7 @@ export function useQueuedAudio() {
       const incoming = incomingAudioRef.current;
       // A crossfade starts real playback now, even while speculative loading is disabled.
       if (
-        state.crossfadeDuration > 0 &&
-        !state.repeat &&
+        crossfadeAllowed(state) &&
         remaining <= state.crossfadeDuration &&
         remaining > 0 &&
         incoming &&
@@ -205,8 +275,7 @@ export function useQueuedAudio() {
         load(incoming, live.current.nextUrl, false);
       }
       if (
-        state.crossfadeDuration > 0 &&
-        !state.repeat &&
+        crossfadeAllowed(state) &&
         fade.current === null &&
         incoming &&
         ready.current.has(incoming) &&
@@ -237,15 +306,27 @@ export function useQueuedAudio() {
       }
     };
     const cleanups = elements.map((element) => {
-      const time = () => onTime(element);
+      const time = () => {
+        onTime(element);
+        persistResume(element);
+      };
+      const paused = () => persistResume(element, true);
       const metadata = () => {
         if (element === audioRef.current) {
           setDuration(Number.isFinite(element.duration) ? element.duration : 0);
+          restoreResume(element);
           onTime(element);
         }
       };
       const ended = () => {
         if (element !== audioRef.current) return;
+        const finishedId = trackIdFor(loaded.current.get(element));
+        if (finishedId) clearResumePosition(finishedId);
+        // "End of track" sleep stops here instead of moving on to the next song (#589).
+        if (live.current.playback.sleepTimer?.kind === 'end-of-track') {
+          live.current.playback.expireSleepTimer();
+          return;
+        }
         if (live.current.playback.repeat) {
           element.currentTime = 0;
           play(element);
@@ -288,6 +369,7 @@ export function useQueuedAudio() {
         else dispose(element);
       };
       element.addEventListener('timeupdate', time);
+      element.addEventListener('pause', paused);
       element.addEventListener('loadedmetadata', metadata);
       element.addEventListener('ended', ended);
       element.addEventListener('playing', playing);
@@ -295,6 +377,7 @@ export function useQueuedAudio() {
       element.addEventListener('error', error);
       return () => {
         element.removeEventListener('timeupdate', time);
+        element.removeEventListener('pause', paused);
         element.removeEventListener('loadedmetadata', metadata);
         element.removeEventListener('ended', ended);
         element.removeEventListener('playing', playing);
@@ -307,6 +390,7 @@ export function useQueuedAudio() {
     commands.current = { load, dispose, stopFade, play, prepare, configureAudio };
     const release = () => {
       stopFade();
+      if (audioRef.current) persistResume(audioRef.current, true);
       elements.forEach(dispose);
     };
     window.addEventListener('pagehide', release);
@@ -390,17 +474,26 @@ export function useQueuedAudio() {
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) {
-      audio.volume = playback.isMuted ? 0 : playback.volume;
+      audio.volume = (playback.isMuted ? 0 : playback.volume) * playback.sleepFade;
       audio.muted = playback.isMuted;
       audio.playbackRate = playbackSpeed;
     }
     if (incomingAudioRef.current) incomingAudioRef.current.playbackRate = playbackSpeed;
-  }, [playback.volume, playback.isMuted, playbackSpeed, streamUrl]);
+  }, [playback.volume, playback.isMuted, playback.sleepFade, playbackSpeed, streamUrl]);
   useEffect(() => {
     if (audioRef.current) commands.current?.configureAudio(audioRef.current);
     if (incomingAudioRef.current && playback.isCrossfading)
       commands.current?.configureAudio(incomingAudioRef.current);
   }, [playback.normalizeAudio, playback.isCrossfading, streamUrl]);
+  // Sources loaded later pick up the cap from `live`; re-cap the ones already playing (#590).
+  const appliedCap = useRef(bitrateCap);
+  useEffect(() => {
+    if (appliedCap.current === bitrateCap) return;
+    appliedCap.current = bitrateCap;
+    for (const element of [audioRef.current, incomingAudioRef.current]) {
+      if (element) sources.current.get(element)?.setMaxBitrate(bitrateCap);
+    }
+  }, [bitrateCap]);
   return {
     audioRef,
     incomingAudioRef,
@@ -411,5 +504,6 @@ export function useQueuedAudio() {
     streamUrl,
     playbackSpeed,
     setPlaybackSpeed,
+    streamQuality,
   };
 }

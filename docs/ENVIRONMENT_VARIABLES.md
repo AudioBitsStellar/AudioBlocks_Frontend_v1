@@ -49,8 +49,9 @@ Flags gate sections whose backend endpoints are not live yet. They live in `lib/
 | `merch` | `NEXT_PUBLIC_FEATURE_MERCH` | on | off | Merch section on the Explore page | `/api/merch` |
 | `events` | `NEXT_PUBLIC_FEATURE_EVENTS` | on | off | Events section on the Explore page | `/api/events` |
 | `communityVoting` | `NEXT_PUBLIC_FEATURE_COMMUNITY_VOTING` | on | off | Community voting and leaderboard page (the route 404s when off) | `/api/community/leaderboard`, `/api/community/vote`, `/api/community/votes/me` |
+| `artistPerks` | `NEXT_PUBLIC_FEATURE_ARTIST_PERKS` | on | off | Fan perks section on the public artist page (#586) | `/api/artists/:artistId/perks` |
 
-`.env.example` keeps these three lines commented out so a copy to `.env.local` gets the environment default. Setting a variable to `false` in `.env.local` hides that section locally, so uncomment a line only when you want to override the default. Restart the dev server after changing it. See "Feature flags" in `CONTRIBUTING.md` for how to add a flag.
+`.env.example` keeps these four lines commented out so a copy to `.env.local` gets the environment default. Setting a variable to `false` in `.env.local` hides that section locally, so uncomment a line only when you want to override the default. Restart the dev server after changing it. See "Feature flags" in `CONTRIBUTING.md` for how to add a flag.
 
 ### Privy Authentication
 
