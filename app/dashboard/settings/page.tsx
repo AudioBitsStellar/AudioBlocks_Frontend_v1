@@ -1,12 +1,12 @@
 'use client';
-
+import Link from 'next/link';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { Mail, Wallet, Trash2 } from 'lucide-react';
+import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
+import DataSaverToggle from '@/components/help/DataSaverToggle';
+import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
 import { useUserPreferences } from '@/context/UserPreferencesContext';
 import type { AudioQuality } from '@/context/UserPreferencesContext';
-import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
-import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import Link from 'next/link';
-import { Mail, Wallet, Trash2 } from 'lucide-react';
 
 function LinkedAccountsList() {
   const { user, handleUnlinkWallet } = useDynamicContext();
@@ -31,8 +31,8 @@ function LinkedAccountsList() {
           </div>
           <button
             className="text-red-500 hover:text-red-400 p-2 rounded-full hover:bg-red-500/10 transition-colors"
-            onClick={() => handleUnlinkWallet(wallet.id)}
             title="Unlink Wallet"
+            onClick={() => handleUnlinkWallet(wallet.id)}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -115,6 +115,7 @@ export default function SettingsPage() {
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Playback</h2>
+        <DataSaverToggle />
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E]">
             <div>
@@ -204,8 +205,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <Link
-              href="/dashboard/settings/quality"
               className="px-3 py-1.5 text-xs font-semibold text-white bg-[#D2045B] hover:bg-[#b0034c] rounded-lg transition-colors shrink-0"
+              href="/dashboard/settings/quality"
             >
               Tune Thresholds
             </Link>

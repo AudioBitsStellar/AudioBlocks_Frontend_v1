@@ -48,7 +48,10 @@ describe('useWalletConnectionErrors', () => {
 
     getConnectionFailureHandler()({}, new Error('sensitive provider detail'));
 
-    expect(mockToast.error).toHaveBeenCalledWith(WALLET_CONNECTION_ERROR_MESSAGES.failed);
+    expect(mockToast.error).toHaveBeenCalledWith(
+      WALLET_CONNECTION_ERROR_MESSAGES.failed,
+      expect.objectContaining({ action: expect.objectContaining({ label: 'Wallet guide' }) })
+    );
     expect(mockToast.error).toHaveBeenCalledTimes(1);
     expect(mockToast.error).not.toHaveBeenCalledWith(
       expect.stringContaining('sensitive provider detail')
@@ -60,7 +63,10 @@ describe('useWalletConnectionErrors', () => {
 
     getConnectionFailureHandler()({}, { code: 4001 });
 
-    expect(mockToast.error).toHaveBeenCalledWith(WALLET_CONNECTION_ERROR_MESSAGES.cancelled);
+    expect(mockToast.error).toHaveBeenCalledWith(
+      WALLET_CONNECTION_ERROR_MESSAGES.cancelled,
+      expect.objectContaining({ action: expect.objectContaining({ label: 'Wallet guide' }) })
+    );
     expect(mockToast.error).toHaveBeenCalledTimes(1);
   });
 });

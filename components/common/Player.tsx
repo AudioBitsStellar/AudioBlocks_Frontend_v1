@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useMediaSession } from '@/hooks/useMediaSession';
+import { useQueuedAudio } from '@/hooks/useQueuedAudio';
 import { FullScreenPlayer } from './FullScreenPlayer';
 
 // Lazy-load CommentPanel to reduce initial bundle size
@@ -242,10 +243,8 @@ const Player = () => {
     isMuted,
     shuffle,
     repeat,
-    queue,
     trackError,
     autoplayBlocked,
-    crossfadeDuration,
     isCrossfading,
     normalizeAudio,
     gapless,
@@ -257,64 +256,44 @@ const Player = () => {
     toggleMute,
     toggleShuffle,
     toggleRepeat,
-    setError,
     dismissError,
     addToRecentlyPlayed,
     setAutoplayBlocked,
     resumeAudio,
-    setCrossfading,
     setNormalizeAudio,
     setGapless,
   } = usePlayback();
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const incomingAudioRef = useRef<HTMLAudioElement | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const outgoingGainRef = useRef<GainNode | null>(null);
-  const incomingGainRef = useRef<GainNode | null>(null);
-  const outgoingSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const incomingSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const crossfadeRafRef = useRef<number | null>(null);
-  const crossfadeActiveRef = useRef(false);
-  const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Audio normalization (#328) graph nodes, keyed to the current primary element.
-  const primarySourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const primarySourceElementRef = useRef<HTMLAudioElement | null>(null);
-  const compressorRef = useRef<DynamicsCompressorNode | null>(null);
-  const primaryGainRef = useRef<GainNode | null>(null);
-  const [duration, setDuration] = useState(0);
+  const {
+    audioRef,
+    deckARef,
+    deckBRef,
+    duration,
+    isBuffering,
+    streamUrl,
+    playbackSpeed,
+    setPlaybackSpeed,
+  } = useQueuedAudio();
   const [showComments, setShowComments] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(false);
-  const [trackAnnouncement, setTrackAnnouncement] = useState('');
-  const [incomingUrl, setIncomingUrl] = useState<string | null>(null);
-  // True once the preloaded (gapless) next track can start playing (#329).
-  const [incomingReady, setIncomingReady] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
-
   const currentTrack = playlist[currentIndex];
   const trackId = currentTrack?.id || `track-${currentIndex}`;
-
-  const resolveStreamUrl = useCallback((track: typeof currentTrack, index: number) => {
-    if (!track) return '';
-    const id = track.id || `track-${index}`;
-    return track.url ? track.url : `${process.env.NEXT_PUBLIC_API_URL}/stream/${id}`;
-  }, []);
-
-  const streamUrl = useMemo(
-    () => resolveStreamUrl(currentTrack, currentIndex),
-    [currentTrack, currentIndex, resolveStreamUrl]
-  );
-
-  const resolveNextIndex = useCallback(() => {
-    if (playlist.length === 0) return -1;
-    if (shuffle) return Math.floor(Math.random() * playlist.length);
-    return (currentIndex + 1) % playlist.length;
-  }, [playlist.length, shuffle, currentIndex]);
-
-  // #331 — Media Session API integration
+  const trackAnnouncement = currentTrack
+    ? `Now playing: ${currentTrack.title} by ${currentTrack.artist}`
+    : '';
+  useEffect(() => {
+    setCoverFailed(false);
+    if (currentTrack && isPlaying) addToRecentlyPlayed(currentTrack);
+  }, [currentTrack, isPlaying, addToRecentlyPlayed]);
+  const handleTogglePlay = useCallback(() => {
+    if (isPlaying) pause();
+    else {
+      resumeAudio();
+      play();
+    }
+  }, [isPlaying, pause, play, resumeAudio]);
   useMediaSession({
     track: currentTrack
       ? { title: currentTrack.title, artist: currentTrack.artist, cover: currentTrack.cover }
@@ -324,6 +303,11 @@ const Player = () => {
     currentTime: audioRef.current?.currentTime ?? 0,
     onPlay: play,
     onPause: pause,
+    onPrevTrack: prev,
+    onNextTrack: next,
+    onSeekTo: (time) => {
+      if (audioRef.current) audioRef.current.currentTime = time;
+    },
     onSeekBackward: (offset) => {
       if (audioRef.current)
         audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - offset);
@@ -332,500 +316,7 @@ const Player = () => {
       if (audioRef.current)
         audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + offset);
     },
-    onPrevTrack: prev,
-    onNextTrack: next,
-    onSeekTo: (seekTime) => {
-      if (audioRef.current) audioRef.current.currentTime = seekTime;
-    },
   });
-
-  const ensureAudioGraph = useCallback(() => {
-    if (typeof window === 'undefined') return null;
-    const AudioCtx =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return null;
-
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioCtx();
-    }
-    return audioCtxRef.current;
-  }, []);
-
-  /**
-   * Apply (or neutralize) the loudness-normalization compressor settings (#328).
-   * With a ratio of 1 and threshold of 0 the compressor is a passthrough, so
-   * toggling normalization off never requires rebuilding the audio graph.
-   */
-  const applyNormalizationParams = useCallback((enabled: boolean) => {
-    const compressor = compressorRef.current;
-    if (!compressor) return;
-    if (enabled) {
-      compressor.threshold.value = -24;
-      compressor.knee.value = 30;
-      compressor.ratio.value = 12;
-      compressor.attack.value = 0.003;
-      compressor.release.value = 0.25;
-    } else {
-      compressor.threshold.value = 0;
-      compressor.knee.value = 0;
-      compressor.ratio.value = 1;
-      compressor.attack.value = 0;
-      compressor.release.value = 0;
-    }
-  }, []);
-
-  /**
-   * Route the primary element through the normalization graph:
-   * element → compressor → gain → destination (#328).
-   * `createMediaElementSource` may only be called once per element, so the
-   * graph is rebuilt only when the primary element changes (track switch).
-   */
-  const ensureNormalizationGraph = useCallback(
-    (primary: HTMLAudioElement) => {
-      const ctx = ensureAudioGraph();
-      if (!ctx) return;
-
-      if (primarySourceElementRef.current !== primary && primarySourceRef.current) {
-        try {
-          primarySourceRef.current.disconnect();
-        } catch {
-          // already disconnected
-        }
-        try {
-          primaryGainRef.current?.disconnect();
-        } catch {
-          // already disconnected
-        }
-        primarySourceRef.current = null;
-        primarySourceElementRef.current = null;
-        compressorRef.current = null;
-        primaryGainRef.current = null;
-      }
-
-      if (primarySourceRef.current) return;
-      try {
-        const source = ctx.createMediaElementSource(primary);
-        const compressor = ctx.createDynamicsCompressor();
-        const gain = ctx.createGain();
-        source.connect(compressor);
-        compressor.connect(gain);
-        gain.connect(ctx.destination);
-        primarySourceRef.current = source;
-        primarySourceElementRef.current = primary;
-        compressorRef.current = compressor;
-        primaryGainRef.current = gain;
-      } catch {
-        // Element is already routed through another graph — leave it alone.
-      }
-    },
-    [ensureAudioGraph]
-  );
-
-  const cleanupIncoming = useCallback(() => {
-    if (crossfadeRafRef.current !== null) {
-      cancelAnimationFrame(crossfadeRafRef.current);
-      crossfadeRafRef.current = null;
-    }
-    crossfadeActiveRef.current = false;
-    setCrossfading(false);
-
-    const incoming = incomingAudioRef.current;
-    if (incoming) {
-      incoming.pause();
-      incoming.removeAttribute('src');
-      incoming.load();
-    }
-
-    try {
-      incomingSourceRef.current?.disconnect();
-    } catch {
-      // already disconnected
-    }
-    try {
-      incomingGainRef.current?.disconnect();
-    } catch {
-      // already disconnected
-    }
-    incomingSourceRef.current = null;
-    incomingGainRef.current = null;
-    setIncomingUrl(null);
-  }, [setCrossfading]);
-
-  const finishCrossfade = useCallback(() => {
-    const primary = audioRef.current;
-    const incoming = incomingAudioRef.current;
-    if (primary && incoming && incoming.src) {
-      // Swap: primary takes over the incoming stream position/volume
-      const incomingTime = incoming.currentTime;
-      primary.src = incoming.src;
-      primary.currentTime = incomingTime;
-      primary.volume = isMuted ? 0 : volume;
-      if (isPlaying) {
-        void primary.play().catch(() => {
-          /* handled by autoplay / error paths */
-        });
-      }
-    }
-    // Restore the normalization gain (pinned to 1 during the fade) so the
-    // volume level is applied exactly once going forward (#328).
-    if (primaryGainRef.current) {
-      primaryGainRef.current.gain.value = isMuted ? 0 : volume;
-    }
-    cleanupIncoming();
-  }, [cleanupIncoming, isMuted, volume, isPlaying]);
-
-  const startCrossfade = useCallback(async () => {
-    if (crossfadeActiveRef.current || crossfadeDuration <= 0 || repeat) return;
-    const primary = audioRef.current;
-    if (!primary || !Number.isFinite(primary.duration) || primary.duration <= 0) return;
-
-    const nextIdx = resolveNextIndex();
-    if (nextIdx < 0 || nextIdx === currentIndex) return;
-    const nextTrack = playlist[nextIdx];
-    if (!nextTrack) return;
-
-    const nextUrl = resolveStreamUrl(nextTrack, nextIdx);
-    if (!nextUrl) return;
-
-    crossfadeActiveRef.current = true;
-    setCrossfading(true);
-    setIncomingUrl(nextUrl);
-
-    // Wait a tick so the incoming <audio> mounts with the new src
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
-    const incoming = incomingAudioRef.current;
-    if (!incoming) {
-      cleanupIncoming();
-      return;
-    }
-
-    incoming.volume = 0;
-    incoming.muted = isMuted;
-
-    try {
-      await incoming.play();
-    } catch {
-      cleanupIncoming();
-      return;
-    }
-
-    // When the primary is routed through the normalization graph, its gain
-    // would double-apply the volume envelope — pin it to 1 during the fade so
-    // element.volume drives the transition cleanly (#328).
-    if (primaryGainRef.current && primarySourceElementRef.current === primary) {
-      primaryGainRef.current.gain.value = 1;
-    }
-
-    const ctx = ensureAudioGraph();
-    const durationMs = crossfadeDuration * 1000;
-    const start = performance.now();
-
-    // Prefer Web Audio gain nodes when available; fall back to element.volume envelopes.
-    if (ctx) {
-      try {
-        if (ctx.state === 'suspended') await ctx.resume();
-
-        if (!outgoingSourceRef.current && primary) {
-          outgoingSourceRef.current = ctx.createMediaElementSource(primary);
-          outgoingGainRef.current = ctx.createGain();
-          outgoingSourceRef.current.connect(outgoingGainRef.current);
-          outgoingGainRef.current.connect(ctx.destination);
-          outgoingGainRef.current.gain.value = isMuted ? 0 : volume;
-        }
-
-        incomingSourceRef.current = ctx.createMediaElementSource(incoming);
-        incomingGainRef.current = ctx.createGain();
-        incomingSourceRef.current.connect(incomingGainRef.current);
-        incomingGainRef.current.connect(ctx.destination);
-        incomingGainRef.current.gain.value = 0;
-      } catch {
-        // createMediaElementSource can only be called once per element — fall back to volume
-      }
-    }
-
-    const tick = (now: number) => {
-      if (!crossfadeActiveRef.current) return;
-      const elapsed = now - start;
-      const t = Math.min(1, elapsed / durationMs);
-      const outVol = (isMuted ? 0 : volume) * (1 - t);
-      const inVol = (isMuted ? 0 : volume) * t;
-
-      if (outgoingGainRef.current && incomingGainRef.current) {
-        outgoingGainRef.current.gain.value = outVol;
-        incomingGainRef.current.gain.value = inVol;
-      } else {
-        if (primary) primary.volume = outVol;
-        if (incoming) incoming.volume = inVol;
-      }
-
-      if (t < 1 && isPlaying) {
-        crossfadeRafRef.current = requestAnimationFrame(tick);
-      } else if (t >= 1) {
-        // Advance playlist to the next track and finalize the handoff
-        next();
-        finishCrossfade();
-      } else {
-        // Paused mid-crossfade — leave both elements paused at current envelope
-        primary?.pause();
-        incoming?.pause();
-      }
-    };
-
-    crossfadeRafRef.current = requestAnimationFrame(tick);
-  }, [
-    crossfadeDuration,
-    repeat,
-    resolveNextIndex,
-    currentIndex,
-    playlist,
-    resolveStreamUrl,
-    setCrossfading,
-    isMuted,
-    cleanupIncoming,
-    ensureAudioGraph,
-    volume,
-    isPlaying,
-    next,
-    finishCrossfade,
-  ]);
-
-  useEffect(() => {
-    setCoverFailed(false);
-    setIsBuffering(false);
-    // Add to recently played when track changes
-    if (currentTrack) {
-      addToRecentlyPlayed(currentTrack);
-    }
-    // Abort any in-flight crossfade when the track changes externally
-    if (crossfadeActiveRef.current) {
-      cleanupIncoming();
-    }
-  }, [currentIndex, currentTrack, addToRecentlyPlayed, cleanupIncoming]);
-
-  // Sync play/pause with the audio element; currentIndex triggers re-sync on track change
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (isPlaying) {
-      audio.play().catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === 'NotAllowedError') {
-          setAutoplayBlocked(true);
-        } else {
-          setError(`Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`);
-        }
-      });
-      // Resume incoming element if we paused mid-crossfade
-      if (crossfadeActiveRef.current && incomingAudioRef.current) {
-        void incomingAudioRef.current.play().catch(() => {});
-      }
-    } else {
-      audio.pause();
-      incomingAudioRef.current?.pause();
-    }
-  }, [isPlaying, currentIndex, currentTrack?.title, setAutoplayBlocked, setError]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    // Don't clobber volume envelopes mid-crossfade
-    if (crossfadeActiveRef.current) {
-      if (outgoingGainRef.current) {
-        // gain nodes handle mute/volume via the envelope loop on next frame
-      }
-      return;
-    }
-    audio.volume = isMuted ? 0 : volume;
-    audio.muted = isMuted;
-    if (outgoingGainRef.current) {
-      outgoingGainRef.current.gain.value = isMuted ? 0 : volume;
-    }
-    if (primaryGainRef.current) {
-      primaryGainRef.current.gain.value = isMuted ? 0 : volume;
-    }
-  }, [volume, isMuted]);
-
-  // Route the primary element through the normalization compressor whenever
-  // it is enabled and rebuild the graph when the track (element) changes (#328).
-  useEffect(() => {
-    const primary = audioRef.current;
-    if (!primary) return;
-
-    if (!normalizeAudio) {
-      applyNormalizationParams(false);
-      return;
-    }
-
-    ensureNormalizationGraph(primary);
-    applyNormalizationParams(true);
-    if (primaryGainRef.current) {
-      primaryGainRef.current.gain.value = isMuted ? 0 : volume;
-    }
-  }, [
-    normalizeAudio,
-    streamUrl,
-    isMuted,
-    volume,
-    ensureNormalizationGraph,
-    applyNormalizationParams,
-  ]);
-
-  // Watch primary audio position and kick off crossfade near the end
-  useEffect(() => {
-    if (!isPlaying || crossfadeDuration <= 0 || repeat) return;
-
-    let raf: number | null = null;
-    const watch = () => {
-      const audio = audioRef.current;
-      if (
-        audio &&
-        !crossfadeActiveRef.current &&
-        Number.isFinite(audio.duration) &&
-        audio.duration > 0
-      ) {
-        const remaining = audio.duration - audio.currentTime;
-        if (remaining <= crossfadeDuration && remaining > 0) {
-          void startCrossfade();
-          return;
-        }
-      }
-      raf = requestAnimationFrame(watch);
-    };
-    raf = requestAnimationFrame(watch);
-    return () => {
-      if (raf !== null) cancelAnimationFrame(raf);
-    };
-  }, [isPlaying, crossfadeDuration, repeat, currentIndex, startCrossfade]);
-
-  // Gapless playback (#329): preload the next track while the current one
-  // plays so the handoff on `ended` has no audible gap. Only sequential
-  // playback with an empty queue is eligible — shuffle/queue ordering is
-  // decided at transition time and can't be preloaded reliably.
-  useEffect(() => {
-    if (!gapless || !isPlaying || crossfadeDuration > 0 || crossfadeActiveRef.current) return;
-    if (shuffle || queue.length > 0 || repeat) return;
-    if (playlist.length === 0) return;
-
-    const nextIdx = resolveNextIndex();
-    if (nextIdx < 0 || nextIdx === currentIndex) return;
-    const nextTrack = playlist[nextIdx];
-    if (!nextTrack) return;
-
-    const url = resolveStreamUrl(nextTrack, nextIdx);
-    if (!url) return;
-    setIncomingUrl(url);
-  }, [
-    gapless,
-    isPlaying,
-    crossfadeDuration,
-    shuffle,
-    queue.length,
-    repeat,
-    currentIndex,
-    playlist,
-    resolveNextIndex,
-    resolveStreamUrl,
-  ]);
-
-  // Reset readiness whenever a new track is preloaded (#329).
-  useEffect(() => {
-    setIncomingReady(false);
-  }, [incomingUrl]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    const incoming = incomingAudioRef.current;
-    if (audio) audio.playbackRate = playbackSpeed;
-    if (incoming) incoming.playbackRate = playbackSpeed;
-  }, [playbackSpeed]);
-
-  // Stop playback and release the audio resource when the tab is closed or the
-  // user navigates to an external URL, so streaming doesn't continue orphaned.
-  useEffect(() => {
-    const releaseAudio = () => {
-      cleanupIncoming();
-      const audio = audioRef.current;
-      if (!audio) return;
-      audio.pause();
-      audio.src = '';
-      audio.load();
-      try {
-        outgoingSourceRef.current?.disconnect();
-        outgoingGainRef.current?.disconnect();
-      } catch {
-        // ignore
-      }
-      outgoingSourceRef.current = null;
-      outgoingGainRef.current = null;
-      try {
-        primarySourceRef.current?.disconnect();
-        primaryGainRef.current?.disconnect();
-      } catch {
-        // ignore
-      }
-      primarySourceRef.current = null;
-      primarySourceElementRef.current = null;
-      compressorRef.current = null;
-      primaryGainRef.current = null;
-      if (audioCtxRef.current) {
-        void audioCtxRef.current.close().catch(() => {});
-        audioCtxRef.current = null;
-      }
-    };
-    window.addEventListener('beforeunload', releaseAudio);
-    window.addEventListener('pagehide', releaseAudio);
-    return () => {
-      window.removeEventListener('beforeunload', releaseAudio);
-      window.removeEventListener('pagehide', releaseAudio);
-      releaseAudio();
-    };
-  }, [cleanupIncoming]);
-
-  useEffect(() => {
-    if (currentTrack) {
-      setTrackAnnouncement(`Now playing: ${currentTrack.title} by ${currentTrack.artist}`);
-    }
-  }, [currentIndex, currentTrack]);
-
-  useEffect(() => {
-    if (!autoplayBlocked) return;
-    const handler = () => {
-      resumeAudio();
-      setAutoplayBlocked(false);
-    };
-    document.addEventListener('click', handler, { once: true });
-    document.addEventListener('keydown', handler, { once: true });
-    return () => {
-      document.removeEventListener('click', handler);
-      document.removeEventListener('keydown', handler);
-    };
-  }, [autoplayBlocked, resumeAudio, setAutoplayBlocked]);
-
-  useEffect(() => {
-    return () => {
-      if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
-    };
-  }, []);
-
-  const handleTogglePlay = useCallback(() => {
-    if (isBuffering) return;
-    if (isPlaying) pause();
-    else play();
-  }, [isBuffering, isPlaying, pause, play]);
-
-  const handleAudioError = useCallback(() => {
-    if (crossfadeActiveRef.current) {
-      cleanupIncoming();
-    }
-    const errorMessage = currentTrack?.id
-      ? `Unable to stream track "${currentTrack?.title}". The track may be unavailable or the ID is invalid.`
-      : `Unable to load "${currentTrack?.title ?? 'track'}". Skipping to next track…`;
-    setError(errorMessage);
-    if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
-    skipTimerRef.current = setTimeout(() => next(), 3000);
-  }, [currentTrack, setError, next, cleanupIncoming]);
-
   const coverSrc = useMemo(
     () => (coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover),
     [coverFailed, currentTrack]
@@ -1062,65 +553,9 @@ const Player = () => {
           </div>
         </div>
 
-        {/* Primary audio element — key forces remount on track change so new src loads cleanly; gapless mode (#329) keeps the element mounted and swaps src manually to avoid a gap */}
-        <audio
-          key={gapless ? undefined : streamUrl}
-          ref={audioRef}
-          src={streamUrl}
-          onCanPlay={() => setIsBuffering(false)}
-          onEnded={() => {
-            if (crossfadeActiveRef.current) {
-              finishCrossfade();
-              return;
-            }
-            if (repeat) {
-              audioRef.current?.play();
-              return;
-            }
-            const primary = audioRef.current;
-            const incoming = incomingAudioRef.current;
-            if (
-              gapless &&
-              incomingReady &&
-              !shuffle &&
-              queue.length === 0 &&
-              incoming?.src &&
-              primary
-            ) {
-              // Gapless handoff (#329): swap in the preloaded track and advance.
-              primary.src = incoming.src;
-              primary.currentTime = 0;
-              if (isPlaying) {
-                void primary.play().catch(() => {
-                  /* handled by autoplay / error paths */
-                });
-              }
-              next();
-              cleanupIncoming();
-              return;
-            }
-            next();
-          }}
-          onError={handleAudioError}
-          onLoadedMetadata={(e) => {
-            setDuration(e.currentTarget.duration);
-          }}
-          onPlaying={() => setIsBuffering(false)}
-          onWaiting={() => setIsBuffering(true)}
-        />
-        {/* Incoming audio element used during crossfade (#115) */}
-        {incomingUrl && (
-          <audio
-            ref={incomingAudioRef}
-            aria-hidden="true"
-            preload="auto"
-            src={incomingUrl}
-            onCanPlay={() => setIncomingReady(true)}
-            onError={() => {
-              cleanupIncoming();
-            }}
-          />
-        )}
+        {/* Persistent decks are promoted with their HLS buffers intact. */}
+        <audio ref={deckARef} aria-hidden="true" data-audio-deck="a" preload="none" />
+        <audio ref={deckBRef} aria-hidden="true" data-audio-deck="b" preload="none" />
         {/* Expose crossfade state for tests / a11y tooling */}
         <span className="sr-only" data-crossfading={isCrossfading ? 'true' : 'false'} />
       </div>
