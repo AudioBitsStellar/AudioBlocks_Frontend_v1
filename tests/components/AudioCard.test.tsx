@@ -217,7 +217,7 @@ describe('AudioCard Component', () => {
       // If the placeholder also fails, it switches to the gradient fallback div
       fireEvent.error(placeholder);
       const fallback = screen.getByRole('img', {
-        name: `${defaultProps.title} by ${defaultProps.artist}`,
+        name: `Cover art for ${defaultProps.title} unavailable`,
       });
       expect(fallback).toBeInTheDocument();
       expect(fallback.tagName.toLowerCase()).toBe('div');

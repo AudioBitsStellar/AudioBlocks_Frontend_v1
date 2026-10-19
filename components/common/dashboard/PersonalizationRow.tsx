@@ -1,10 +1,10 @@
 'use client';
 
 import { memo } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { usePersonalizationRow } from '@/hooks/usePersonalizationRow';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { usePlayback } from '@/context/PlaybackContext';
+import { usePersonalizationRow } from '@/hooks/usePersonalizationRow';
 import type { Track } from '@/context/PlaybackContext';
 
 const PersonalizationRow = memo(function PersonalizationRow() {
@@ -35,9 +35,9 @@ const PersonalizationRow = memo(function PersonalizationRow() {
           <div
             key={`${song.id}-${index}`}
             className="group relative bg-surface-input rounded-lg p-4 hover:bg-surface-input/80 transition cursor-pointer"
-            onClick={() => handlePlaySong(song, index)}
             role="button"
             tabIndex={0}
+            onClick={() => handlePlaySong(song, index)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -45,13 +45,14 @@ const PersonalizationRow = memo(function PersonalizationRow() {
               }
             }}
           >
-            <div className="relative mb-4 overflow-hidden rounded-md">
-              <Image
+            <div className="relative mb-4 aspect-square overflow-hidden rounded-md">
+              <ArtworkImage
+                fill
                 alt={`${song.title} cover`}
-                className="w-full aspect-square object-cover group-hover:scale-105 transition"
-                height={200}
+                className="object-cover group-hover:scale-105 transition"
+                sizes="200px"
                 src={song.cover || '/placeholder.png'}
-                width={200}
+                title={song.title}
               />
             </div>
             <h3 className="font-medium text-sm text-white truncate">{song.title}</h3>

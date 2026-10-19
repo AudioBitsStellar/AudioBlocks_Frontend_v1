@@ -42,6 +42,8 @@ interface ArtworkImageProps {
   height?: number;
   className?: string;
   fill?: boolean;
+  /** Passed to next/image; useful with `fill` so the right size is requested. */
+  sizes?: string;
 }
 
 export function ArtworkImage({
@@ -52,6 +54,7 @@ export function ArtworkImage({
   height = 200,
   className,
   fill = false,
+  sizes,
 }: ArtworkImageProps) {
   const gradient = titleToGradient(title || 'untitled');
   // Ordered load attempts; each onError advances to the next one.
@@ -68,7 +71,8 @@ export function ArtworkImage({
   if (!currentSrc) {
     return (
       <div
-        aria-label={alt ?? title}
+        // Still names the item, but says plainly that its artwork is not available.
+        aria-label={`Cover art for ${title || alt || 'this item'} unavailable`}
         className={className}
         role="img"
         style={{
@@ -87,6 +91,7 @@ export function ArtworkImage({
       className={className}
       fill={fill}
       height={fill ? undefined : height}
+      sizes={sizes}
       src={currentSrc}
       width={fill ? undefined : width}
       onError={() => setFailed({ src, count: failedCount + 1 })}
