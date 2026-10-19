@@ -12,11 +12,11 @@ const nextConfig: NextConfig = {
   eslint: {
     // Lint should be a separate CI check, not a deploy gate — pre-existing
     // lint errors in unrelated components shouldn't block production builds.
+    // Enforced by the `lint` job in .github/workflows/test.yml.
     ignoreDuringBuilds: true,
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // Type errors fail production builds (no `ignoreBuildErrors`). Type errors
+  // are also caught in CI by the `type-check` job in .github/workflows/test.yml.
   webpack: (config) => {
     // @metamask/sdk (pulled in via @dynamic-labs/ethereum) optionally
     // supports React Native and imports this for native storage — it's
