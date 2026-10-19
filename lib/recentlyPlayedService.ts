@@ -1,6 +1,7 @@
 import type { Track } from '@/context/PlaybackContext';
 import apiClient from './apiClient';
 import { API_ENDPOINTS } from './constants';
+import { unwrapList } from './api/unwrap';
 
 /** Local and remote history are both capped at this many tracks. */
 export const MAX_RECENTLY_PLAYED = 20;
@@ -38,10 +39,7 @@ function toTrack(item: RemoteTrack): Track | null {
  */
 export async function getRemoteRecentlyPlayed(): Promise<Track[]> {
   const res = await apiClient.get(API_ENDPOINTS.RECENTLY_PLAYED);
-  const items: unknown = res.data?.data ?? res.data;
-  if (!Array.isArray(items)) return [];
-
-  return (items as RemoteTrack[])
+  return unwrapList<RemoteTrack>(res)
     .map(toTrack)
     .filter((track): track is Track => track !== null)
     .slice(0, MAX_RECENTLY_PLAYED);
