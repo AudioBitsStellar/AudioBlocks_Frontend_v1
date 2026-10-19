@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Flag, SendHorizonal, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReportDialog } from '@/components/common/ReportDialog';
+import { CommentReactions } from '@/components/common/dashboard/CommentReactions';
 import { sanitizeUserInput } from '@/lib/sanitize';
 
 interface CommentPanelProps {
@@ -45,10 +46,12 @@ const Comment = ({ onClose }: CommentPanelProps) => {
   // Clicks inside the report dialog are outside this panel, so the outside-click
   // handler must ignore them while the dialog is open.
   const isReportingRef = useRef(false);
+  // Same for the login prompt a signed-out user gets when reacting (#577).
+  const isAuthPromptOpenRef = useRef(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (isReportingRef.current) return;
+      if (isReportingRef.current || isAuthPromptOpenRef.current) return;
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose();
       }
@@ -151,6 +154,13 @@ const Comment = ({ onClose }: CommentPanelProps) => {
               <div>
                 <p className="text-xs font-normal text-[#AFB6B2]">{comment.content}</p>
               </div>
+
+              <CommentReactions
+                commentId={comment.id}
+                onPromptOpenChange={(open) => {
+                  isAuthPromptOpenRef.current = open;
+                }}
+              />
 
               <button
                 aria-label={`Report comment by ${comment.name} at ${comment.time}`}
