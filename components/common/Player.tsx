@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { AnimatePresence } from 'framer-motion';
 import { AlertCircle, X } from 'lucide-react';
@@ -18,7 +18,11 @@ import { FullScreenPlayer } from './FullScreenPlayer';
 // Lazy-load CommentPanel to reduce initial bundle size
 const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
   loading: () => (
-    <div className="fixed bottom-0 right-0 bg-[#1e1e1e] w-80 h-20 flex items-center justify-center text-gray-400">
+    <div
+      aria-live="polite"
+      className="fixed bottom-0 right-0 bg-[#1e1e1e] w-80 h-20 flex items-center justify-center text-gray-400"
+      role="status"
+    >
       Loading comments...
     </div>
   ),
@@ -26,6 +30,7 @@ const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
 });
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
+const COMMENT_PANEL_ID = 'comment-panel';
 
 /**
  * Main Player Component — a composition layer (#602). Audio behavior lives in
@@ -75,6 +80,12 @@ const Player = () => {
     setPlaybackSpeed,
   } = useQueuedAudio();
   const [showComments, setShowComments] = useState(false);
+  const commentsTriggerRef = useRef<HTMLButtonElement | null>(null);
+  // Hand focus back to the trigger so keyboard users land where they were.
+  const closeComments = useCallback(() => {
+    setShowComments(false);
+    commentsTriggerRef.current?.focus();
+  }, []);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
@@ -196,6 +207,9 @@ const Player = () => {
         </NowPlayingInfo>
 
         <PlayerActions
+          commentsExpanded={showComments}
+          commentsPanelId={COMMENT_PANEL_ID}
+          commentsTriggerRef={commentsTriggerRef}
           gapless={gapless}
           isMuted={isMuted}
           normalizeAudio={normalizeAudio}
@@ -216,7 +230,9 @@ const Player = () => {
         <span className="sr-only" data-crossfading={isCrossfading ? 'true' : 'false'} />
       </div>
 
-      {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}
+      {showComments && (
+        <CommentPanel id={COMMENT_PANEL_ID} trackId={trackId} onClose={closeComments} />
+      )}
       <AnimatePresence>
         {isFullScreen && (
           <FullScreenPlayer

@@ -54,7 +54,9 @@ const Provider = ({ children }: { children: ReactNode }) => {
       <PlaybackProvider>
         <DynamicContextProvider
           settings={{
-            environmentId: 'c686da1e-ac86-4bd4-a2f4-5fe6ff42ed85',
+            // Literal access so Next.js inlines the value into the client bundle. A missing
+            // value is reported by `EnvCheck` rather than crashing here.
+            environmentId: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID ?? '',
             walletConnectors: [EthereumWalletConnectors],
             theme: 'auto',
             cssOverrides: `
