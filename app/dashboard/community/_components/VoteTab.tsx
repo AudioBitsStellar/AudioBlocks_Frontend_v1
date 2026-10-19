@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Music, Search } from 'lucide-react';
+import ArtistCard, { type Artist } from '@/components/ui/ArtistCard';
 import { Card } from '@/components/ui/card';
-import ArtistCard, { type Artist } from './ArtistCard';
 
 const genres = ['All', 'Electronic', 'Pop', 'Contemporary'];
 
@@ -110,6 +110,7 @@ const VoteTab = ({ artists, isLoading, isError, myVotes, isVoting, onVote }: Vot
               artist={artist}
               hasVoted={myVotes.includes(artist.id)}
               isVoting={isVoting}
+              variant="community"
               onVote={onVote}
             />
           ))}

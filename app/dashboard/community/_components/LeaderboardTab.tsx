@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { UserRound } from 'lucide-react';
-import type { Artist } from './ArtistCard';
+import type { Artist } from '@/components/ui/ArtistCard';
 
 interface LeaderboardTabProps {
   artists: Artist[];

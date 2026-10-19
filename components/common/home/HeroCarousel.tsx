@@ -9,6 +9,7 @@ import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { usePlayback, type Track } from '@/context/PlaybackContext';
 import { Auth } from '@/hooks/useAuth';
+import { buildStreamUrl } from '@/lib/player/streamUrl';
 import FullScreenLoader from './FullScreenLoader';
 
 type SpotlightItem = Track & {
@@ -277,12 +278,7 @@ const HeroCarousel = () => {
         ))}
       </div>
 
-      <audio
-        ref={audioRef}
-        aria-hidden="true"
-        preload="none"
-        src={`${process.env.NEXT_PUBLIC_API_URL || ''}/stream/${activeItem.id}`}
-      />
+      <audio ref={audioRef} aria-hidden="true" preload="none" src={buildStreamUrl(activeItem.id)} />
       {loading && <FullScreenLoader />}
     </section>
   );

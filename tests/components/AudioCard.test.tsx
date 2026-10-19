@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AudioCard from '@/components/AudioCard';
+import AudioCard from '@/components/ui/AudioCard';
 
 // Mock next/image
 vi.mock('next/image', () => ({
