@@ -13,6 +13,7 @@ import { ThemeScript } from '@/components/ThemeScript';
 import RouteProgress from '@/components/ui/RouteProgress';
 import PrivyAuthProvider from '@/context/PrivyAuthProvider';
 import Provider from '@/context/provider';
+import SentryErrorBoundary from '@/components/SentryErrorBoundary';
 import type { Metadata } from 'next';
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -64,21 +65,23 @@ export default function RootLayout({
         <MotionConfig reducedMotion="user">
           <PrivyAuthProvider>
             <Provider>
-              <Suspense fallback={null}>
-                <RouteProgress />
-              </Suspense>
-              <SWRegister />
-              <EnvCheck />
-              <AccessibilityAnnouncer />
-              <a
-                className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:font-semibold"
-                href="#main-content"
-              >
-                Skip to main content
-              </a>
-              <Toaster closeButton position="bottom-right" />
-              {children}
-              <AnalyticsScript />
+              <SentryErrorBoundary>
+                <Suspense fallback={null}>
+                  <RouteProgress />
+                </Suspense>
+                <SWRegister />
+                <EnvCheck />
+                <AccessibilityAnnouncer />
+                <a
+                  className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:font-semibold"
+                  href="#main-content"
+                >
+                  Skip to main content
+                </a>
+                <Toaster closeButton position="bottom-right" />
+                {children}
+                <AnalyticsScript />
+              </SentryErrorBoundary>
             </Provider>
           </PrivyAuthProvider>
         </MotionConfig>

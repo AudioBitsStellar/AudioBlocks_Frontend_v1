@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { WaveformDisplay } from '@/components/ui/WaveformDisplay';
+import { AudioVisualizer } from '@/components/AudioVisualizer';
 import { useAudioBuffer } from '@/hooks/useAudioBuffer';
+import { MoreVertical } from 'lucide-react';
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
 
@@ -46,10 +48,60 @@ export const FullScreenPlayer = ({
 }) => {
   const { buffer } = useAudioBuffer(audioSrc);
   const [currentTime, setCurrentTime] = useState(0);
+  const [analyserNode, setAnalyserNode] = useState<AnalyserNode | undefined>();
+  const [visualizerEnabled, setVisualizerEnabled] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const audioContextRef = React.useRef<AudioContext | null>(null);
 
   const peaks = useMemo(() => (buffer ? getWaveformPeaks(buffer) : undefined), [buffer]);
 
-  // Reset the visual playhead when the track changes.
+  const isMobile = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768;
+  }, []);
+
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
+  const defaultVisualizerState = !isMobile && !prefersReducedMotion;
+
+  useEffect(() => {
+    const savedPreference = localStorage.getItem('visualizer-enabled');
+    setVisualizerEnabled(savedPreference === 'true' ? true : defaultVisualizerState);
+  }, [defaultVisualizerState]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !visualizerEnabled) return;
+
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+      }
+
+      const ctx = audioContextRef.current;
+      const source = ctx.createMediaElementAudioSource(audio);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+
+      setAnalyserNode(analyser);
+    } catch (err) {
+      console.warn('Failed to create analyser node:', err);
+    }
+  }, [audioRef, visualizerEnabled]);
+
+  const toggleVisualizer = useCallback(() => {
+    const newState = !visualizerEnabled;
+    setVisualizerEnabled(newState);
+    localStorage.setItem('visualizer-enabled', newState.toString());
+  }, [visualizerEnabled]);
+
   useEffect(() => {
     setCurrentTime(0);
   }, [trackKey]);
@@ -69,6 +121,14 @@ export const FullScreenPlayer = ({
     }
   };
 
+  const handleClose = useCallback(() => {
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    onClose();
+  }, [onClose]);
+
   return (
     <motion.div
       animate={{ y: 0 }}
@@ -79,12 +139,49 @@ export const FullScreenPlayer = ({
       initial={{ y: '100%' }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
       onDragEnd={(e, info) => {
-        if (info.offset.y > 100) onClose();
+        if (info.offset.y > 100) handleClose();
       }}
     >
-      <button className="absolute top-4 right-4 text-white p-2" type="button" onClick={onClose}>
+      <button
+        className="absolute top-4 right-4 text-white p-2"
+        type="button"
+        onClick={handleClose}
+      >
         Close
       </button>
+
+      <div className="absolute top-4 right-14">
+        <button
+          className="text-white p-2 hover:bg-white/10 rounded-full transition-colors"
+          onClick={() => setShowMenu(!showMenu)}
+          type="button"
+          aria-label="Player menu"
+        >
+          <MoreVertical size={20} />
+        </button>
+        {showMenu && (
+          <div className="absolute right-0 mt-2 bg-gray-900 rounded-lg shadow-lg border border-gray-700 min-w-48 z-10">
+            <button
+              className="w-full text-left px-4 py-2 text-white hover:bg-gray-800 text-sm transition-colors first:rounded-t-lg"
+              onClick={() => {
+                toggleVisualizer();
+                setShowMenu(false);
+              }}
+              type="button"
+            >
+              {visualizerEnabled ? '✓ ' : ''}
+              Visualizer {visualizerEnabled ? 'On' : 'Off'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {visualizerEnabled && (
+        <div className="absolute inset-0 opacity-30">
+          <AudioVisualizer analyserNode={analyserNode} isEnabled={visualizerEnabled} />
+        </div>
+      )}
+
       <div className="w-64 h-64 relative rounded-md mb-8 overflow-hidden bg-gray-800">
         <Image
           fill

@@ -1,4 +1,5 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -33,4 +34,16 @@ const withBundleAnalyzerConfig = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
-export default withBundleAnalyzerConfig(nextConfig);
+let config = withBundleAnalyzerConfig(nextConfig);
+
+// Add Sentry if DSN is configured
+if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  config = withSentryConfig(config, {
+    silent: true,
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+  });
+}
+
+export default config;

@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useMemo, useCallback, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ListFilter, Music, Search, UsersRound } from 'lucide-react';
+import { ListFilter, Music, Search, UsersRound, Send } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useOwnedCollection } from '@/hooks/useOwnedCollection';
+import { NftTransfer } from '@/components/NftTransfer';
 
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 const ITEMS_PER_PAGE = 10;
@@ -37,6 +39,7 @@ const CollectionsPage = () => {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isPageLoading, setIsPageLoading] = useState(false);
+  const [selectedNFT, setSelectedNFT] = useState<bigint | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const songs: OwnedNFT[] = useMemo(() => {
@@ -242,14 +245,27 @@ const CollectionsPage = () => {
                     <p className="text-xs text-gray-400">
                       {song.artistAddress.slice(0, 6)}…{song.artistAddress.slice(-4)}
                     </p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-xs text-gray-400">
+                    <div className="mt-2 flex items-center justify-between gap-1">
+                      <span className="text-xs text-gray-400 flex-1">
                         {song.totalStreams.toString()} streams
                       </span>
-                      <button className="px-3 py-1 text-xs bg-surface border border-border-dark rounded-full hover:bg-[#333]">
-                        Sell Now
+                      <button
+                        className="p-1.5 text-xs bg-surface border border-border-dark rounded-full hover:bg-[#333] transition-colors"
+                        onClick={() => setSelectedNFT(selectedNFT === song.songId ? null : song.songId)}
+                        title="Transfer NFT"
+                        type="button"
+                      >
+                        <Send size={12} />
                       </button>
                     </div>
+                    {selectedNFT === song.songId && (
+                      <div className="mt-3 p-3 bg-surface-hover rounded-lg border border-border-dark">
+                        <NftTransfer
+                          songId={song.songId}
+                          onSuccess={() => setSelectedNFT(null)}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
