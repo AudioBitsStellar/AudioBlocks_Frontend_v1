@@ -12,6 +12,7 @@ import { usePlayback } from '@/context/PlaybackContext';
 import { useAudioEngine } from '@/hooks/player/useAudioEngine';
 import { usePlayerKeyboard } from '@/hooks/player/usePlayerKeyboard';
 import { useMediaSession } from '@/hooks/useMediaSession';
+import { useQueuedAudio } from '@/hooks/useQueuedAudio';
 import { FullScreenPlayer } from './FullScreenPlayer';
 
 // Lazy-load CommentPanel to reduce initial bundle size
@@ -63,24 +64,36 @@ const Player = () => {
   const engine = useAudioEngine(playback);
   const { audioRef, streamUrl, duration, isBuffering } = engine;
 
+  const {
+    audioRef,
+    deckARef,
+    deckBRef,
+    duration,
+    isBuffering,
+    streamUrl,
+    playbackSpeed,
+    setPlaybackSpeed,
+  } = useQueuedAudio();
   const [showComments, setShowComments] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
-
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const currentTrack = playlist[currentIndex];
   const trackId = currentTrack?.id || `track-${currentIndex}`;
   const trackAnnouncement = currentTrack
     ? `Now playing: ${currentTrack.title} by ${currentTrack.artist}`
     : '';
-
-  const unlockAutoplay = useCallback(() => {
-    resumeAudio();
-    setAutoplayBlocked(false);
-  }, [resumeAudio, setAutoplayBlocked]);
-
-  usePlayerKeyboard({ autoplayBlocked, onUnlock: unlockAutoplay });
-
-  // #331 — Media Session API integration
+  useEffect(() => {
+    setCoverFailed(false);
+    if (currentTrack && isPlaying) addToRecentlyPlayed(currentTrack);
+  }, [currentTrack, isPlaying, addToRecentlyPlayed]);
+  const handleTogglePlay = useCallback(() => {
+    if (isPlaying) pause();
+    else {
+      resumeAudio();
+      play();
+    }
+  }, [isPlaying, pause, play, resumeAudio]);
   useMediaSession({
     track: currentTrack
       ? { title: currentTrack.title, artist: currentTrack.artist, cover: currentTrack.cover }
@@ -90,6 +103,11 @@ const Player = () => {
     currentTime: audioRef.current?.currentTime ?? 0,
     onPlay: play,
     onPause: pause,
+    onPrevTrack: prev,
+    onNextTrack: next,
+    onSeekTo: (time) => {
+      if (audioRef.current) audioRef.current.currentTime = time;
+    },
     onSeekBackward: (offset) => {
       if (audioRef.current)
         audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - offset);
@@ -98,17 +116,7 @@ const Player = () => {
       if (audioRef.current)
         audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + offset);
     },
-    onPrevTrack: prev,
-    onNextTrack: next,
-    onSeekTo: (seekTime) => {
-      if (audioRef.current) audioRef.current.currentTime = seekTime;
-    },
   });
-
-  useEffect(() => {
-    setCoverFailed(false);
-  }, [currentIndex, currentTrack]);
-
   const coverSrc = useMemo(
     () => (coverFailed || !currentTrack?.cover ? COVER_FALLBACK : currentTrack.cover),
     [coverFailed, currentTrack]
@@ -201,23 +209,9 @@ const Player = () => {
           onVolumeChange={setVolume}
         />
 
-        {/* key remounts on track change so the new src loads cleanly; gapless mode (#329) keeps the element mounted and swaps src manually */}
-        <audio
-          key={gapless ? undefined : streamUrl}
-          ref={audioRef}
-          src={streamUrl}
-          {...engine.primaryHandlers}
-        />
-        {/* Incoming audio element used during crossfade (#115) */}
-        {engine.incomingUrl && (
-          <audio
-            ref={engine.incomingAudioRef}
-            aria-hidden="true"
-            preload="auto"
-            src={engine.incomingUrl}
-            {...engine.incomingHandlers}
-          />
-        )}
+        {/* Persistent decks are promoted with their HLS buffers intact. */}
+        <audio ref={deckARef} aria-hidden="true" data-audio-deck="a" preload="none" />
+        <audio ref={deckBRef} aria-hidden="true" data-audio-deck="b" preload="none" />
         {/* Expose crossfade state for tests / a11y tooling */}
         <span className="sr-only" data-crossfading={isCrossfading ? 'true' : 'false'} />
       </div>

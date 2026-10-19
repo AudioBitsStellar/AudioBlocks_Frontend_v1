@@ -549,6 +549,9 @@ Open a GitHub issue with:
   internally by `wagmi`) but isn't yet used for the app's own data fetching.
 - Dynamic Labs `environmentId` is hardcoded in `context/provider.tsx` and
   should be moved to an environment variable.
+- Several frontend API calls don't match a mounted backend route. See the
+  [API contract map](docs/api-contract.md) for each call's status (ok, path
+  mismatch, missing on backend, or mocked) and the backend issue tracking it.
 
 ## Testing
 

@@ -1,0 +1,28 @@
+name: queued-hls-playback
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  playback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Existing Sentry 7 / Next 15 peer mismatch also affects local setup.
+      - run: npm ci --legacy-peer-deps
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:playback
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playback-measurements-and-screenshots
+          path: test-results/

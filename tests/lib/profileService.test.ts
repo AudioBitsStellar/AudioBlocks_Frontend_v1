@@ -47,6 +47,14 @@ describe('profileService', () => {
       await expect(getProfile()).resolves.toEqual(mockOwnProfileFixture);
     });
 
+    it('requests /api/users/profile and unwraps the backend `data` envelope', async () => {
+      const profile = { id: 'u1', name: 'Alexia' };
+      mockGet.mockResolvedValueOnce({ data: { success: true, data: profile } } as never);
+
+      await expect(getProfile()).resolves.toEqual(profile);
+      expect(mockGet).toHaveBeenCalledWith('/api/users/profile');
+    });
+
     it('returns the raw body when there is no `user` wrapper', async () => {
       server.use(http.get(PROFILE_URL, () => HttpResponse.json({ id: 'u2', name: 'Bare' })));
 

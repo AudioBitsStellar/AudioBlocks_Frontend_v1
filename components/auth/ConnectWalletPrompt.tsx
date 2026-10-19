@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Headphones, Mic2, ArrowRight } from 'lucide-react';
+import WalletHelpLink from '@/components/help/WalletHelpLink';
 import { Modal } from '@/components/ui/Modal';
 import {
   AUTH_ROLE_SELECTED_EVENT,
@@ -81,6 +82,7 @@ export default function ConnectWalletPrompt({ open, onClose }: ConnectWalletProm
           <ArrowRight aria-hidden="true" className="text-on-muted" size={16} />
         </button>
       </div>
+      <WalletHelpLink />
       <p className="mt-4 text-center text-xs text-on-muted">
         Connecting a wallet lets you sign in — we never take custody of your funds.
       </p>

@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseEther } from 'viem';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import WalletHelpLink from '@/components/help/WalletHelpLink';
 import { Modal } from '@/components/ui/Modal';
 import { contractAddress, abi } from '@/config/abi';
 
@@ -97,6 +98,7 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
             You&apos;re about to buy <span className="text-white font-medium">{label}</span> for{' '}
             <span className="text-white font-medium">{price}</span>.
           </p>
+          <WalletHelpLink />
           <div className="flex justify-end gap-3">
             <button
               className="px-4 py-2 rounded-2xl text-sm text-on-muted hover:text-white transition-colors"

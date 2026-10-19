@@ -6,7 +6,9 @@ import { getWalletConnectionErrorMessage } from '@/lib/walletErrors';
 
 /** Shared UI entry point for wallet provider connection callbacks. */
 export function showWalletConnectionError(error: unknown): void {
-  toast.error(getWalletConnectionErrorMessage(error));
+  toast.error(getWalletConnectionErrorMessage(error), {
+    action: { label: 'Wallet guide', onClick: () => window.location.assign('/help/wallet') },
+  });
 }
 
 /**

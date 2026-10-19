@@ -9,6 +9,7 @@ import {
   useCallback,
   ReactNode,
 } from 'react';
+import { isTrackAvailable, shuffleTracks } from '@/lib/tracks';
 
 export type Track = {
   id: string;
@@ -16,6 +17,10 @@ export type Track = {
   artist: string;
   cover: string;
   url?: string;
+  duration?: number;
+  available?: boolean;
+  flagged?: boolean;
+  status?: string;
 };
 
 // ── Queue types (#116) ────────────────────────────────────────────────────
@@ -73,6 +78,7 @@ type PlaybackState = {
 };
 
 type PlaybackAction =
+  | { type: 'PLAY_TRACKS'; tracks: Track[]; shuffle: boolean }
   | { type: 'PLAY' }
   | { type: 'PAUSE' }
   | { type: 'NEXT' }
@@ -109,6 +115,7 @@ type PlaybackAction =
 
 export type PlaybackContextValue = PlaybackState & {
   playTrack: (track: Track) => void;
+  playTracks: (tracks: Track[], shuffle?: boolean) => void;
   enqueueTrack: (track: Track) => void;
   play: () => void;
   pause: () => void;
@@ -197,7 +204,7 @@ function containsUnsafeObjectKeys(value: unknown): boolean {
         key === '__proto__' ||
         key === 'prototype' ||
         key === 'constructor' ||
-        containsUnsafeObjectKeys(nestedValue),
+        containsUnsafeObjectKeys(nestedValue)
     );
   }
 
@@ -250,15 +257,40 @@ const initialState: PlaybackState = {
 // ── Reducer ───────────────────────────────────────────────────────────────
 
 function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
+  // Guard every public queue entry point, including context-menu actions.
+  if (
+    'track' in action &&
+    !isTrackAvailable(action.track) &&
+    ['PLAY_TRACK', 'ENQUEUE_TRACK', 'ADD_TO_QUEUE'].includes(action.type)
+  )
+    return state;
   switch (action.type) {
+    case 'PLAY_TRACKS': {
+      const playable = action.tracks.filter(isTrackAvailable);
+      const tracks = action.shuffle ? shuffleTracks(playable) : playable;
+      if (!tracks.length) return state;
+      return {
+        ...state,
+        playlist: tracks,
+        currentIndex: 0,
+        queue: tracks.slice(1),
+        shuffle: false,
+        isPlaying: true,
+        trackError: null,
+      };
+    }
     case 'PLAY':
-      return { ...state, isPlaying: true, trackError: null };
+      return isTrackAvailable(state.playlist[state.currentIndex])
+        ? { ...state, isPlaying: true, trackError: null }
+        : state;
     case 'PAUSE':
       return { ...state, isPlaying: false };
-    case 'NEXT': {
+    case 'NEXT':
+    case 'ADVANCE_QUEUE': {
       // If queue has items, advance from queue first (#116).
-      if (state.queue.length > 0) {
-        const [next, ...rest] = state.queue;
+      const validQueue = state.queue.filter(isTrackAvailable);
+      if (validQueue.length > 0) {
+        const [next, ...rest] = validQueue;
         const existing = state.playlist.findIndex((t) => t.id === next.id);
         if (existing >= 0) {
           return {
@@ -278,18 +310,29 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
           trackError: null,
         };
       }
+      const indices = state.playlist.flatMap((track, index) =>
+        isTrackAvailable(track) ? [index] : []
+      );
+      if (!indices.length) return { ...state, queue: [], isPlaying: false };
       const nextIndex = state.shuffle
-        ? Math.floor(Math.random() * state.playlist.length)
-        : (state.currentIndex + 1) % state.playlist.length;
-      return { ...state, currentIndex: nextIndex, isPlaying: true, trackError: null };
+        ? indices[Math.floor(Math.random() * indices.length)]
+        : (indices.find((index) => index > state.currentIndex) ?? indices[0]);
+      return { ...state, queue: [], currentIndex: nextIndex, isPlaying: true, trackError: null };
     }
     case 'PREV': {
+      const indices = state.playlist.flatMap((track, index) =>
+        isTrackAvailable(track) ? [index] : []
+      );
       const prevIndex =
-        state.currentIndex === 0 ? state.playlist.length - 1 : state.currentIndex - 1;
-      return { ...state, currentIndex: prevIndex, isPlaying: true, trackError: null };
+        indices.filter((index) => index < state.currentIndex).pop() ?? indices[indices.length - 1];
+      return prevIndex === undefined
+        ? { ...state, isPlaying: false }
+        : { ...state, currentIndex: prevIndex, isPlaying: true, trackError: null };
     }
     case 'SET_INDEX':
-      return { ...state, currentIndex: action.index, isPlaying: true, trackError: null };
+      return isTrackAvailable(state.playlist[action.index])
+        ? { ...state, currentIndex: action.index, isPlaying: true, trackError: null }
+        : state;
     case 'SET_VOLUME':
       return { ...state, volume: action.volume, isMuted: false };
     case 'TOGGLE_MUTE':
@@ -355,35 +398,6 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
     }
     case 'CLEAR_QUEUE':
       return { ...state, queue: [] };
-    case 'ADVANCE_QUEUE': {
-      if (state.queue.length > 0) {
-        const [next, ...rest] = state.queue;
-        const existing = state.playlist.findIndex((t) => t.id === next.id);
-        if (existing >= 0) {
-          return {
-            ...state,
-            queue: rest,
-            currentIndex: existing,
-            isPlaying: true,
-            trackError: null,
-          };
-        }
-        return {
-          ...state,
-          queue: rest,
-          playlist: [...state.playlist, next],
-          currentIndex: state.playlist.length,
-          isPlaying: true,
-          trackError: null,
-        };
-      }
-      // No queue — advance in playlist.
-      const nextIdx = state.shuffle
-        ? Math.floor(Math.random() * state.playlist.length)
-        : (state.currentIndex + 1) % state.playlist.length;
-      return { ...state, currentIndex: nextIdx, isPlaying: true, trackError: null };
-    }
-
     // ── History (#117) ──────────────────────────────────────────────────
 
     case 'RECORD_PLAY': {
@@ -433,7 +447,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   // Hydrate queue, history, and volume from localStorage on mount (#121).
   const hydratedState: PlaybackState = {
     ...initialState,
-    queue: loadFromStorage<Track[]>(QUEUE_STORAGE_KEY, []),
+    queue: loadFromStorage<Track[]>(QUEUE_STORAGE_KEY, []).filter(isTrackAvailable),
     history: loadFromStorage<PlaybackEvent[]>(HISTORY_STORAGE_KEY, []),
     recentlyPlayed: loadFromStorage<Track[]>(RECENTLY_PLAYED_STORAGE_KEY, []),
     // #121: restore volume and muted state from the device so the user's
@@ -477,6 +491,11 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveToStorage(GAPPLESS_STORAGE_KEY, state.gapless);
   }, [state.gapless]);
+
+  const addToRecentlyPlayed = useCallback(
+    (track: Track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
+    []
+  );
 
   const setAutoplayBlocked = useCallback(
     (blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }),
@@ -548,10 +567,11 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       toggleShuffle: () => dispatch({ type: 'TOGGLE_SHUFFLE' }),
       toggleRepeat: () => dispatch({ type: 'TOGGLE_REPEAT' }),
       playTrack: (track) => dispatch({ type: 'PLAY_TRACK', track }),
+      playTracks: (tracks, shuffle = false) => dispatch({ type: 'PLAY_TRACKS', tracks, shuffle }),
       enqueueTrack: (track) => dispatch({ type: 'ENQUEUE_TRACK', track }),
       setError: (error) => dispatch({ type: 'SET_ERROR', error }),
       dismissError: () => dispatch({ type: 'DISMISS_ERROR' }),
-      addToRecentlyPlayed: (track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
+      addToRecentlyPlayed,
       clearRecentlyPlayed: () => dispatch({ type: 'CLEAR_RECENTLY_PLAYED' }),
       autoplayBlocked: state.autoplayBlocked,
       setAutoplayBlocked,
@@ -576,6 +596,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     }),
     [
       state,
+      addToRecentlyPlayed,
       setAutoplayBlocked,
       resumeAudio,
       addToQueue,

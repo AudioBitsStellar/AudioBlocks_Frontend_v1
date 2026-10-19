@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useQueryClient } from '@tanstack/react-query';
-import { RecentlyPlayed } from '@/components/common/home/RecentlyPlayed';
+import { RecentlyPlayed } from '@/components/common/RecentlyPlayed';
 import LazySection from '@/components/common/LazySection';
 import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -43,7 +43,7 @@ export default function HomeSections() {
   return (
     <>
       <PullToRefreshIndicator {...pullToRefresh} />
-      <RecentlyPlayed />
+      <RecentlyPlayed variant="home" />
 
       <LazySection minHeight={360}>
         <Featured />

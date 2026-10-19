@@ -9,7 +9,7 @@ import Collections from '@/components/common/dashboard/Collections';
 import EventSection from '@/components/common/dashboard/EventSection';
 import Merch from '@/components/common/dashboard/Merch';
 import PersonalizationRow from '@/components/common/dashboard/PersonalizationRow';
-import RecentlyPlayed from '@/components/common/dashboard/RecentlyPlayed';
+import { RecentlyPlayed } from '@/components/common/RecentlyPlayed';
 import DataErrorBoundary from '@/components/common/DataErrorBoundary';
 import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
 import { ProfileCompletion } from '@/components/dashboard/ProfileCompletion';
@@ -77,7 +77,7 @@ const ExplorePage = () => {
         docs/ERROR_BOUNDARIES.md for applying this to Collection/Community/Playlist.
       */}
       <DataErrorBoundary name="Recently Played">
-        <RecentlyPlayed />
+        <RecentlyPlayed variant="dashboard" />
       </DataErrorBoundary>
 
       <DataErrorBoundary name="For You">
