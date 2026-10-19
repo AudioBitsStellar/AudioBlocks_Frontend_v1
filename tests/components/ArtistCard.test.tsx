@@ -47,7 +47,7 @@ describe('ArtistCard Component', () => {
       expect(screen.getByText(/12 collections/i)).toBeInTheDocument();
       expect(screen.getByTestId('artist-link')).toHaveAttribute(
         'href',
-        '/dashboard/artist/artist-1'
+        '/artist/artist-1'
       );
     });
 
