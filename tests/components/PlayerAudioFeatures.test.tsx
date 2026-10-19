@@ -100,6 +100,8 @@ const createMockContext = (
   isCrossfading: false,
   normalizeAudio: true,
   gapless: true,
+  sleepTimer: null,
+  sleepFade: 1,
   play: vi.fn(),
   pause: vi.fn(),
   next: vi.fn(),

@@ -43,7 +43,7 @@ describe('release page', () => {
     expect(screen.getByRole('heading', { name: 'New EP' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'The artist' })).toHaveAttribute(
       'href',
-      '/dashboard/artist/artist'
+      '/artist/artist'
     );
     expect(screen.getByText('2:01')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Play release' })).toBeEnabled();

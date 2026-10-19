@@ -12,11 +12,12 @@ import {
 } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import apiClient from '@/lib/apiClient';
+import { normalizeAudioQuality, type AudioQuality } from '@/lib/streamQuality';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export type { AudioQuality };
 export type ColorScheme = 'system' | 'light' | 'dark';
-export type AudioQuality = 'auto' | 'low' | 'medium' | 'high';
 
 export interface UserPreferences {
   colorScheme: ColorScheme;
@@ -60,9 +61,17 @@ const SYNC_DEBOUNCE_MS = 1500;
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function UserPreferencesProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useLocalStorage<UserPreferences>(
+  const [storedPreferences, setPreferences] = useLocalStorage<UserPreferences>(
     PREFS_STORAGE_KEY,
     DEFAULT_PREFERENCES
+  );
+  // Values saved before #590 (`low`, `medium`) are mapped to the current quality names.
+  const preferences = useMemo<UserPreferences>(
+    () => ({
+      ...storedPreferences,
+      audioQuality: normalizeAudioQuality(storedPreferences.audioQuality),
+    }),
+    [storedPreferences]
   );
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -128,4 +137,9 @@ export function useUserPreferences(): UserPreferencesContextValue {
   const ctx = useContext(UserPreferencesContext);
   if (!ctx) throw new Error('useUserPreferences must be used inside UserPreferencesProvider');
   return ctx;
+}
+
+/** Like `useUserPreferences`, but returns null outside the provider instead of throwing. */
+export function useOptionalUserPreferences(): UserPreferencesContextValue | null {
+  return useContext(UserPreferencesContext);
 }

@@ -5,6 +5,10 @@ import { Mail, Wallet, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useRecentlyPlayed } from '@/hooks/useRecentlyPlayed';
+import { useUserPreferences, type AudioQuality } from '@/context/UserPreferencesContext';
+import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
+import DataSaverToggle from '@/components/help/DataSaverToggle';
+import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
 
 function LinkedAccountsList() {
   const { user, handleUnlinkWallet } = useDynamicContext();
@@ -104,10 +108,18 @@ function ListeningHistorySection() {
 }
 
 const QUALITY_OPTIONS: { value: AudioQuality; label: string; description: string }[] = [
-  { value: 'auto', label: 'Auto', description: 'Adapt quality based on your connection speed' },
-  { value: 'low', label: 'Low', description: 'Uses less data, lower audio fidelity' },
-  { value: 'medium', label: 'Medium', description: 'Balanced quality and data usage' },
-  { value: 'high', label: 'High', description: 'Best audio quality, uses more data' },
+  {
+    value: 'auto',
+    label: 'Auto',
+    description: 'Adapt quality to your connection. Uses data saver when Save-Data is on.',
+  },
+  {
+    value: 'data-saver',
+    label: 'Data saver',
+    description: 'Streams at up to 64 kbps. Best for metered mobile data.',
+  },
+  { value: 'normal', label: 'Normal', description: 'Streams at up to 128 kbps.' },
+  { value: 'high', label: 'High', description: 'Streams at up to 256 kbps. Uses the most data.' },
 ];
 
 export default function SettingsPage() {
@@ -132,6 +144,10 @@ export default function SettingsPage() {
         <h2 className="text-lg font-semibold text-white mb-4">Audio Quality</h2>
         <p className="text-sm text-gray-400 mb-4">
           Choose the default audio streaming quality for your playback experience.
+        </p>
+        <p className="text-xs text-gray-400 mb-4">
+          Safari plays streams natively and cannot cap the bitrate, so these limits only apply in
+          other browsers.
         </p>
         <div className="grid gap-3">
           {QUALITY_OPTIONS.map((option) => (

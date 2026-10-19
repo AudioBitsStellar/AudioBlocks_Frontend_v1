@@ -14,7 +14,7 @@
  */
 
 /** Names of the flags understood by the app. */
-export type FeatureFlagName = 'merch' | 'events' | 'communityVoting';
+export type FeatureFlagName = 'merch' | 'events' | 'communityVoting' | 'artistPerks';
 
 /** Static metadata for a single feature flag. */
 export interface FeatureFlagDefinition {
@@ -47,6 +47,11 @@ export const FEATURE_FLAGS: Record<FeatureFlagName, FeatureFlagDefinition> = {
       '/api/community/votes/me',
     ],
   },
+  artistPerks: {
+    envVar: 'NEXT_PUBLIC_FEATURE_ARTIST_PERKS',
+    description: 'Fan perks section on the public artist page (#586)',
+    pendingEndpoints: ['/api/artists/:artistId/perks'],
+  },
 };
 
 const TRUTHY_VALUES = new Set(['true', '1', 'on', 'yes']);
@@ -66,6 +71,8 @@ function readFlagValue(flag: FeatureFlagName): string | undefined {
       return process.env.NEXT_PUBLIC_FEATURE_EVENTS;
     case 'communityVoting':
       return process.env.NEXT_PUBLIC_FEATURE_COMMUNITY_VOTING;
+    case 'artistPerks':
+      return process.env.NEXT_PUBLIC_FEATURE_ARTIST_PERKS;
   }
 }
 

@@ -118,12 +118,12 @@ export function validateEnv(): ValidationResult {
     });
   }
 
-  // Required: NEXT_PUBLIC_DYNAMIC_ENV_ID
-  if (!process.env.NEXT_PUBLIC_DYNAMIC_ENV_ID) {
+  // Required: NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID
+  if (!process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID) {
     errors.push({
-      variable: 'NEXT_PUBLIC_DYNAMIC_ENV_ID',
+      variable: 'NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID',
       message: 'Missing required environment variable',
-      solution: 'Set NEXT_PUBLIC_DYNAMIC_ENV_ID with your Dynamic Labs environment ID',
+      solution: 'Set NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID with your Dynamic Labs environment ID',
     });
   }
 
@@ -154,7 +154,7 @@ export function getEnvConfig(): EnvConfig {
     usdcAddress: process.env.NEXT_PUBLIC_USDC_ADDRESS!,
     apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL!,
     apiTimeout: Number(process.env.NEXT_PUBLIC_API_TIMEOUT || 30000),
-    dynamicEnvId: process.env.NEXT_PUBLIC_DYNAMIC_ENV_ID!,
+    dynamicEnvId: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID!,
     segmentWriteKey: process.env.NEXT_PUBLIC_SEGMENT_WRITE_KEY,
     logLevel: (process.env.NEXT_PUBLIC_LOG_LEVEL || 'info') as EnvConfig['logLevel'],
     enableDevtools: process.env.NEXT_PUBLIC_ENABLE_DEVTOOLS === 'true',

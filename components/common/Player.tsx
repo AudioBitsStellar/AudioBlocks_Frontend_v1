@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { AnimatePresence } from 'framer-motion';
 import { AlertCircle, X } from 'lucide-react';
@@ -9,8 +9,6 @@ import { PlayerActions } from '@/components/player/PlayerActions';
 import { PlayerControls } from '@/components/player/PlayerControls';
 import { ProgressBar } from '@/components/player/ProgressBar';
 import { usePlayback } from '@/context/PlaybackContext';
-import { useAudioEngine } from '@/hooks/player/useAudioEngine';
-import { usePlayerKeyboard } from '@/hooks/player/usePlayerKeyboard';
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { useQueuedAudio } from '@/hooks/useQueuedAudio';
 import { FullScreenPlayer } from './FullScreenPlayer';
@@ -18,7 +16,11 @@ import { FullScreenPlayer } from './FullScreenPlayer';
 // Lazy-load CommentPanel to reduce initial bundle size
 const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
   loading: () => (
-    <div className="fixed bottom-0 right-0 bg-[#1e1e1e] w-80 h-20 flex items-center justify-center text-gray-400">
+    <div
+      aria-live="polite"
+      className="fixed bottom-0 right-0 bg-[#1e1e1e] w-80 h-20 flex items-center justify-center text-gray-400"
+      role="status"
+    >
       Loading comments...
     </div>
   ),
@@ -26,10 +28,12 @@ const CommentPanel = dynamic(() => import('./dashboard/Comment'), {
 });
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
+const COMMENT_PANEL_ID = 'comment-panel';
 
 /**
- * Main Player Component — a composition layer (#602). Audio behavior lives in
- * `hooks/player/useAudioEngine.ts`; UI pieces live in `components/player/`.
+ * Main Player Component — a composition layer (#602). Playback runs in
+ * `hooks/useQueuedAudio.ts`, which owns the two audio decks and HLS sources;
+ * UI pieces live in `components/player/`.
  */
 const Player = () => {
   const playback = usePlayback();
@@ -46,6 +50,7 @@ const Player = () => {
     isCrossfading,
     normalizeAudio,
     gapless,
+    sleepTimer,
     play,
     pause,
     next,
@@ -55,14 +60,13 @@ const Player = () => {
     toggleShuffle,
     toggleRepeat,
     dismissError,
-    setAutoplayBlocked,
     resumeAudio,
     setNormalizeAudio,
     setGapless,
+    addToRecentlyPlayed,
+    setSleepTimer,
+    cancelSleepTimer,
   } = playback;
-
-  const engine = useAudioEngine(playback);
-  const { audioRef, streamUrl, duration, isBuffering } = engine;
 
   const {
     audioRef,
@@ -73,11 +77,17 @@ const Player = () => {
     streamUrl,
     playbackSpeed,
     setPlaybackSpeed,
+    streamQuality,
   } = useQueuedAudio();
   const [showComments, setShowComments] = useState(false);
+  const commentsTriggerRef = useRef<HTMLButtonElement | null>(null);
+  // Hand focus back to the trigger so keyboard users land where they were.
+  const closeComments = useCallback(() => {
+    setShowComments(false);
+    commentsTriggerRef.current?.focus();
+  }, []);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const currentTrack = playlist[currentIndex];
   const trackId = currentTrack?.id || `track-${currentIndex}`;
   const trackAnnouncement = currentTrack
@@ -94,6 +104,10 @@ const Player = () => {
       play();
     }
   }, [isPlaying, pause, play, resumeAudio]);
+  const unlockAutoplay = useCallback(() => {
+    resumeAudio();
+    play();
+  }, [play, resumeAudio]);
   useMediaSession({
     track: currentTrack
       ? { title: currentTrack.title, artist: currentTrack.artist, cover: currentTrack.cover }
@@ -176,7 +190,7 @@ const Player = () => {
           shuffle={shuffle}
           onNext={next}
           onPrev={prev}
-          onTogglePlay={engine.togglePlay}
+          onTogglePlay={handleTogglePlay}
           onToggleRepeat={toggleRepeat}
           onToggleShuffle={toggleShuffle}
         />
@@ -196,15 +210,22 @@ const Player = () => {
         </NowPlayingInfo>
 
         <PlayerActions
+          commentsExpanded={showComments}
+          commentsPanelId={COMMENT_PANEL_ID}
+          commentsTriggerRef={commentsTriggerRef}
           gapless={gapless}
           isMuted={isMuted}
           normalizeAudio={normalizeAudio}
-          playbackSpeed={engine.playbackSpeed}
+          playbackSpeed={playbackSpeed}
+          sleepTimer={sleepTimer}
+          streamQuality={streamQuality}
           volume={volume}
+          onCancelSleepTimer={cancelSleepTimer}
           onGaplessChange={setGapless}
           onNormalizeAudioChange={setNormalizeAudio}
           onOpenComments={() => setShowComments(true)}
-          onPlaybackSpeedChange={engine.setPlaybackSpeed}
+          onPlaybackSpeedChange={setPlaybackSpeed}
+          onSelectSleepTimer={setSleepTimer}
           onToggleMute={toggleMute}
           onVolumeChange={setVolume}
         />
@@ -216,7 +237,9 @@ const Player = () => {
         <span className="sr-only" data-crossfading={isCrossfading ? 'true' : 'false'} />
       </div>
 
-      {showComments && <CommentPanel trackId={trackId} onClose={() => setShowComments(false)} />}
+      {showComments && (
+        <CommentPanel id={COMMENT_PANEL_ID} trackId={trackId} onClose={closeComments} />
+      )}
       <AnimatePresence>
         {isFullScreen && (
           <FullScreenPlayer
@@ -225,9 +248,12 @@ const Player = () => {
             audioSrc={streamUrl}
             cover={coverSrc}
             duration={duration}
+            sleepTimer={sleepTimer}
             title={currentTrack?.title}
             trackKey={trackId}
+            onCancelSleepTimer={cancelSleepTimer}
             onClose={() => setIsFullScreen(false)}
+            onSelectSleepTimer={setSleepTimer}
           />
         )}
       </AnimatePresence>

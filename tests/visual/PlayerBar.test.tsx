@@ -86,6 +86,11 @@ describe('PlayerBar Visual Regression (DOM Snapshots)', () => {
     setCrossfading: vi.fn(),
     setNormalizeAudio: vi.fn(),
     setGapless: vi.fn(),
+    sleepTimer: null,
+    sleepFade: 1,
+    setSleepTimer: vi.fn(),
+    cancelSleepTimer: vi.fn(),
+    expireSleepTimer: vi.fn(),
   };
 
   const setViewport = (width: number) => {

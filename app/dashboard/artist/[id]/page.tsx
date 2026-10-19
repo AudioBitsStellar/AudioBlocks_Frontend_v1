@@ -1,83 +1,9 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { use, useMemo } from 'react';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import { artistsData } from '@/components/common/dashboard/data';
-import ArtistReleases from '@/components/releases/ArtistReleases';
-import { ArtworkImage } from '@/components/ui/ArtworkImage';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
-import { useNFTCollection } from '@/hooks/useNFTCollection';
-import { shortenId } from '@/lib/stellarExplorer';
+type Props = { params: Promise<{ id: string }> };
 
-export default function ArtistDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const { songs, isLoading } = useNFTCollection();
-
-  const artistInfo = useMemo(() => {
-    return artistsData.find((artist) => artist.id === parseInt(id));
-  }, [id]);
-
-  const artistSongs = useMemo(() => {
-    if (isLoading) return undefined;
-    return songs.filter((s) => s.artistAddress === id);
-  }, [songs, id, isLoading]);
-
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-32 w-full rounded-xl" />
-      </div>
-    );
-  }
-
-  // Releases can exist before an artist has minted an on-chain song.
-  if (!id) notFound();
-
-  return (
-    <div className="p-6">
-      <Link
-        className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors"
-        href="/dashboard/all-artists"
-      >
-        <ArrowLeft size={16} />
-        Back to Artists
-      </Link>
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-2 break-all">
-            {artistInfo?.song || `Artist: ${id}`}
-          </h1>
-          <div className="flex items-center gap-3">
-            <p className="text-sm text-gray-400">{artistInfo?.description || 'Unknown'}</p>
-            {artistInfo?.isVerified && <VerifiedBadge size="sm" />}
-          </div>
-        </div>
-      </div>
-      <ArtistReleases artistId={id} />
-      <p className="text-sm text-gray-400 mb-4">{artistSongs?.length || 0} track(s)</p>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {artistSongs?.map((song, i) => (
-          <div key={i} className="bg-surface-elevated rounded-lg overflow-hidden">
-            <div className="relative aspect-square">
-              <ArtworkImage
-                fill
-                alt={`Cover art for ${shortenId(song.songCID, 8, 4)}`}
-                className="object-cover"
-                sizes="(max-width: 768px) 50vw, 25vw"
-                src="/audio.jpg"
-                title={shortenId(song.songCID, 8, 4)}
-              />
-            </div>
-            <div className="p-3">
-              <p className="text-sm text-white truncate">{song.songCID}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+/** Artist pages moved to the public `/artist/[id]` route (#586). This keeps old links working. */
+export default async function LegacyArtistPage({ params }: Props) {
+  const { id } = await params;
+  redirect(`/artist/${encodeURIComponent(id)}`);
 }

@@ -138,7 +138,7 @@ Required API:
 - NEXT_PUBLIC_API_BASE_URL (valid URL)
 
 Required Auth:
-- NEXT_PUBLIC_DYNAMIC_ENV_ID (string)
+- NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID (string)
 
 Optional:
 - NEXT_PUBLIC_LOG_LEVEL (debug|info|warn|error)

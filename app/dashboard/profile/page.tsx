@@ -1,12 +1,21 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Headphones, History } from 'lucide-react';
+import { Headphones, History, LogIn, UserPlus } from 'lucide-react';
+import ErrorState from '@/components/common/ErrorState';
+import { useLogout } from '@/hooks/useLogout';
 import { useGetProfile } from '@/hooks/useProfile';
+import { AuthError, NotFoundError } from '@/lib/apiClient';
 
 const ProfileSkeleton = () => (
-  <div className="bg-[#1E1F23] p-8 py-13 rounded-lg flex justify-between animate-pulse">
+  <div
+    aria-busy="true"
+    aria-label="Loading profile"
+    className="bg-[#1E1F23] p-8 py-13 rounded-lg flex justify-between animate-pulse"
+    role="status"
+  >
     <div className="flex items-center w-3/5 gap-4">
       <div
         className="w-26 h-26 rounded-lg bg-gray-700 shrink-0"
@@ -21,9 +30,79 @@ const ProfileSkeleton = () => (
   </div>
 );
 
+const buttonClass =
+  'flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand hover:bg-brand-hover rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+
+/**
+ * Error branch of the profile page. Distinguishes an expired session, a profile
+ * that has not been created yet and any other failure (network, 5xx).
+ */
+const ProfileError = ({
+  error,
+  onRetry,
+  isRetrying,
+}: {
+  error: unknown;
+  onRetry: () => void;
+  isRetrying: boolean;
+}) => {
+  const { logout, isLoggingOut } = useLogout();
+
+  if (error instanceof AuthError) {
+    return (
+      <div className="bg-[#1E1F23] rounded-lg">
+        <ErrorState
+          illustration={<LogIn className="text-brand" size={48} />}
+          message="Your session has expired. Sign in again to see your profile."
+          title="You're signed out"
+        />
+        <div className="flex justify-center pb-10">
+          <button
+            className={buttonClass}
+            disabled={isLoggingOut}
+            type="button"
+            onClick={() => logout({ redirectTo: '/', showToast: false })}
+          >
+            Sign in again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (error instanceof NotFoundError) {
+    return (
+      <div className="bg-[#1E1F23] rounded-lg">
+        <ErrorState
+          illustration={<UserPlus className="text-brand" size={48} />}
+          message="We couldn't find a profile for your account yet. Add a few details to get started."
+          title="Finish setting up your profile"
+        />
+        <div className="flex justify-center pb-10">
+          <Link className={buttonClass} href="/dashboard/profile/edit">
+            Set up profile
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-[#1E1F23] rounded-lg">
+      <ErrorState
+        isRetrying={isRetrying}
+        message="We couldn't load your profile. Check your connection and try again."
+        title="Failed to load profile"
+        variant="network"
+        onRetry={onRetry}
+      />
+    </div>
+  );
+};
+
 const ProfilePage = () => {
   const router = useRouter();
-  const { data: profile, isLoading, isError } = useGetProfile();
+  const { data: profile, isLoading, isError, error, refetch, isRefetching } = useGetProfile();
 
   const joinedLabel = profile?.joinedAt
     ? `Joined ${new Date(profile.joinedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
@@ -36,9 +115,7 @@ const ProfilePage = () => {
       {isLoading ? (
         <ProfileSkeleton />
       ) : isError ? (
-        <div className="bg-[#1E1F23] p-8 rounded-lg text-red-400 text-sm">
-          Failed to load profile. Please refresh the page.
-        </div>
+        <ProfileError error={error} isRetrying={isRefetching} onRetry={() => void refetch()} />
       ) : (
         <div className="bg-[#1E1F23] p-8 py-13 rounded-lg text-white flex justify-between">
           <div className="flex items-center w-3/5">
