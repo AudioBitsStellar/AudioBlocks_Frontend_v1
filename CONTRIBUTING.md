@@ -120,6 +120,14 @@ Add or update tests for any behavior you change. UI changes touching
 interactive components should also be checked against the accessibility
 guidelines above.
 
+### Dependency security audit
+
+The required dependency check is `security / dependency-audit` from
+`.github/workflows/security.yml`. It runs `npm audit --audit-level=high` for
+pull requests that change `package.json` or `package-lock.json`, and on the
+weekly schedule. High and critical advisories fail the check; lower severities
+do not block it.
+
 ## Mocking the API (MSW)
 
 [Mock Service Worker](https://mswjs.io/) answers API requests with fixtures

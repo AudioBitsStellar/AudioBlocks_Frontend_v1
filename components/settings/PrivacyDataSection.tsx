@@ -1,13 +1,13 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { useAnalyticsConsent } from '@/hooks/useAnalyticsConsent';
 import {
   useAccountDeletionStatus,
   useCancelAccountDeletion,
   useExportAccountData,
   useRequestAccountDeletion,
 } from '@/hooks/useAccountPrivacy';
+import { useAnalyticsConsent } from '@/hooks/useAnalyticsConsent';
 import { ACCOUNT_DELETION_CONFIRMATION_PHRASE } from '@/lib/accountService';
 import { setAnalyticsConsent } from '@/lib/analyticsConsent';
 
@@ -78,6 +78,11 @@ function DataExport() {
       >
         {exportData.isPending ? 'Preparing…' : 'Download'}
       </button>
+      {exportData.isError && (
+        <p className="text-xs text-red-400" role="alert">
+          Could not export your data. Please try again later.
+        </p>
+      )}
     </div>
   );
 }
@@ -129,10 +134,21 @@ function DeleteAccount() {
           that time.
         </p>
         <p className="text-amber-300">
-          NFTs and transactions recorded on-chain are permanent. Deleting your account cannot
-          remove them.
+          NFTs and transactions recorded on-chain are permanent. Deleting your account cannot remove
+          them.
         </p>
       </div>
+
+      {statusQuery.isError && (
+        <p className="mt-3 text-sm text-red-400" role="alert">
+          Could not load account deletion status. Please try again.
+        </p>
+      )}
+      {requestDeletion.isError && (
+        <p className="mt-3 text-sm text-red-400" role="alert">
+          Could not schedule account deletion. Please try again.
+        </p>
+      )}
 
       <form
         className="mt-4 flex flex-col gap-2"
