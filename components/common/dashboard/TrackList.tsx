@@ -3,7 +3,7 @@
 import { useCallback, useRef, type KeyboardEvent } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import AudioCard, { type AudioCardVariant } from '@/components/ui/AudioCard';
-import { usePlayback, type Track } from '@/context/PlaybackContext';
+import { usePlaybackActions, type Track } from '@/context/PlaybackContext';
 
 export type TrackListItem = Track & { duration?: string; variant?: AudioCardVariant };
 
@@ -14,7 +14,7 @@ const estimatedHeights: Record<AudioCardVariant, number> = {
 };
 
 export default function TrackList({ tracks }: { tracks: TrackListItem[] }) {
-  const { playTrack } = usePlayback();
+  const { playTrack } = usePlaybackActions();
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({

@@ -47,6 +47,8 @@ process.env.NEXT_PUBLIC_SITE_URL = 'http://localhost:3000';
 process.env.NEXT_PUBLIC_RPC_URL = 'http://localhost:8545';
 process.env.NEXT_PUBLIC_CONTRACT_ADDRESS = '0x1234567890123456789012345678901234567890';
 process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID = 'test-env-id';
+// Tests rely on the demo fixtures (default playlist, listings); production leaves this unset.
+process.env.NEXT_PUBLIC_USE_DEMO_DATA = 'true';
 
 // #603: API calls in unit tests are answered by the shared MSW handlers.
 beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));

@@ -5,11 +5,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { artistsData } from '@/components/common/dashboard/data';
+import { demoOr } from '@/lib/fixtures';
+import { artistsData as demoArtistsData } from '@/lib/fixtures/dashboard';
 import ArtistReleases from '@/components/releases/ArtistReleases';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
+
+const artistsData = demoOr(demoArtistsData, []);
 
 export default function ArtistDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);

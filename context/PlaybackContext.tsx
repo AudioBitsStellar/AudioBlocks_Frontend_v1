@@ -2,13 +2,18 @@
 
 import {
   createContext,
+  use,
   useContext,
   useReducer,
   useEffect,
+  useLayoutEffect,
   useMemo,
-  useCallback,
+  useRef,
+  useSyncExternalStore,
   ReactNode,
 } from 'react';
+import { demoOr } from '@/lib/fixtures';
+import { demoPlaylist } from '@/lib/fixtures/playback';
 import { isTrackAvailable, shuffleTracks } from '@/lib/tracks';
 
 export type Track = {
@@ -43,7 +48,7 @@ export function clampCrossfadeDuration(seconds: number): number {
   return Math.min(5, Math.max(0, seconds));
 }
 
-type PlaybackState = {
+export type PlaybackState = {
   playlist: Track[];
   currentIndex: number;
   isPlaying: boolean;
@@ -157,26 +162,19 @@ export type PlaybackContextValue = PlaybackState & {
   setGapless: (enabled: boolean) => void;
 };
 
-const defaultPlaylist: Track[] = [
-  {
-    id: 'track-1',
-    title: 'Relax and Unwind',
-    artist: 'Rozé',
-    cover: '/AFRO.jpg',
-  },
-  {
-    id: 'track-2',
-    title: 'Vibe Mix',
-    artist: 'Yemi Sax',
-    cover: '/AFRO.jpg',
-  },
-  {
-    id: 'track-3',
-    title: 'Cool Session',
-    artist: 'Dunsin',
-    cover: '/AFRO.jpg',
-  },
-];
+/**
+ * Every action function exposed by the provider. These have a stable identity
+ * for the lifetime of the provider, so components that only call actions never
+ * re-render when playback state changes.
+ */
+export type PlaybackActions = {
+  [K in keyof PlaybackContextValue as PlaybackContextValue[K] extends (...args: never[]) => unknown
+    ? K
+    : never]: PlaybackContextValue[K];
+};
+
+/** The player starts with the demo playlist only when demo data is enabled; otherwise it starts empty. */
+const defaultPlaylist: Track[] = demoOr(demoPlaylist, []);
 
 const HISTORY_MAX = 200;
 
@@ -441,7 +439,40 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
 
 // ── Context ───────────────────────────────────────────────────────────────
 
+/** Full state plus actions. Prefer the narrower hooks below in new code. */
 export const PlaybackContext = createContext<PlaybackContextValue | null>(null);
+/** Reducer state only; changes on every state update. */
+export const PlaybackStateContext = createContext<PlaybackState | null>(null);
+/** Action functions only; the value never changes. */
+export const PlaybackActionsContext = createContext<PlaybackActions | null>(null);
+
+interface PlaybackStore {
+  getState: () => PlaybackState;
+  subscribe: (listener: () => void) => () => void;
+  set: (next: PlaybackState) => void;
+}
+
+/** Holder for the latest state that `useSyncExternalStore` subscribers read from. Its identity never changes. */
+const PlaybackStoreContext = createContext<PlaybackStore | null>(null);
+
+function createPlaybackStore(initial: PlaybackState): PlaybackStore {
+  let current = initial;
+  const listeners = new Set<() => void>();
+  return {
+    getState: () => current,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    set: (next) => {
+      if (Object.is(next, current)) return;
+      current = next;
+      listeners.forEach((listener) => listener());
+    },
+  };
+}
+
+const noopSubscribe = () => () => {};
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
   // Hydrate queue, history, and volume from localStorage on mount (#121).
@@ -492,71 +523,15 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     saveToStorage(GAPPLESS_STORAGE_KEY, state.gapless);
   }, [state.gapless]);
 
-  const addToRecentlyPlayed = useCallback(
-    (track: Track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
-    []
-  );
+  // Latest history for `getRecentlyPlayed`, so that action stays stable while
+  // still reading current data.
+  const historyRef = useRef(state.history);
+  historyRef.current = state.history;
 
-  const setAutoplayBlocked = useCallback(
-    (blocked: boolean) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }),
-    []
-  );
-  const resumeAudio = useCallback(() => dispatch({ type: 'RESUME_AUDIO' }), []);
-
-  // Queue actions (#116)
-  const addToQueue = useCallback((track: Track, position: QueuePosition = 'last') => {
-    dispatch({ type: 'ADD_TO_QUEUE', track, position });
-  }, []);
-  const removeFromQueue = useCallback((index: number) => {
-    dispatch({ type: 'REMOVE_FROM_QUEUE', index });
-  }, []);
-  const reorderQueue = useCallback((fromIndex: number, toIndex: number) => {
-    dispatch({ type: 'REORDER_QUEUE', fromIndex, toIndex });
-  }, []);
-  const clearQueue = useCallback(() => dispatch({ type: 'CLEAR_QUEUE' }), []);
-  const advanceQueue = useCallback(() => dispatch({ type: 'ADVANCE_QUEUE' }), []);
-
-  // History actions (#117)
-  const recordPlay = useCallback((trackId: string, durationPlayed: number) => {
-    dispatch({ type: 'RECORD_PLAY', event: { trackId, timestamp: Date.now(), durationPlayed } });
-  }, []);
-  const clearHistory = useCallback(() => dispatch({ type: 'CLEAR_HISTORY' }), []);
-  const getRecentlyPlayed = useCallback(
-    (n = 20) => {
-      const seen = new Set<string>();
-      const result: PlaybackEvent[] = [];
-      for (const ev of state.history) {
-        if (seen.has(ev.trackId)) continue;
-        seen.add(ev.trackId);
-        result.push(ev);
-        if (result.length >= n) break;
-      }
-      return result;
-    },
-    [state.history]
-  );
-
-  // Crossfade (#115)
-  const setCrossfadeDuration = useCallback((duration: number) => {
-    dispatch({ type: 'SET_CROSSFADE_DURATION', duration });
-  }, []);
-  const setCrossfading = useCallback((isCrossfading: boolean) => {
-    dispatch({ type: 'SET_CROSSFADING', isCrossfading });
-  }, []);
-
-  // Audio normalization (#328)
-  const setNormalizeAudio = useCallback((enabled: boolean) => {
-    dispatch({ type: 'SET_NORMALIZE_AUDIO', enabled });
-  }, []);
-
-  // Gapless playback (#329)
-  const setGapless = useCallback((enabled: boolean) => {
-    dispatch({ type: 'SET_GAPPLESS', enabled });
-  }, []);
-
-  const value = useMemo<PlaybackContextValue>(
+  // The actions object is created once from `dispatch`, so its identity (and
+  // that of every function in it) never changes.
+  const actions = useMemo<PlaybackActions>(
     () => ({
-      ...state,
       play: () => dispatch({ type: 'PLAY' }),
       pause: () => dispatch({ type: 'PAUSE' }),
       next: () => dispatch({ type: 'NEXT' }),
@@ -571,54 +546,114 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       enqueueTrack: (track) => dispatch({ type: 'ENQUEUE_TRACK', track }),
       setError: (error) => dispatch({ type: 'SET_ERROR', error }),
       dismissError: () => dispatch({ type: 'DISMISS_ERROR' }),
-      addToRecentlyPlayed,
+      addToRecentlyPlayed: (track) => dispatch({ type: 'ADD_TO_RECENTLY_PLAYED', track }),
       clearRecentlyPlayed: () => dispatch({ type: 'CLEAR_RECENTLY_PLAYED' }),
-      autoplayBlocked: state.autoplayBlocked,
-      setAutoplayBlocked,
-      resumeAudio,
-      // Queue
-      addToQueue,
-      removeFromQueue,
-      reorderQueue,
-      clearQueue,
-      advanceQueue,
-      // History
-      recordPlay,
-      clearHistory,
-      getRecentlyPlayed,
-      // Crossfade
-      setCrossfadeDuration,
-      setCrossfading,
+      setAutoplayBlocked: (blocked) => dispatch({ type: 'SET_AUTOPLAY_BLOCKED', blocked }),
+      resumeAudio: () => dispatch({ type: 'RESUME_AUDIO' }),
+      // Queue (#116)
+      addToQueue: (track, position = 'last') => dispatch({ type: 'ADD_TO_QUEUE', track, position }),
+      removeFromQueue: (index) => dispatch({ type: 'REMOVE_FROM_QUEUE', index }),
+      reorderQueue: (fromIndex, toIndex) => dispatch({ type: 'REORDER_QUEUE', fromIndex, toIndex }),
+      clearQueue: () => dispatch({ type: 'CLEAR_QUEUE' }),
+      advanceQueue: () => dispatch({ type: 'ADVANCE_QUEUE' }),
+      // History (#117)
+      recordPlay: (trackId, durationPlayed) =>
+        dispatch({
+          type: 'RECORD_PLAY',
+          event: { trackId, timestamp: Date.now(), durationPlayed },
+        }),
+      clearHistory: () => dispatch({ type: 'CLEAR_HISTORY' }),
+      getRecentlyPlayed: (n = 20) => {
+        const seen = new Set<string>();
+        const result: PlaybackEvent[] = [];
+        for (const ev of historyRef.current) {
+          if (seen.has(ev.trackId)) continue;
+          seen.add(ev.trackId);
+          result.push(ev);
+          if (result.length >= n) break;
+        }
+        return result;
+      },
+      // Crossfade (#115)
+      setCrossfadeDuration: (duration) => dispatch({ type: 'SET_CROSSFADE_DURATION', duration }),
+      setCrossfading: (isCrossfading) => dispatch({ type: 'SET_CROSSFADING', isCrossfading }),
       // Audio normalization (#328)
-      setNormalizeAudio,
+      setNormalizeAudio: (enabled) => dispatch({ type: 'SET_NORMALIZE_AUDIO', enabled }),
       // Gapless playback (#329)
-      setGapless,
+      setGapless: (enabled) => dispatch({ type: 'SET_GAPPLESS', enabled }),
     }),
-    [
-      state,
-      addToRecentlyPlayed,
-      setAutoplayBlocked,
-      resumeAudio,
-      addToQueue,
-      removeFromQueue,
-      reorderQueue,
-      clearQueue,
-      advanceQueue,
-      recordPlay,
-      clearHistory,
-      getRecentlyPlayed,
-      setCrossfadeDuration,
-      setCrossfading,
-      setNormalizeAudio,
-      setGapless,
-    ]
+    []
   );
 
-  return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
+  // External store behind `usePlaybackSelector`. Subscribers re-render only when
+  // their selected slice changes, not on every state update.
+  const storeRef = useRef<PlaybackStore | null>(null);
+  if (storeRef.current === null) storeRef.current = createPlaybackStore(state);
+  const store = storeRef.current;
+  useLayoutEffect(() => {
+    store.set(state);
+  }, [store, state]);
+
+  // Backwards-compatible value for `usePlayback()`: state plus actions.
+  const value = useMemo<PlaybackContextValue>(() => ({ ...state, ...actions }), [state, actions]);
+
+  return (
+    <PlaybackActionsContext.Provider value={actions}>
+      <PlaybackStoreContext.Provider value={store}>
+        <PlaybackStateContext.Provider value={state}>
+          <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>
+        </PlaybackStateContext.Provider>
+      </PlaybackStoreContext.Provider>
+    </PlaybackActionsContext.Provider>
+  );
 }
 
 export function usePlayback(): PlaybackContextValue {
   const ctx = useContext(PlaybackContext);
   if (!ctx) throw new Error('usePlayback must be used inside PlaybackProvider');
   return ctx;
+}
+
+/**
+ * Playback state only. Re-renders on every state change, so prefer
+ * `usePlaybackSelector` when a component needs just one field.
+ */
+export function usePlaybackState(): PlaybackState {
+  const state = useContext(PlaybackStateContext);
+  if (state) return state;
+  // A bare `PlaybackContext.Provider` (tests, harnesses) still works.
+  const legacy = use(PlaybackContext);
+  if (!legacy) throw new Error('usePlaybackState must be used inside PlaybackProvider');
+  return legacy;
+}
+
+/**
+ * Playback actions. The returned object and every function in it keep the same
+ * identity for the lifetime of the provider, so using this hook never causes a
+ * re-render on its own.
+ */
+export function usePlaybackActions(): PlaybackActions {
+  const actions = useContext(PlaybackActionsContext);
+  if (actions) return actions;
+  const legacy = use(PlaybackContext);
+  if (!legacy) throw new Error('usePlaybackActions must be used inside PlaybackProvider');
+  return legacy;
+}
+
+/**
+ * Subscribes to one slice of playback state, e.g. `usePlaybackSelector((s) => s.isPlaying)`.
+ * The component re-renders only when the selected value changes (compared with
+ * `Object.is`), so a selector must return an existing reference or a primitive,
+ * not a freshly built object.
+ */
+export function usePlaybackSelector<T>(selector: (state: PlaybackState) => T): T {
+  const store = useContext(PlaybackStoreContext);
+  const legacy = store ? null : use(PlaybackContext);
+  if (!store && !legacy)
+    throw new Error('usePlaybackSelector must be used inside PlaybackProvider');
+  return useSyncExternalStore(
+    store ? store.subscribe : noopSubscribe,
+    () => selector(store ? store.getState() : legacy!),
+    () => selector(store ? store.getState() : legacy!)
+  );
 }

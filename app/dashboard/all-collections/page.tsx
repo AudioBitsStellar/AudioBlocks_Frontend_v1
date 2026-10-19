@@ -4,10 +4,12 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { collectionsData } from '@/components/common/dashboard/data';
+import { demoOr } from '@/lib/fixtures';
+import { collectionsData as demoCollectionsData } from '@/lib/fixtures/dashboard';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 
+const collectionsData = demoOr(demoCollectionsData, []);
 const ITEMS_PER_PAGE = 12;
 
 const AllCollectionsPage = () => {
@@ -58,6 +60,10 @@ const AllCollectionsPage = () => {
           </div>
         ))}
       </div>
+
+      {currentItems.length === 0 && (
+        <p className="py-16 text-center text-on-muted">No collections to show yet.</p>
+      )}
 
       {totalPages > 1 && (
         <Pagination
