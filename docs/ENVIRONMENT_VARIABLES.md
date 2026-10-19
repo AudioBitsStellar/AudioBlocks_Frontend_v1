@@ -66,6 +66,7 @@ See `docs/PRIVY_SETUP.md` for the full setup guide.
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
+| `NEXT_PUBLIC_USE_DEMO_DATA` | boolean | unset (off) | Show demo fixture data from `lib/fixtures/` (default playlist, marketplace listings, sample artists and collections). Keep it unset in production, where those screens show empty states until the backend is wired up |
 | `NEXT_PUBLIC_LOG_LEVEL` | string | `"info"` | Logging level: `debug`, `info`, `warn`, `error` |
 | `NEXT_PUBLIC_ENABLE_DEVTOOLS` | boolean | `"false"` | Enable React Query DevTools | `"true"` |
 | `NEXT_PUBLIC_CACHE_TTL` | number | `300000` | Cache time-to-live in milliseconds | `600000` |

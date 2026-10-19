@@ -4,7 +4,7 @@ import { memo, useCallback, useRef, useState } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import AudioCard from '@/components/ui/AudioCard';
-import { usePlayback } from '@/context/PlaybackContext';
+import { usePlaybackActions } from '@/context/PlaybackContext';
 import type { Track } from '@/context/PlaybackContext';
 import { useRecentlyPlayed } from '@/hooks/useRecentlyPlayed';
 
@@ -17,7 +17,7 @@ const RecentlyPlayedCard = memo(function RecentlyPlayedCard({
   track: Track;
   variant: RecentlyPlayedVariant;
 }) {
-  const { playTrack } = usePlayback();
+  const { playTrack } = usePlaybackActions();
   const handlePlay = useCallback(() => playTrack(track), [playTrack, track]);
 
   return (

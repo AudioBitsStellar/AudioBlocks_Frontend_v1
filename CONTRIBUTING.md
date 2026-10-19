@@ -12,6 +12,7 @@ need to get set up and submit a change.
 - [Testing](#testing)
 - [Mocking the API (MSW)](#mocking-the-api-msw)
 - [Feature flags](#feature-flags)
+- [Mocks and fixtures](#mocks-and-fixtures)
 - [Commit Messages](#commit-messages)
 - [Pull Request Process](#pull-request-process)
 - [Reporting Issues](#reporting-issues)
@@ -196,6 +197,22 @@ To add a flag:
 
 `tests/lib/featureFlags.test.ts` fails if a flag is registered in
 `FEATURE_FLAGS` without a matching `case` in `readFlagValue`.
+
+## Mocks and fixtures
+
+Where mock data lives, so it is clear which screens are real:
+
+| Kind | Location | Used by |
+|------|----------|---------|
+| Demo data for the running app (default playlist, marketplace listings, sample artists and collections) | `lib/fixtures/` | components, behind `USE_DEMO_DATA` |
+| API responses for tests and local development | `mocks/` (MSW, see [Mocking the API](#mocking-the-api-msw)) | tests, Storybook, dev server |
+
+Rules:
+
+- Do not define demo arrays inside components, hooks or contexts. Put them in `lib/fixtures/` and type them with the same interface the API returns.
+- Read them through `USE_DEMO_DATA` (`lib/fixtures/index.ts`), e.g. `demoOr(artistsData, [])`. It is `true` only when `NEXT_PUBLIC_USE_DEMO_DATA=true`, so a production build with the variable unset shows no fixture data. Give the screen an empty state for that case.
+- Tests set `NEXT_PUBLIC_USE_DEMO_DATA=true` in `vitest.setup.ts`; override it with `vi.stubEnv` plus a module reset when you need the production behaviour.
+- When you wire a screen to the backend, delete its fixture and the `demoOr` call.
 
 ## Commit Messages
 

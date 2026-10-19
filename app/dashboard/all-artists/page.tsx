@@ -4,11 +4,13 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { artistsData } from '@/components/common/dashboard/data';
+import { demoOr } from '@/lib/fixtures';
+import { artistsData as demoArtistsData } from '@/lib/fixtures/dashboard';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
+const artistsData = demoOr(demoArtistsData, []);
 const ITEMS_PER_PAGE = 12;
 
 const AllArtistsPage = () => {
@@ -62,6 +64,10 @@ const AllArtistsPage = () => {
           </div>
         ))}
       </div>
+
+      {currentItems.length === 0 && (
+        <p className="py-16 text-center text-on-muted">No artists to show yet.</p>
+      )}
 
       {totalPages > 1 && (
         <Pagination

@@ -5,17 +5,14 @@ import { Inter } from 'next/font/google';
 import { Search } from 'lucide-react';
 import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Pagination } from '@/components/ui/pagination';
+import { demoOr } from '@/lib/fixtures';
+import {
+  eventData as demoEvents,
+  merchData as demoMerch,
+  musicData as demoMusic,
+  type CollectionItem,
+} from '@/lib/fixtures/marketplace';
 import BuyButton from './BuyButton';
-
-interface CollectionItem {
-  id: string;
-  image: string;
-  artistName: string;
-  songName?: string;
-  eventName?: string;
-  itemName?: string;
-  price: string;
-}
 
 const inter = Inter({
   subsets: ['latin'],
@@ -25,84 +22,10 @@ const inter = Inter({
 
 const ITEMS_PER_PAGE = 8;
 
-const musicData = [
-  {
-    id: 'music-1',
-    image: '/wif.jpg',
-    artistName: 'Wiffi Drips',
-    songName: 'Bigger',
-    price: '0.5 ETH',
-  },
-  {
-    id: 'music-2',
-    image: '/chilli.jpg',
-    artistName: 'Mchivir',
-    songName: 'ASILW',
-    price: '0.3 ETH',
-  },
-  {
-    id: 'music-3',
-    image: '/cat.png',
-    artistName: 'Soldier Cat',
-    songName: 'Bad Guy',
-    price: '0.7 ETH',
-  },
-  {
-    id: 'music-4',
-    image: '/moon.webp',
-    artistName: 'Lost',
-    songName: 'Circles',
-    price: '0.4 ETH',
-  },
-];
-
-const eventData = [
-  {
-    id: 'event-1',
-    image: '/AFRO.jpg',
-    artistName: 'Wiffi Drips Tour',
-    eventName: 'World Tour',
-    price: '1.2 ETH',
-  },
-  {
-    id: 'event-2',
-    image: '/tech.jpg',
-    artistName: 'Ara',
-    eventName: 'Sweetener World Tour',
-    price: '0.9 ETH',
-  },
-  {
-    id: 'event-3',
-    image: '/rap.png',
-    artistName: 'Rap Battle',
-    eventName: 'Mat Tour',
-    price: '0.8 ETH',
-  },
-];
-
-const merchData = [
-  {
-    id: 'merch-1',
-    image: '/audio.jpg',
-    artistName: 'AudioBlocks',
-    itemName: 'T-Shirts',
-    price: '0.2 ETH',
-  },
-  {
-    id: 'merch-2',
-    image: '/ad.jpg',
-    artistName: 'AudioBlocks',
-    itemName: 'Folklore Vinyl',
-    price: '0.15 ETH',
-  },
-  {
-    id: 'merch-3',
-    image: '/ads.jpg',
-    artistName: 'BTS',
-    itemName: 'Official T-Shirt',
-    price: '0.1 ETH',
-  },
-];
+// Placeholder listings until the marketplace API is wired up; empty unless demo data is on.
+const musicData = demoOr<CollectionItem[]>(demoMusic, []);
+const eventData = demoOr<CollectionItem[]>(demoEvents, []);
+const merchData = demoOr<CollectionItem[]>(demoMerch, []);
 
 function parsePrice(price: string): number {
   return parseFloat(price.replace(' ETH', ''));
