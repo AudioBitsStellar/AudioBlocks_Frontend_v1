@@ -153,6 +153,9 @@ export const API_ENDPOINTS = {
   PLAYLIST: (playlistId: string) => `/api/playlists/${playlistId}`,
   PLAYLIST_FOLLOW: (playlistId: string) => `/api/playlists/${playlistId}/follow`,
   PLAYLISTS_FOLLOWED: '/api/playlists/followed',
+
+  // Listening history (#581). Not mounted on the backend yet; the client falls back to local history.
+  RECENTLY_PLAYED: '/api/users/me/recently-played',
 } as const;
 
 // ===== QUERY KEYS =====
