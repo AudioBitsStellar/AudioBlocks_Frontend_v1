@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseEther } from 'viem';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { Modal } from '@/components/ui/Modal';
 import { contractAddress, abi } from '@/config/abi';
+import { useStellarBalance } from '@/hooks/useStellarBalance';
 
 interface BuyButtonProps {
   tokenId: string;
@@ -21,6 +22,7 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
   // Issue #319: confirm before submitting the transaction, so a stray click
   // never sends an on-chain purchase without the user seeing price/token first.
   const [showConfirm, setShowConfirm] = useState(false);
+  const { data: stellarBalance } = useStellarBalance();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -68,6 +70,14 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
 
   const isProcessing = isPending || isConfirming;
 
+  // #555: Check if the user has enough Stellar XLM to cover the price.
+  // Parse the price (e.g., "0.5 ETH" -> 0.5) and assume a small fee (~0.01 XLM).
+  const priceXlm = parseFloat(price.split(' ')[0]);
+  const estimatedFee = 0.01; // Stellar transaction fee estimate
+  const totalRequired = priceXlm + estimatedFee;
+  const hasInsufficientFunds =
+    stellarBalance?.isFunded && stellarBalance.spendableXlm < totalRequired;
+
   return (
     <>
       <button
@@ -97,6 +107,21 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
             You&apos;re about to buy <span className="text-white font-medium">{label}</span> for{' '}
             <span className="text-white font-medium">{price}</span>.
           </p>
+
+          {/* #555: Warn when spendable balance is insufficient */}
+          {hasInsufficientFunds && (
+            <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <AlertTriangle className="text-amber-400 mt-0.5 flex-shrink-0" size={16} />
+              <div className="text-xs text-amber-200">
+                <p className="font-semibold mb-1">Insufficient balance</p>
+                <p>
+                  You need at least {totalRequired.toFixed(2)} XLM (price + fee), but your
+                  spendable balance is {stellarBalance.spendableXlm.toFixed(2)} XLM.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3">
             <button
               className="px-4 py-2 rounded-2xl text-sm text-on-muted hover:text-white transition-colors"
@@ -105,7 +130,8 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
               Cancel
             </button>
             <button
-              className="px-4 py-2 rounded-2xl text-sm bg-brand text-white hover:bg-pink-700 transition-colors"
+              className="px-4 py-2 rounded-2xl text-sm bg-brand text-white hover:bg-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={hasInsufficientFunds}
               onClick={handleBuy}
             >
               Confirm purchase
