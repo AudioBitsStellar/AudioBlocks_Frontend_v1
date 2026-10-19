@@ -140,3 +140,14 @@ describe('SearchOverlay Integration Tests', () => {
     expect(searchInput).toHaveFocus();
   });
 });
+
+describe('SearchOverlay "See all results" link (#569)', () => {
+  it('links the current query to the full /search page', async () => {
+    const user = userEvent.setup();
+    render(<SearchOverlay />);
+    await user.keyboard('{Control>}k{/Control}');
+    await user.type(screen.getByRole('searchbox'), 'love you');
+    const link = screen.getByRole('link', { name: /See all results for "love you"/ });
+    expect(link).toHaveAttribute('href', '/search?q=love%20you');
+  });
+});
