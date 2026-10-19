@@ -38,6 +38,34 @@ describe('parseFlagValue', () => {
   });
 });
 
+describe('readFlagValue wiring', () => {
+  // Setting a flag's own variable must change the result, in both directions and
+  // against the environment default. A flag missing from `readFlagValue` ignores
+  // its variable and always reports the default, so one of these fails.
+  it.each(ALL_FLAGS)('%s honours its environment variable', (flag) => {
+    const { envVar } = FEATURE_FLAGS[flag];
+
+    vi.stubEnv(envVar, 'true');
+    expect(isFeatureEnabled(flag, { nodeEnv: 'production' })).toBe(true);
+
+    vi.stubEnv(envVar, 'false');
+    expect(isFeatureEnabled(flag, { nodeEnv: 'development' })).toBe(false);
+  });
+
+  it.each(ALL_FLAGS)("%s does not read any other flag's variable", (flag) => {
+    for (const other of ALL_FLAGS) {
+      vi.stubEnv(FEATURE_FLAGS[other].envVar, other === flag ? '' : 'true');
+    }
+    expect(isFeatureEnabled(flag, { nodeEnv: 'production' })).toBe(false);
+  });
+
+  it('uses the NEXT_PUBLIC_FEATURE_ prefix for every flag variable', () => {
+    for (const flag of ALL_FLAGS) {
+      expect(FEATURE_FLAGS[flag].envVar).toMatch(/^NEXT_PUBLIC_FEATURE_[A-Z_]+$/);
+    }
+  });
+});
+
 describe('defaultFlagValue', () => {
   it('is off in production so unimplemented features never ship', () => {
     expect(defaultFlagValue('production')).toBe(false);

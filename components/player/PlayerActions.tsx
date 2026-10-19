@@ -1,12 +1,18 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useState, type RefObject } from 'react';
 import { AudioWaveform, Ellipsis, Heart, ListPlus, MessageSquare, Zap } from 'lucide-react';
 import { VolumeControl } from './VolumeControl';
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 export interface PlayerActionsProps {
+  /** Whether the comment panel is open (drives `aria-expanded` on its trigger). */
+  commentsExpanded: boolean;
+  /** DOM id of the comment panel, referenced by `aria-controls`. */
+  commentsPanelId: string;
+  /** Ref to the Comments button so focus can return to it when the panel closes. */
+  commentsTriggerRef: RefObject<HTMLButtonElement | null>;
   normalizeAudio: boolean;
   gapless: boolean;
   playbackSpeed: number;
@@ -25,6 +31,9 @@ const toggleClass = (active: boolean) =>
 
 /** Right-hand player controls: track actions, audio toggles, speed (#336) and volume. */
 export const PlayerActions = memo(function PlayerActions({
+  commentsExpanded,
+  commentsPanelId,
+  commentsTriggerRef,
   normalizeAudio,
   gapless,
   playbackSpeed,
@@ -42,6 +51,10 @@ export const PlayerActions = memo(function PlayerActions({
   return (
     <div className="flex items-center border-l-2 pl-4 gap-4 relative">
       <button
+        ref={commentsTriggerRef}
+        aria-controls={commentsPanelId}
+        aria-expanded={commentsExpanded}
+        aria-haspopup="dialog"
         aria-label="Comments"
         className="hover:text-gray-300 cursor-pointer text-white"
         onClick={onOpenComments}

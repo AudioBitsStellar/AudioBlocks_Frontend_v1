@@ -14,11 +14,13 @@ import { CommentItem, type CommentViewer } from './comments/CommentItem';
 import type { CommentAuthor } from '@/lib/commentService';
 
 interface CommentPanelProps {
+  /** DOM id of the dialog, referenced by the trigger's `aria-controls`. */
+  id?: string;
   onClose: () => void;
   trackId: string;
 }
 
-const Comment = ({ onClose, trackId }: CommentPanelProps) => {
+const Comment = ({ id, onClose, trackId }: CommentPanelProps) => {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const [reportedComment, setReportedComment] = useState<{ id: string } | null>(null);
@@ -103,6 +105,7 @@ const Comment = ({ onClose, trackId }: CommentPanelProps) => {
         aria-modal="true"
         className="fixed bottom-0 pb-20 right-0 bg-[#1e1e1e] w-80 max-w-sm h-[90vh] p-4 z-50 flex flex-col"
         exit={{ y: 300, opacity: 0 }}
+        id={id}
         initial={{ y: 300, opacity: 0 }}
         role="dialog"
         transition={{ type: 'spring', stiffness: 200, damping: 20 }}

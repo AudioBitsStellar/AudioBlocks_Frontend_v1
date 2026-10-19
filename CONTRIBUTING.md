@@ -11,6 +11,7 @@ need to get set up and submit a change.
 - [Code Style Guidelines](#code-style-guidelines)
 - [Testing](#testing)
 - [Mocking the API (MSW)](#mocking-the-api-msw)
+- [Feature flags](#feature-flags)
 - [Commit Messages](#commit-messages)
 - [Pull Request Process](#pull-request-process)
 - [Reporting Issues](#reporting-issues)
@@ -167,6 +168,34 @@ backend's controller output (envelope, pagination and error shape — see
 `mocks/handlers/response.ts`), add the handler under `mocks/handlers/`, and
 register it in `mocks/handlers/index.ts`. Use a leading `*` in paths
 (`'*/api/song'`) so they match whatever `NEXT_PUBLIC_API_URL` is.
+
+## Feature flags
+
+Sections whose backend endpoints are not live yet are gated by flags in
+`lib/featureFlags.ts`. A flag is **on** in development and test and **off** in
+production unless its `NEXT_PUBLIC_FEATURE_*` variable says otherwise. The
+current flags, their defaults and the endpoints they wait on are listed in
+[`docs/ENVIRONMENT_VARIABLES.md`](docs/ENVIRONMENT_VARIABLES.md#feature-flags).
+
+`.env.example` keeps the flag variables commented out on purpose: copying it to
+`.env.local` should leave the environment defaults in place. If Merch, Events
+or Community voting are missing locally, check that `.env.local` does not set
+the matching variable to `false`.
+
+To add a flag:
+
+1. Add its name to `FeatureFlagName` in `lib/featureFlags.ts`.
+2. Add an entry to `FEATURE_FLAGS` with the `envVar`, a description and the
+   endpoints it waits on.
+3. Add a `case` to `readFlagValue` that reads the variable through a **literal**
+   `process.env.NEXT_PUBLIC_...` access. Next.js only inlines literal accesses
+   into the client bundle, so `process.env[name]` will not work in the browser.
+4. Document it in `.env.example` (commented out) and in the table in
+   `docs/ENVIRONMENT_VARIABLES.md`.
+5. Gate the UI with `isFeatureEnabled('yourFlag')`.
+
+`tests/lib/featureFlags.test.ts` fails if a flag is registered in
+`FEATURE_FLAGS` without a matching `case` in `readFlagValue`.
 
 ## Commit Messages
 
