@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AnalyticsScript from '@/components/AnalyticsScript';
+import { resetAnalyticsConsentMemory, setAnalyticsConsent } from '@/lib/analyticsConsent';
 
 vi.mock('next/script', () => ({
   default: ({ id, src, strategy }: { id: string; src: string; strategy: string }) => (
@@ -9,11 +10,17 @@ vi.mock('next/script', () => ({
 }));
 
 describe('AnalyticsScript', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    resetAnalyticsConsentMemory();
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it('loads analytics lazily after the first user interaction', () => {
+  it('loads analytics lazily after the first user interaction once accepted', () => {
+    setAnalyticsConsent('accepted');
     render(<AnalyticsScript />);
 
     expect(screen.queryByTestId('analytics-script')).not.toBeInTheDocument();
@@ -29,6 +36,7 @@ describe('AnalyticsScript', () => {
   });
 
   it('also starts analytics after keyboard interaction', () => {
+    setAnalyticsConsent('accepted');
     render(<AnalyticsScript />);
 
     fireEvent.keyDown(window, { key: 'Tab' });
@@ -38,9 +46,41 @@ describe('AnalyticsScript', () => {
 
   it('does not load analytics when tracking is disabled', () => {
     vi.stubEnv('NEXT_PUBLIC_ANALYTICS_ENABLED', 'false');
+    setAnalyticsConsent('accepted');
 
     render(<AnalyticsScript />);
     fireEvent.pointerDown(window);
+
+    expect(screen.queryByTestId('analytics-script')).not.toBeInTheDocument();
+  });
+
+  it('never loads analytics without consent, even after interaction (#597)', () => {
+    render(<AnalyticsScript />);
+
+    fireEvent.pointerDown(window);
+    fireEvent.keyDown(window, { key: 'Tab' });
+
+    expect(screen.queryByTestId('analytics-script')).not.toBeInTheDocument();
+  });
+
+  it('never loads analytics after the visitor rejects them', () => {
+    setAnalyticsConsent('rejected');
+
+    render(<AnalyticsScript />);
+    fireEvent.pointerDown(window);
+
+    expect(screen.queryByTestId('analytics-script')).not.toBeInTheDocument();
+  });
+
+  it('unloads analytics when consent is revoked on the page', () => {
+    setAnalyticsConsent('accepted');
+    render(<AnalyticsScript />);
+    fireEvent.pointerDown(window);
+    expect(screen.getByTestId('analytics-script')).toBeInTheDocument();
+
+    act(() => {
+      setAnalyticsConsent('rejected');
+    });
 
     expect(screen.queryByTestId('analytics-script')).not.toBeInTheDocument();
   });

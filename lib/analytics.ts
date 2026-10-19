@@ -1,3 +1,5 @@
+import { hasAnalyticsConsent } from '@/lib/analyticsConsent';
+
 /**
  * Lightweight client-side analytics (#323).
  *
@@ -7,7 +9,8 @@
  * `NEXT_PUBLIC_ANALYTICS_ENABLED=false`.
  *
  * Consumers should call {@link trackEvent} with a snake_case event name and a
- * flat, serializable properties object.
+ * flat, serializable properties object. Events are dropped until the visitor
+ * accepts analytics (#597).
  */
 
 interface AnalyticsWindow extends Window {
@@ -25,11 +28,13 @@ export function isAnalyticsEnabled(): boolean {
 /**
  * Track a named event with optional properties.
  *
- * No-ops silently when tracking is disabled or the environment is SSR, so it
- * is safe to call from effects and event handlers.
+ * No-ops silently when tracking is disabled, the visitor has not accepted
+ * analytics (#597), or the environment is SSR, so it is safe to call from
+ * effects and event handlers.
  */
 export function trackEvent(eventName: string, properties: Record<string, unknown> = {}): void {
   if (!isAnalyticsEnabled()) return;
+  if (!hasAnalyticsConsent()) return;
   if (typeof window === 'undefined') return;
 
   const w = window as unknown as AnalyticsWindow;
