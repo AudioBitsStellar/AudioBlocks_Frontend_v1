@@ -1,23 +1,45 @@
-import apiClient from '@/lib/apiClient';
-import { songToTrack, type SongResponse } from '@/lib/tracks';
-export interface SavedPlaylist {
+import apiClient from './apiClient';
+import { API_ENDPOINTS } from './constants';
+
+export interface PlaylistSummary {
   id: string;
   name: string;
+  description?: string | null;
+  /** Owner's user id. Compared with the signed-in profile id to hide follow on own playlists. */
   userId: string;
+  isPublic?: boolean;
   isRuleBased?: boolean;
-  songs: { songId: string; position: number; song: SongResponse | null }[];
+  songs?: unknown[];
 }
-export async function getPlaylist(id: string): Promise<SavedPlaylist> {
-  const response = await apiClient.get(`/api/playlists/${encodeURIComponent(id)}`);
-  return response.data.data;
+
+export interface FollowedPlaylistEntry {
+  playlist: PlaylistSummary;
+  followedAt: string;
 }
-export function playlistTracks(playlist: SavedPlaylist) {
-  return [...(playlist.songs ?? [])]
-    .sort((a, b) => a.position - b.position)
-    .map((entry) => songToTrack(entry.song, entry.songId));
+
+/** Fetches one playlist with its songs. Public playlists are readable by anyone. */
+export async function getPlaylist(playlistId: string): Promise<PlaylistSummary> {
+  const res = await apiClient.get(API_ENDPOINTS.PLAYLIST(playlistId));
+  return res.data?.data ?? res.data;
 }
-export async function removePlaylistSong(playlistId: string, songId: string) {
-  await apiClient.delete(
-    `/api/playlists/${encodeURIComponent(playlistId)}/songs/${encodeURIComponent(songId)}`
-  );
+
+/** Lists the playlists the signed-in user follows (first page). */
+export async function listFollowedPlaylists(): Promise<PlaylistSummary[]> {
+  const res = await apiClient.get(API_ENDPOINTS.PLAYLISTS_FOLLOWED);
+  const entries: FollowedPlaylistEntry[] = res.data?.data ?? [];
+  return entries.map((entry) => entry.playlist).filter((playlist) => !!playlist?.id);
+}
+
+/** Creates a playlist. Pass `isRuleBased: true` with a rule to create a smart playlist. */
+export async function createPlaylist(payload: object): Promise<PlaylistSummary> {
+  const res = await apiClient.post(API_ENDPOINTS.PLAYLISTS, payload);
+  return res.data?.data ?? res.data;
+}
+
+export async function followPlaylist(playlistId: string): Promise<void> {
+  await apiClient.post(API_ENDPOINTS.PLAYLIST_FOLLOW(playlistId));
+}
+
+export async function unfollowPlaylist(playlistId: string): Promise<void> {
+  await apiClient.delete(API_ENDPOINTS.PLAYLIST_FOLLOW(playlistId));
 }

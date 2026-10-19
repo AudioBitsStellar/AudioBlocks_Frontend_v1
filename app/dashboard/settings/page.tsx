@@ -2,11 +2,9 @@
 import Link from 'next/link';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Mail, Wallet, Trash2 } from 'lucide-react';
-import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
-import DataSaverToggle from '@/components/help/DataSaverToggle';
-import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
-import { useUserPreferences } from '@/context/UserPreferencesContext';
-import type { AudioQuality } from '@/context/UserPreferencesContext';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useRecentlyPlayed } from '@/hooks/useRecentlyPlayed';
 
 function LinkedAccountsList() {
   const { user, handleUnlinkWallet } = useDynamicContext();
@@ -57,6 +55,51 @@ function LinkedAccountsList() {
         <div className="text-sm text-gray-400">No linked accounts found.</div>
       )}
     </>
+  );
+}
+
+function ListeningHistorySection() {
+  const { clearHistory } = useRecentlyPlayed();
+  const [isClearing, setIsClearing] = useState(false);
+
+  const handleClear = async () => {
+    if (!window.confirm('Clear your listening history? This also applies to your other devices.')) {
+      return;
+    }
+    setIsClearing(true);
+    try {
+      await clearHistory();
+      toast.success('Listening history cleared');
+    } catch {
+      toast.error('Could not clear your listening history. Please try again.');
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  return (
+    <section className="mb-10">
+      <h2 className="text-lg font-semibold text-white mb-4">Listening History</h2>
+      <p className="text-sm text-gray-400 mb-4">
+        Recently played tracks follow your account across browsers.
+      </p>
+      <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E]">
+        <div>
+          <div className="font-medium text-white">Clear listening history</div>
+          <div className="text-xs text-gray-400 mt-1">
+            Removes recently played tracks from your account and this browser.
+          </div>
+        </div>
+        <button
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-500/60 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isClearing}
+          type="button"
+          onClick={handleClear}
+        >
+          {isClearing ? 'Clearing…' : 'Clear history'}
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -162,6 +205,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
+      <ListeningHistorySection />
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Quality Checks</h2>
