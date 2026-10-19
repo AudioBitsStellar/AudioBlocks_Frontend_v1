@@ -1,15 +1,16 @@
 'use client';
 
 import { use, useMemo } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { artistsData } from '@/components/common/dashboard/data';
 import ArtistReleases from '@/components/releases/ArtistReleases';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
+import { shortenId } from '@/lib/stellarExplorer';
 
 export default function ArtistDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -62,7 +63,14 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
         {artistSongs?.map((song, i) => (
           <div key={i} className="bg-surface-elevated rounded-lg overflow-hidden">
             <div className="relative aspect-square">
-              <Image fill alt={song.songCID} className="object-cover" src="/audio.jpg" />
+              <ArtworkImage
+                fill
+                alt={`Cover art for ${shortenId(song.songCID, 8, 4)}`}
+                className="object-cover"
+                sizes="(max-width: 768px) 50vw, 25vw"
+                src="/audio.jpg"
+                title={shortenId(song.songCID, 8, 4)}
+              />
             </div>
             <div className="p-3">
               <p className="text-sm text-white truncate">{song.songCID}</p>

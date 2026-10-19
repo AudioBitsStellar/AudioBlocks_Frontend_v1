@@ -2,32 +2,19 @@
 
 import { useState, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ListFilter, Music, Search, UsersRound, Send } from 'lucide-react';
 import { useAccount } from 'wagmi';
+import { NftTransfer } from '@/components/NftTransfer';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useOwnedCollection } from '@/hooks/useOwnedCollection';
-import { NftTransfer } from '@/components/NftTransfer';
+import { filterOwnedSongs, songCoverSrc, toOwnedNFT, type OwnedNFT } from '@/lib/collectionSongs';
 
-const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 const ITEMS_PER_PAGE = 10;
-
-function ipfsImage(cid: string): string {
-  if (cid.startsWith('Qm') || cid.startsWith('baf')) return `${IPFS_GATEWAY}${cid}`;
-  return '/audio.jpg';
-}
-
-interface OwnedNFT {
-  songId: bigint;
-  artistAddress: string;
-  songCID: string;
-  totalStreams: bigint;
-  totalLikes: bigint;
-}
 
 const CollectionsPage = () => {
   const { address, isConnected } = useAccount();
@@ -38,28 +25,15 @@ const CollectionsPage = () => {
 
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isPageLoading, setIsPageLoading] = useState(false);
   const [selectedNFT, setSelectedNFT] = useState<bigint | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const songs: OwnedNFT[] = useMemo(() => {
     if (!address || ownedNfts.length === 0) return [] as OwnedNFT[];
-    return ownedNfts.map((n) => ({
-      songId: BigInt(n.songId),
-      artistAddress: n.artistAddress,
-      songCID: n.songCID,
-      totalStreams: BigInt(n.totalStreams ?? 0),
-      totalLikes: BigInt(n.totalLikes ?? 0),
-    }));
+    return ownedNfts.map(toOwnedNFT);
   }, [address, ownedNfts]);
 
-  const filtered = useMemo(() => {
-    return songs.filter(
-      (s) =>
-        s.songCID.toLowerCase().includes(search.toLowerCase()) ||
-        s.artistAddress.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [songs, search]);
+  const filtered = useMemo(() => filterOwnedSongs(songs, search), [songs, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginatedSongs = filtered.slice(
@@ -67,25 +41,23 @@ const CollectionsPage = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
+  // Paging is purely client-side, so it applies immediately; loading is only
+  // shown while the owned NFTs are actually being fetched.
   const handlePageChange = useCallback((page: number) => {
-    setIsPageLoading(true);
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => setIsPageLoading(false), 300);
   }, []);
 
   const loadMore = useCallback(() => {
     if (currentPage < totalPages) {
-      setIsPageLoading(true);
       setCurrentPage((prev) => prev + 1);
-      setTimeout(() => setIsPageLoading(false), 300);
     }
   }, [currentPage, totalPages]);
 
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: loadMore,
     hasMore: currentPage < totalPages,
-    isLoading: isPageLoading,
+    isLoading: false,
     enabled: isConnected && !isLoading && songs.length > 0,
   });
 
@@ -141,7 +113,7 @@ const CollectionsPage = () => {
             <input
               aria-label="Search NFT songs"
               className="w-full pl-10 pr-4 py-2 rounded-full bg-surface-input outline-none border border-border-dark text-sm text-gray-200 placeholder:text-gray-500"
-              placeholder="Search by CID or address"
+              placeholder="Search by title, artist, CID or address"
               type="search"
               value={search}
               onChange={(e) => {
@@ -209,19 +181,7 @@ const CollectionsPage = () => {
 
       {isConnected && !isLoading && !backendLoading && (
         <div ref={scrollContainerRef} className="space-y-6">
-          {isPageLoading && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={`loading-${i}`} className="p-3 rounded-lg">
-                  <Skeleton className="w-full aspect-square rounded-md mb-3" />
-                  <Skeleton className="h-4 w-3/4 mb-1" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!isPageLoading && paginatedSongs.length > 0 && (
+          {paginatedSongs.length > 0 && (
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 {paginatedSongs.map((song) => (
@@ -229,21 +189,21 @@ const CollectionsPage = () => {
                     key={song.songId.toString()}
                     className="hover:bg-surface-hover p-3 rounded-lg"
                   >
-                    <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
-                      <Image
-                        alt={`Song #${song.songId}`}
-                        className="w-full h-full object-cover"
-                        height={300}
-                        src={ipfsImage(song.songCID)}
-                        width={300}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = '/audio.jpg';
-                        }}
+                    <div className="relative w-full aspect-square rounded-md overflow-hidden mb-3">
+                      <ArtworkImage
+                        fill
+                        alt={`${song.title} cover art`}
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, 20vw"
+                        src={songCoverSrc(song)}
+                        title={song.title}
                       />
                     </div>
-                    <p className="text-sm font-semibold">Song #{song.songId.toString()}</p>
-                    <p className="text-xs text-gray-400">
-                      {song.artistAddress.slice(0, 6)}…{song.artistAddress.slice(-4)}
+                    <p className="text-sm font-semibold truncate" title={song.title}>
+                      {song.title}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate" title={song.artistAddress}>
+                      {song.artistName}
                     </p>
                     <div className="mt-2 flex items-center justify-between gap-1">
                       <span className="text-xs text-gray-400 flex-1">
@@ -251,19 +211,18 @@ const CollectionsPage = () => {
                       </span>
                       <button
                         className="p-1.5 text-xs bg-surface border border-border-dark rounded-full hover:bg-[#333] transition-colors"
-                        onClick={() => setSelectedNFT(selectedNFT === song.songId ? null : song.songId)}
                         title="Transfer NFT"
                         type="button"
+                        onClick={() =>
+                          setSelectedNFT(selectedNFT === song.songId ? null : song.songId)
+                        }
                       >
                         <Send size={12} />
                       </button>
                     </div>
                     {selectedNFT === song.songId && (
                       <div className="mt-3 p-3 bg-surface-hover rounded-lg border border-border-dark">
-                        <NftTransfer
-                          songId={song.songId}
-                          onSuccess={() => setSelectedNFT(null)}
-                        />
+                        <NftTransfer songId={song.songId} onSuccess={() => setSelectedNFT(null)} />
                       </div>
                     )}
                   </div>

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Heart, Play } from 'lucide-react';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 
 interface Release {
   id: string;
@@ -112,17 +112,19 @@ export function FollowingFeed() {
           className="flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition group"
         >
           <div className="relative shrink-0 w-12 h-12">
-            <Image
-              src={release.imageUrl}
-              alt={`${release.title} cover`}
+            <ArtworkImage
               fill
+              alt={`${release.title} cover`}
               className="rounded object-cover"
+              sizes="48px"
+              src={release.imageUrl}
+              title={release.title}
             />
             <button
-              className="absolute inset-0 rounded flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition"
               aria-label={`Play ${release.title}`}
+              className="absolute inset-0 rounded flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition"
             >
-              <Play size={16} className="text-white fill-white" />
+              <Play className="text-white fill-white" size={16} />
             </button>
           </div>
 
@@ -138,17 +140,17 @@ export function FollowingFeed() {
           </div>
 
           <button
-            onClick={() => toggleLike(release.id)}
+            aria-label={`${likedReleases.has(release.id) ? 'Unlike' : 'Like'} ${release.title}`}
             className={`shrink-0 transition ${
               likedReleases.has(release.id)
                 ? 'text-red-500'
                 : 'text-gray-400 hover:text-white'
             }`}
-            aria-label={`${likedReleases.has(release.id) ? 'Unlike' : 'Like'} ${release.title}`}
+            onClick={() => toggleLike(release.id)}
           >
             <Heart
-              size={16}
               className={likedReleases.has(release.id) ? 'fill-current' : ''}
+              size={16}
             />
           </button>
         </div>

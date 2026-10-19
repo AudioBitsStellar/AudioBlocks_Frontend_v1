@@ -51,7 +51,44 @@ describe('ArtworkImage', () => {
     fireEvent.error(screen.getByRole('img', { name: 'Song' }));
     fireEvent.error(screen.getByRole('img', { name: 'Song' }));
 
-    expect(screen.getByRole('img', { name: 'Song' }).tagName).toBe('DIV');
+    const fallback = screen.getByRole('img', { name: 'Cover art for Song unavailable' });
+    expect(fallback.tagName).toBe('DIV');
+  });
+
+  it('names the unavailable fallback after the item, even with a custom alt', () => {
+    render(<ArtworkImage alt="Song cover" src={null} title="Midnight Run" />);
+
+    expect(
+      screen.getByRole('img', { name: 'Cover art for Midnight Run unavailable' })
+    ).toBeInTheDocument();
+  });
+
+  it('never loops when the placeholder itself fails to load', () => {
+    render(<ArtworkImage src="https://cdn.example.com/a.jpg" title="Song" />);
+
+    // source -> placeholder -> gradient; further errors cannot re-enter a loop.
+    fireEvent.error(screen.getByRole('img', { name: 'Song' }));
+    expect(screen.getByRole('img', { name: 'Song' })).toHaveAttribute('src', PLACEHOLDER_COVER);
+    fireEvent.error(screen.getByRole('img', { name: 'Song' }));
+
+    const fallback = screen.getByRole('img', { name: 'Cover art for Song unavailable' });
+    expect(fallback.tagName).toBe('DIV');
+    fireEvent.error(fallback);
+    expect(screen.getByRole('img', { name: 'Cover art for Song unavailable' }).tagName).toBe('DIV');
+  });
+
+  it('keeps the box size of the broken image: fixed dimensions or fill', () => {
+    const { rerender } = render(<ArtworkImage height={120} src={null} title="Song" width={80} />);
+    expect(screen.getByRole('img', { name: /unavailable/ })).toHaveStyle({
+      width: '80px',
+      height: '120px',
+    });
+
+    rerender(<ArtworkImage fill src={null} title="Song" />);
+    expect(screen.getByRole('img', { name: /unavailable/ })).toHaveStyle({
+      width: '100%',
+      height: '100%',
+    });
   });
 
   it('restarts the fallback chain when src changes', () => {

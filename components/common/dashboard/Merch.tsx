@@ -1,8 +1,8 @@
 'use client';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import Slider from 'react-slick';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { useGetMerch } from '@/hooks/useExplore';
 import { isFeatureEnabled } from '@/lib/featureFlags';
 import { NextArrow, PrevArrow } from './landing/NavigationArrow';
@@ -74,13 +74,14 @@ const Merch = () => {
           >
             {items.map((item) => (
               <div key={item.id} className="px-4">
-                <div className="w-full h-40 rounded-lg overflow-hidden mx-auto">
-                  <Image
+                <div className="relative w-full h-40 rounded-lg overflow-hidden mx-auto">
+                  <ArtworkImage
+                    fill
                     alt={item.artist}
-                    className="w-full h-full object-cover"
-                    height={150}
+                    className="object-cover"
+                    sizes="150px"
                     src={item.image}
-                    width={150}
+                    title={item.song || item.artist}
                   />
                 </div>
                 <div className="py-2 text-center md:text-left text-white min-w-0">
