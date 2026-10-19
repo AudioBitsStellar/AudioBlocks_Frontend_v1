@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, KeyboardEvent } from 'react';
 import { Search, X, Clock, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 
 interface SearchResult {
@@ -173,6 +174,19 @@ export default function SearchOverlay() {
                 No results found for &quot;{query}&quot;
               </div>
             )}
+          </div>
+        )}
+
+        {/* #569: quick results are a preview; the full page paginates, filters and is shareable. */}
+        {query.trim() && (
+          <div className="border-t border-gray-800 px-4 py-3">
+            <Link
+              href={`/search?q=${encodeURIComponent(query.trim())}`}
+              onClick={() => handleSearchSubmit(query)}
+              className="text-sm font-medium text-white hover:underline"
+            >
+              See all results for &quot;{query.trim()}&quot;
+            </Link>
           </div>
         )}
 
