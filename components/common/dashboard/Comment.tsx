@@ -30,10 +30,12 @@ const Comment = ({ onClose, trackId }: CommentPanelProps) => {
   // Clicks inside the report dialog are outside this panel, so the outside-click
   // handler must ignore them while the dialog is open.
   const isReportingRef = useRef(false);
+  // Same for the login prompt a signed-out user gets when reacting (#577).
+  const isAuthPromptOpenRef = useRef(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (isReportingRef.current) return;
+      if (isReportingRef.current || isAuthPromptOpenRef.current) return;
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose();
       }

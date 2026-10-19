@@ -147,6 +147,8 @@ export const API_ENDPOINTS = {
   SONG_REPORT: (songId: string | number) => `/api/song/${songId}/report`,
   SONG_SEARCH: '/api/song/search',
   COMMENT_REPORT: (commentId: string | number) => `/api/comments/${commentId}/report`,
+  // #577 — GET lists grouped reactions (public); POST toggles one (auth).
+  COMMENT_REACTIONS: (commentId: string | number) => `/api/comments/${commentId}/reactions`,
 
   // Playlists (#579 follow, #580 smart playlists). Follow routes are the mounted
   // /api/playlists/:id/follow variants, not the unmounted /api/playlists/follow ones.
