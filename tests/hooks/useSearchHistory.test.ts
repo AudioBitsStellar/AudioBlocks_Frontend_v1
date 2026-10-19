@@ -1,8 +1,8 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { SEARCH_HISTORY_STORAGE_KEY, useSearchHistory } from '@/hooks/useSearchHistory';
 
-const STORAGE_KEY = 'search-history';
+const STORAGE_KEY = SEARCH_HISTORY_STORAGE_KEY;
 
 describe('useSearchHistory', () => {
   beforeEach(() => {
@@ -76,13 +76,51 @@ describe('useSearchHistory', () => {
   });
 
   it('restores history saved by a previous session', () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify([{ query: 'saved', timestamp: 1 }]),
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([{ query: 'saved', timestamp: 1 }]));
 
     const { result } = renderHook(() => useSearchHistory());
 
     expect(result.current.suggestions).toEqual([{ query: 'saved', timestamp: 1 }]);
+  });
+
+  it('migrates the legacy key once without assigning it to a signed-in user', () => {
+    const legacy = [{ query: 'old search', timestamp: 1 }];
+    localStorage.setItem('search-history', JSON.stringify(legacy));
+
+    const { result } = renderHook(() => useSearchHistory('user-a'));
+
+    expect(result.current.suggestions).toEqual([]);
+    expect(localStorage.getItem('search-history')).toBeNull();
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')).toEqual(legacy);
+  });
+
+  it('keeps each account history separate on the same browser', () => {
+    const userA = renderHook(() => useSearchHistory('user-a'));
+    act(() => userA.result.current.addSearch('private search'));
+    userA.unmount();
+
+    const userB = renderHook(() => useSearchHistory('user-b'));
+    expect(userB.result.current.suggestions).toEqual([]);
+    userB.unmount();
+
+    const returningUserA = renderHook(() => useSearchHistory('user-a'));
+    expect(returningUserA.result.current.suggestions.map((entry) => entry.query)).toEqual([
+      'private search',
+    ]);
+  });
+
+  it('removes one query and persists the remaining entries', () => {
+    const { result } = renderHook(() => useSearchHistory());
+    act(() => {
+      result.current.addSearch('jazz');
+      result.current.addSearch('rock');
+    });
+
+    act(() => result.current.removeSearch('jazz'));
+
+    expect(result.current.suggestions.map((entry) => entry.query)).toEqual(['rock']);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')).toEqual([
+      result.current.suggestions[0],
+    ]);
   });
 });

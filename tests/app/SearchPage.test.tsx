@@ -9,6 +9,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push }),
   usePathname: () => '/search',
 }));
+vi.mock('@dynamic-labs/sdk-react-core', () => ({ useDynamicContext: () => ({ user: null }) }));
 
 const searchSongs = vi.fn();
 vi.mock('@/lib/searchService', () => ({ searchSongs: (...a: unknown[]) => searchSongs(...a) }));
@@ -93,6 +94,8 @@ describe('/search page (#569)', () => {
     searchSongs.mockResolvedValue({ songs: [track], artists: [], nextPage: null });
     render(<SearchResults />);
     await waitFor(() => expect(screen.getByText('Love Song')).toBeInTheDocument());
-    await waitFor(() => expect(localStorage.getItem('search-history') ?? '').toContain('"love"'));
+    await waitFor(() =>
+      expect(localStorage.getItem('audioblocks_search_history') ?? '').toContain('"love"')
+    );
   });
 });

@@ -4,11 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { SearchOverlay } from '@/components/common/SearchOverlay';
 
+vi.mock('@dynamic-labs/sdk-react-core', () => ({ useDynamicContext: () => ({ user: null }) }));
+
 describe('SearchOverlay Integration Tests', () => {
   const user = userEvent.setup();
 
   beforeEach(() => {
-    // Render the component
+    localStorage.clear();
     render(
       <div>
         <button data-testid="outside-button">Outside</button>
@@ -131,10 +133,11 @@ describe('SearchOverlay Integration Tests', () => {
     const searchInput = screen.getByRole('searchbox');
     expect(searchInput).toHaveFocus();
 
-    // Press Tab
+    // Tab moves to the close control, then wraps back to the search input.
+    await user.keyboard('{Tab}');
+    expect(screen.getByRole('button', { name: 'Close search overlay' })).toHaveFocus();
     await user.keyboard('{Tab}');
 
-    // Focus should remain on the search input
     expect(searchInput).toHaveFocus();
   });
 
@@ -162,6 +165,56 @@ describe('SearchOverlay Integration Tests', () => {
     await openOverlay();
 
     expect(screen.queryByRole('dialog', { name: /search overlay/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('SearchOverlay individual history removal (#732)', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('removes a history entry with the keyboard', async () => {
+    localStorage.setItem(
+      'audioblocks_search_history',
+      JSON.stringify([
+        { query: 'jazz', timestamp: 1 },
+        { query: 'rock', timestamp: 2 },
+      ])
+    );
+    const user = userEvent.setup();
+    render(<SearchOverlay />);
+    await user.keyboard('{Control>}k{/Control}');
+
+    const removeButton = await screen.findByRole('button', { name: "Remove 'jazz' from history" });
+    const closeButton = screen.getByRole('button', { name: 'Close search overlay' });
+    closeButton.focus();
+    await user.keyboard('{Tab}');
+    await user.keyboard('{Tab}');
+    await user.keyboard('{Tab}');
+
+    expect(removeButton).toHaveFocus();
+    await user.keyboard('{Enter}');
+
+    expect(
+      screen.queryByRole('button', { name: "Remove 'jazz' from history" })
+    ).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('audioblocks_search_history') ?? '[]')).toEqual([
+      { query: 'rock', timestamp: 2 },
+    ]);
+  });
+
+  it('removes a history entry with the mouse', async () => {
+    localStorage.setItem(
+      'audioblocks_search_history',
+      JSON.stringify([{ query: 'jazz', timestamp: 1 }])
+    );
+    const user = userEvent.setup();
+    render(<SearchOverlay />);
+    await user.keyboard('{Control>}k{/Control}');
+    await user.click(await screen.findByRole('button', { name: "Remove 'jazz' from history" }));
+
+    expect(
+      screen.queryByRole('button', { name: "Remove 'jazz' from history" })
+    ).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('audioblocks_search_history') ?? '[]')).toEqual([]);
   });
 });
 

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import ConnectWalletPrompt from '@/components/auth/ConnectWalletPrompt';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import SearchOverlay from '@/components/common/SearchOverlay';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Auth } from '@/hooks/useAuth';
 import { useLogout } from '@/hooks/useLogout';
@@ -44,42 +45,65 @@ const Navbar = () => {
   const { setShouldTriggerSignature } = Auth();
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileCloseRef = useRef<HTMLButtonElement | null>(null);
+  const mobileMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const mobileMenuWasOpenRef = useRef(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileUserMenuRef = useRef<HTMLDivElement | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const route = useRouter();
 
-  useEffect(() => {
-    if (isMenuOpen) {
-      mobileCloseRef.current?.focus();
-    }
-  }, [isMenuOpen]);
+  const closeMobileMenu = useCallback(() => setIsMenuOpen(false), []);
 
-  const handleMobileMenuKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setIsMenuOpen(false);
+  useEffect(() => {
+    if (!isMenuOpen) {
+      if (mobileMenuWasOpenRef.current) {
+        mobileMenuTriggerRef.current?.focus();
+        mobileMenuWasOpenRef.current = false;
+      }
       return;
     }
-    if (e.key === 'Tab') {
-      const focusable = mobileMenuRef.current?.querySelectorAll<HTMLElement>(
-        'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
-      );
-      if (!focusable || focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
+
+    mobileMenuWasOpenRef.current = true;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    mobileCloseRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMenuOpen]);
+
+  const handleMobileMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeMobileMenu();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusable = mobileMenuRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable || focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (
+          e.shiftKey &&
+          (document.activeElement === first ||
+            !mobileMenuRef.current?.contains(document.activeElement))
+        ) {
           e.preventDefault();
           last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
+        } else if (
+          !e.shiftKey &&
+          (document.activeElement === last ||
+            !mobileMenuRef.current?.contains(document.activeElement))
+        ) {
           e.preventDefault();
           first.focus();
         }
       }
-    }
-  }, []);
+    },
+    [closeMobileMenu]
+  );
 
   const { setShowDynamicUserProfile, user } = useDynamicContext();
   const { logout } = useLogout();
@@ -288,8 +312,13 @@ const Navbar = () => {
         {/* Mobile Menu Button */}
         <div className="flex md:hidden">
           <button
+            ref={mobileMenuTriggerRef}
+            aria-controls="mobile-navigation-menu"
+            aria-expanded={isMenuOpen}
+            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             className="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#D2045B]"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            type="button"
+            onClick={() => setIsMenuOpen((open) => !open)}
           >
             {isMenuOpen ? (
               <X className="h-6 w-6 text-white" />
@@ -305,26 +334,36 @@ const Navbar = () => {
         {isMenuOpen && (
           <motion.div
             ref={mobileMenuRef}
-            animate="visible"
+            animate={{ opacity: 1 }}
             aria-label="Navigation menu"
             aria-modal="true"
-            className="fixed top-0 right-0 bottom-0 w-4/5 max-w-xs bg-[#000] z-50 shadow-lg border-l border-gray-900"
-            exit="exit"
-            initial="hidden"
+            className="fixed inset-0 z-50 flex justify-end bg-black/60 md:hidden"
+            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            id="mobile-navigation-menu"
             role="dialog"
-            variants={menuVariants}
+            onClick={closeMobileMenu}
             onKeyDown={handleMobileMenuKeyDown}
           >
-            <div className="flex justify-between items-center p-4 border-b border-gray-700">
-              <Image alt="AudioBlocks Logo" height={40} src="/logo2.png" width={40} />
-              <button
-                ref={mobileCloseRef}
-                aria-label="Close navigation menu"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <X className="h-6 w-6 text-white" />
-              </button>
-            </div>
+            <motion.div
+              animate="visible"
+              className="fixed top-0 right-0 bottom-0 w-4/5 max-w-xs bg-[#000] z-50 shadow-lg border-l border-gray-900"
+              exit="exit"
+              initial="hidden"
+              variants={menuVariants}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex justify-between items-center p-4 border-b border-gray-700">
+                <Image alt="AudioBlocks Logo" height={40} src="/logo2.png" width={40} />
+                <button
+                  ref={mobileCloseRef}
+                  aria-label="Close navigation menu"
+                  type="button"
+                  onClick={closeMobileMenu}
+                >
+                  <X className="h-6 w-6 text-white" />
+                </button>
+              </div>
 
             <div className="flex flex-col gap-4 px-6 py-6">
               {navLinks.map(({ name, href }) => (
@@ -332,7 +371,7 @@ const Navbar = () => {
                   <Link
                     className={`block text-base ${linkClass(href)}`}
                     href={href}
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMobileMenu}
                   >
                     {name}
                   </Link>
@@ -413,6 +452,7 @@ const Navbar = () => {
                 )}
               </motion.div>
             </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

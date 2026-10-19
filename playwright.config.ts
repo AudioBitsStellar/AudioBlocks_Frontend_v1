@@ -6,7 +6,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
-  reporter: 'list',
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   snapshotDir: './tests/snapshots',
   snapshotPathTemplate: '{snapshotDir}/{testFilePath}/{arg}{ext}',
   expect: {
@@ -20,11 +20,11 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'npm run dev',
+    command: process.env.CI ? 'npm run start' : 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     timeout: 300_000,
     // CI has no .env.local; lib/env.ts refuses to boot without an API URL.
-    env: { NEXT_PUBLIC_API_URL: 'http://localhost:4000/api' },
+    env: { NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api' },
   },
 });

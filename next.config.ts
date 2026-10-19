@@ -31,6 +31,7 @@ function originPattern(value: string | undefined, pathname: string): RemotePatte
 
 const nextConfig: NextConfig = {
   /* config options here */
+  output: 'standalone',
   images: {
     // NFT artwork is resolved through the application's configured IPFS
     // gateway. Never allow arbitrary remote hosts through the image optimizer.
@@ -67,7 +68,7 @@ const withBundleAnalyzerConfig = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
-let config = withBundleAnalyzerConfig(nextConfig);
+let config: NextConfig = withBundleAnalyzerConfig(nextConfig) as NextConfig;
 
 // Add Sentry if DSN is configured
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
