@@ -19,6 +19,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@dynamic-labs/sdk-react-core', () => ({
   useDynamicContext: () => ({
     handleLogOut: mockHandleLogOut,
+    user: { userId: 'user-a' },
   }),
 }));
 
@@ -52,6 +53,13 @@ describe('useLogout (#468)', () => {
     Cookies.set(AUTH.COOKIE_NAME, 'fake_token');
     Cookies.set(AUTH.REFRESH_COOKIE_NAME, 'fake_refresh_token');
     localStorage.setItem('audioblocks_wallet_connected', 'true');
+    localStorage.setItem('audioblocks_search_history', '[{"query":"anonymous","timestamp":1}]');
+    localStorage.setItem('search-history', '[{"query":"legacy","timestamp":0}]');
+    localStorage.setItem(
+      'audioblocks_search_history:user-a',
+      '[{"query":"private","timestamp":2}]'
+    );
+    localStorage.setItem('audioblocks_search_history:user-b', '[{"query":"other","timestamp":3}]');
 
     const { result } = renderHook(() => useLogout());
 
@@ -68,6 +76,10 @@ describe('useLogout (#468)', () => {
 
     // Local storage cleared
     expect(localStorage.getItem('audioblocks_wallet_connected')).toBeNull();
+    expect(localStorage.getItem('audioblocks_search_history')).toBeNull();
+    expect(localStorage.getItem('search-history')).toBeNull();
+    expect(localStorage.getItem('audioblocks_search_history:user-a')).toBeNull();
+    expect(localStorage.getItem('audioblocks_search_history:user-b')).not.toBeNull();
 
     // Provider logouts called
     expect(mockWagmiDisconnect).toHaveBeenCalled();

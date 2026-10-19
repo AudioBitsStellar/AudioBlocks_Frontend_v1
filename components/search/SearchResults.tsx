@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Play, Search } from 'lucide-react';
 import { useInfiniteQuery, type PageParam } from '@/hooks/useInfiniteQuery';
@@ -21,6 +22,7 @@ export const MIN_QUERY_LENGTH = 2;
  * short debounce, and back/forward restore earlier queries.
  */
 export function SearchResults() {
+  const { user } = useDynamicContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -28,7 +30,7 @@ export function SearchResults() {
   const genre = searchParams.get('genre');
   const [input, setInput] = useState(urlQuery);
   const lastPushed = useRef(urlQuery);
-  const { addSearch } = useSearchHistory();
+  const { addSearch } = useSearchHistory(user?.userId);
   const { playTrack } = usePlayback();
 
   // Back/forward (or a shared link) changed the URL: reflect it in the input.

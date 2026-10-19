@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import Image from 'next/image';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Clock, Loader2, Search, Trash2, X } from 'lucide-react';
 import { useSearch } from '@/hooks/useSearch';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
@@ -40,6 +41,7 @@ function groupResults(results: SearchResult[]): { groups: ResultGroup[]; ordered
  * Enter selects, and focus returns to the previously focused element on close.
  */
 export function SearchOverlay() {
+  const { user } = useDynamicContext();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -47,7 +49,7 @@ export function SearchOverlay() {
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const { results, loading } = useSearch(query, 200);
-  const { suggestions, addSearch, clearHistory } = useSearchHistory();
+  const { suggestions, addSearch, removeSearch, clearHistory } = useSearchHistory(user?.userId);
 
   const trimmedQuery = query.trim();
   const { groups, ordered } = useMemo(() => groupResults(results), [results]);
@@ -98,6 +100,28 @@ export function SearchOverlay() {
   );
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Tab') {
+      const dialog = e.currentTarget.closest('[role="dialog"]');
+      const focusable = dialog?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+      return;
+    }
+
+    // Search commands belong to the searchbox. Let interactive controls in
+    // history use their native Enter/arrow key behavior.
+    if (e.target !== inputRef.current) return;
+
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex((i) => Math.min(i + 1, optionCount - 1));
@@ -110,10 +134,6 @@ export function SearchOverlay() {
         ? ordered[selectedIndex]?.title
         : suggestions[selectedIndex]?.query;
       submit(selected ?? query);
-    } else if (e.key === 'Tab') {
-      // Keep focus inside the dialog.
-      e.preventDefault();
-      inputRef.current?.focus();
     }
   };
 
@@ -209,7 +229,7 @@ export function SearchOverlay() {
         )}
 
         {!trimmedQuery && suggestions.length > 0 && (
-          <div className="max-h-96 overflow-y-auto py-2" role="listbox">
+          <div className="max-h-96 overflow-y-auto py-2">
             <div className="px-4 py-2 flex items-center justify-between">
               <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Recent Searches
@@ -227,14 +247,26 @@ export function SearchOverlay() {
             {suggestions.map((entry, index) => (
               <div
                 key={entry.query}
-                aria-selected={index === selectedIndex}
-                className={optionClass(index)}
-                role="option"
-                onClick={() => submit(entry.query)}
+                aria-current={index === selectedIndex ? 'true' : undefined}
+                className={`${optionClass(index)} cursor-default`}
                 onMouseEnter={() => setSelectedIndex(index)}
               >
-                <Clock className="w-4 h-4 text-gray-500 shrink-0" />
-                <span className="text-gray-300 text-sm flex-1 truncate">{entry.query}</span>
+                <button
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  type="button"
+                  onClick={() => submit(entry.query)}
+                >
+                  <Clock className="w-4 h-4 text-gray-500 shrink-0" />
+                  <span className="text-gray-300 text-sm truncate">{entry.query}</span>
+                </button>
+                <button
+                  aria-label={`Remove '${entry.query}' from history`}
+                  className="rounded p-1 text-gray-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  type="button"
+                  onClick={() => removeSearch(entry.query)}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </button>
               </div>
             ))}
           </div>

@@ -60,6 +60,7 @@
     "wagmi": "^2.15.6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
     "@eslint/eslintrc": "^3",

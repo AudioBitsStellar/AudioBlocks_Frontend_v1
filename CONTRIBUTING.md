@@ -20,7 +20,7 @@ need to get set up and submit a change.
 
 Before setting up the project locally, ensure you have the following installed:
 
-- **Node.js** — version 18.17 or later (the project uses Next.js 15 which requires Node 18.17+)
+- **Node.js** — version 20 or later (see `.nvmrc`)
 - **npm** — comes with Node.js (or use `pnpm` / `yarn` as an alternative)
 - **A wallet extension** — [MetaMask](https://metamask.io/download/) or any EVM-compatible browser wallet (required for authentication via Dynamic Labs)
 - **Git** — for cloning the repository
