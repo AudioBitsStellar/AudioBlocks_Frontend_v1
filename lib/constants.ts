@@ -145,6 +145,7 @@ export const API_ENDPOINTS = {
   // Moderation reports (#578). Song reports are not mounted on the backend yet;
   // comment reports use the mounted POST /api/comments/:id/report route.
   SONG_REPORT: (songId: string | number) => `/api/song/${songId}/report`,
+  SONG_SEARCH: '/api/song/search',
   COMMENT_REPORT: (commentId: string | number) => `/api/comments/${commentId}/report`,
 
   // Playlists (#579 follow, #580 smart playlists). Follow routes are the mounted
