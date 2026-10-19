@@ -163,57 +163,6 @@ export default function SettingsPage() {
       </section>
 
       <section className="mb-10">
-        <h2 className="text-lg font-semibold text-white mb-4">Quality Checks</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E]">
-            <div>
-              <div className="font-medium text-white">Opt Out of Quality Checks</div>
-              <div className="text-xs text-gray-400 mt-1">
-                Skip the automated AI quality analysis on your uploads. Existing tracks stay online
-                and you can turn this back on at any time.
-              </div>
-            </div>
-            <button
-              aria-label={`Quality checks are ${preferences.qualityAnalysisOptOut ? 'off' : 'on'}`}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                preferences.qualityAnalysisOptOut ? 'bg-gray-600' : 'bg-[#D2045B]'
-              }`}
-              onClick={() =>
-                setPreference('qualityAnalysisOptOut', !preferences.qualityAnalysisOptOut)
-              }
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  preferences.qualityAnalysisOptOut ? 'translate-x-1' : 'translate-x-6'
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E]">
-            <div>
-              <div className="font-medium text-white flex items-center gap-2">
-                Tune Platform Quality Thresholds
-                <span className="rounded-full bg-[#D2045B]/15 px-2 py-0.5 text-[10px] font-semibold text-[#D2045B] border border-[#D2045B]/30">
-                  Admin
-                </span>
-              </div>
-              <div className="text-xs text-gray-400 mt-1">
-                Configure minimum confidence scores per genre and review adaptive moderation
-                feedback.
-              </div>
-            </div>
-            <Link
-              href="/dashboard/settings/quality"
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-[#D2045B] hover:bg-[#b0034c] rounded-lg transition-colors shrink-0"
-            >
-              Tune Thresholds
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Notifications</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E]">
