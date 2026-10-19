@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import Slider from 'react-slick';
 import { useGetMerch } from '@/hooks/useExplore';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import { NextArrow, PrevArrow } from './landing/NavigationArrow';
 
 const collectiveSettings = {
@@ -39,14 +40,17 @@ const MerchSkeleton = () => (
 const Merch = () => {
   const { data: items, isLoading, isError } = useGetMerch();
 
+  // #637: hide the section while /api/merch has no backend support.
+  if (!isFeatureEnabled('merch')) return null;
+
   return (
     <section>
       <div className="flex justify-between items-center pb-6 border-b">
-        <h2 className="text-2xl font-semibold text-[#A3A3A3] font-poppins leading-tight tracking-tight">
+        <h2 className="text-2xl font-semibold text-muted font-poppins leading-tight tracking-tight">
           Merch
         </h2>
         <Link
-          className="bg-[#1E181D] hover:bg-[#885FA8] text-[#A3A3A3] hover:text-[#1E181D] rounded-full p-3"
+          className="bg-[#1E181D] hover:bg-[#885FA8] text-muted hover:text-[#1E181D] rounded-full p-3"
           href="#"
         >
           <ArrowUpRight className="w-5 h-5" />
@@ -60,7 +64,7 @@ const Merch = () => {
           Failed to load merch. Please try again later.
         </p>
       ) : !items || items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[#A3A3A3]">No merch available yet.</p>
+        <p className="py-8 text-center text-sm text-muted">No merch available yet.</p>
       ) : (
         <div className="relative py-4 overflow-hidden">
           <Slider
@@ -81,7 +85,7 @@ const Merch = () => {
                 </div>
                 <div className="py-2 text-center md:text-left text-white min-w-0">
                   <p className="text-sm font-bold truncate">{item.song}</p>
-                  <p className="text-xs text-[#A3A3A3] font-normal">{item.artist}</p>
+                  <p className="text-xs text-muted font-normal">{item.artist}</p>
                   <p className="text-sm font-medium truncate">{item.description}</p>
                 </div>
               </div>

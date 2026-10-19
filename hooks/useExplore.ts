@@ -9,6 +9,7 @@ import {
   getExploreCollections,
   getExploreArtists,
 } from '@/lib/exploreService';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 
 export function useGetMerch() {
   return useQuery({
@@ -16,6 +17,9 @@ export function useGetMerch() {
     queryFn: getMerchListings,
     staleTime: CACHE_DURATIONS.MEDIUM,
     retry: RETRY_CONFIG.DEFAULT,
+    // #637: /api/merch is not implemented yet, so never request it while the
+    // Merch flag is off.
+    enabled: isFeatureEnabled('merch'),
   });
 }
 
@@ -52,6 +56,9 @@ export function useGetEvents() {
     queryFn: getEventListings,
     staleTime: CACHE_DURATIONS.MEDIUM,
     retry: RETRY_CONFIG.DEFAULT,
+    // #637: /api/events is not implemented yet, so never request it while the
+    // Events flag is off.
+    enabled: isFeatureEnabled('events'),
   });
 }
 

@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isAnalyticsEnabled, trackEvent } from '@/lib/analytics';
+import { resetAnalyticsConsentMemory, setAnalyticsConsent } from '@/lib/analyticsConsent';
 
 describe('lib/analytics', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
+    window.localStorage.clear();
+    resetAnalyticsConsentMemory();
+    setAnalyticsConsent('accepted');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).analytics;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,6 +59,17 @@ describe('lib/analytics', () => {
         expect.any(String)
       );
       debugSpy.mockRestore();
+    });
+
+    it('drops events until the visitor accepts analytics (#597)', () => {
+      setAnalyticsConsent('rejected');
+      const track = vi.fn();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).analytics = { track };
+
+      trackEvent('wallet_connect');
+
+      expect(track).not.toHaveBeenCalled();
     });
 
     it('is a no-op when analytics are disabled', () => {

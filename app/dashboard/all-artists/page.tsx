@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { artistsData } from '@/components/common/dashboard/data';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -43,7 +44,7 @@ const AllArtistsPage = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
         {currentItems.map((item) => (
           <div key={item.id} className="hover:bg-surface-hover p-3 rounded-lg transition-colors">
-            <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
+            <div className="w-full aspect-square rounded-md overflow-hidden mb-3 relative">
               <Image
                 alt={item.song}
                 className="w-full h-full object-cover"
@@ -52,7 +53,10 @@ const AllArtistsPage = () => {
                 width={300}
               />
             </div>
-            <p className="text-sm font-bold text-white">{item.song}</p>
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <p className="text-sm font-bold text-white flex-1">{item.song}</p>
+              {item.isVerified && <VerifiedBadge size="sm" />}
+            </div>
             <p className="text-xs text-on-muted">{item.artist}</p>
             <p className="text-sm font-medium text-white">{item.description}</p>
           </div>

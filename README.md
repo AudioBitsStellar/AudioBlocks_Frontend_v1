@@ -189,15 +189,15 @@ graph TD
 
 ### Authenticated app — `app/dashboard/` (requires `audioblocks_jwt` cookie)
 
-| Route                        | Description                                              |
-| ---------------------------- | -------------------------------------------------------- |
-| `/dashboard`                 | Explore: categories, collections, events, artists, merch |
-| `/dashboard/playlist`        | The listener's playlist                                  |
-| `/dashboard/community`       | Artist voting and listening-hours leaderboard            |
-| `/dashboard/collection`      | The listener's owned NFTs/assets                         |
-| `/dashboard/profile`         | Listener profile                                         |
-| `/dashboard/all-artists`     | Browse all artists                                       |
-| `/dashboard/all-collections` | Browse all NFT collections                               |
+| Route                        | Description                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| `/dashboard`                 | Explore: categories, collections, events, artists, merch                                        |
+| `/dashboard/playlist`        | The listener's playlist                                                                         |
+| `/dashboard/community`       | Artist voting and listening-hours leaderboard (flag-gated, see [Feature flags](#feature-flags)) |
+| `/dashboard/collection`      | The listener's owned NFTs/assets                                                                |
+| `/dashboard/profile`         | Listener profile                                                                                |
+| `/dashboard/all-artists`     | Browse all artists                                                                              |
+| `/dashboard/all-collections` | Browse all NFT collections                                                                      |
 
 `middleware.ts` gates every `/dashboard/*` route on the presence of the
 `audioblocks_jwt` cookie, redirecting unauthenticated visitors to `/`.
@@ -346,6 +346,24 @@ All environment variables are prefixed `NEXT_PUBLIC_` (client-accessible).
 
 Variables are validated at runtime by `lib/env.ts`. If `NEXT_PUBLIC_API_URL` is
 missing, the app logs an error and throws.
+
+### Feature flags
+
+Sections whose backend endpoints do not exist yet are hidden behind the flags
+in `lib/featureFlags.ts`. Each flag is read from a `NEXT_PUBLIC_FEATURE_*`
+environment variable, defaults to **off in production** and **on elsewhere**,
+and accepts `true/false`, `1/0`, `on/off` or `yes/no`.
+
+| Variable                               | Default                              | Hides when off                                                                    |
+| -------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_FEATURE_MERCH`            | `false` in production, `true` in dev | Merch section on `/dashboard` (no `/api/merch` calls)                             |
+| `NEXT_PUBLIC_FEATURE_EVENTS`           | `false` in production, `true` in dev | Events section on `/dashboard` (no `/api/events` calls)                           |
+| `NEXT_PUBLIC_FEATURE_COMMUNITY_VOTING` | `false` in production, `true` in dev | Community nav entry and `/dashboard/community` (404, no `/api/community/*` calls) |
+
+While a flag is off the corresponding section is not rendered and its React
+Query hooks stay disabled, so no request is made. Flipping the flag on restores
+the section; see issues #51 and #55 for the backend work that will let the flags
+default to on.
 
 ## Getting Started
 
@@ -531,6 +549,9 @@ Open a GitHub issue with:
   internally by `wagmi`) but isn't yet used for the app's own data fetching.
 - Dynamic Labs `environmentId` is hardcoded in `context/provider.tsx` and
   should be moved to an environment variable.
+- Several frontend API calls don't match a mounted backend route. See the
+  [API contract map](docs/api-contract.md) for each call's status (ok, path
+  mismatch, missing on backend, or mocked) and the backend issue tracking it.
 
 ## Testing
 

@@ -3,23 +3,31 @@
 import type { SVGProps } from 'react';
 import { useEffect } from 'react';
 
-export type IconName =
-  | 'alert-triangle'
-  | 'chevron-down'
-  | 'chevron-up'
-  | 'help-circle'
-  | 'heart'
-  | 'list-plus'
-  | 'music'
-  | 'play'
-  | 'refresh-cw'
-  | 'rotate-cw'
-  | 'search'
-  | 'share-2'
-  | 'square-check'
-  | 'user'
-  | 'user-round'
-  | 'x';
+const ICON_NAMES = [
+  'alert-triangle',
+  'chevron-down',
+  'chevron-up',
+  'google',
+  'help-circle',
+  'heart',
+  'instagram',
+  'list-plus',
+  'music',
+  'play',
+  'refresh-cw',
+  'rotate-cw',
+  'search',
+  'share-2',
+  'snapchat',
+  'square-check',
+  'telegram',
+  'user',
+  'user-round',
+  'x',
+  'x-brand',
+] as const;
+
+export type IconName = (typeof ICON_NAMES)[number];
 
 export type IconSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -35,35 +43,17 @@ const ICON_SIZES: Record<IconSize, number> = {
   xl: 32,
 };
 
-const ICON_NAMES = new Set<IconName>([
-  'alert-triangle',
-  'chevron-down',
-  'chevron-up',
-  'help-circle',
-  'heart',
-  'list-plus',
-  'music',
-  'play',
-  'refresh-cw',
-  'rotate-cw',
-  'search',
-  'share-2',
-  'square-check',
-  'user',
-  'user-round',
-  'x',
-]);
+const ICON_NAME_SET: ReadonlySet<string> = new Set(ICON_NAMES);
 
 export function Icon({
   name,
   size = 'md',
   className,
-  ariaHidden = true,
-  'aria-hidden': ariaHiddenAttribute,
+  'aria-hidden': ariaHidden = true,
   ...props
-}: IconProps & { ariaHidden?: boolean }) {
+}: IconProps) {
   const iconSize = ICON_SIZES[size];
-  const isKnownIcon = ICON_NAMES.has(name);
+  const isKnownIcon = ICON_NAME_SET.has(name);
 
   useEffect(() => {
     if (process.env.NODE_ENV === 'development' && !isKnownIcon) {
@@ -74,7 +64,7 @@ export function Icon({
   return (
     <svg
       {...props}
-      aria-hidden={ariaHiddenAttribute ?? ariaHidden}
+      aria-hidden={ariaHidden}
       className={className}
       fill="none"
       focusable="false"

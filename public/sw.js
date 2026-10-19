@@ -78,7 +78,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Strategy 1: Network-first for API requests (`/api/*`)
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith('/api/') && event.request.method === 'GET') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {

@@ -482,7 +482,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -964,7 +971,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -1457,7 +1471,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -1950,7 +1971,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -2432,7 +2460,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -2925,7 +2960,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -3418,7 +3460,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -3900,7 +3949,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -4393,7 +4449,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"

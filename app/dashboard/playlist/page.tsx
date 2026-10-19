@@ -1,37 +1,53 @@
 'use client';
 
-import { useState } from 'react';
-import { GripVertical, Play, Trash2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { GripVertical, Play, Trash2, Loader2, Shield } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
+import CollaboratorsPanel from '@/components/playlist/CollaboratorsPanel';
+import { CreateSmartPlaylistDialog } from '@/components/playlist/CreateSmartPlaylistDialog';
+import { FollowedPlaylistsList } from '@/components/playlist/FollowedPlaylistsList';
+import { useHasAuthSession } from '@/hooks/useHasAuthSession';
+import { useQuery } from '@tanstack/react-query';
 
-const sampleTracks = [
-  {
-    id: 'pl-1',
-    title: 'Relax and Unwind',
-    artist: 'Rozé',
-    cover: '/AFRO.jpg',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  },
-  {
-    id: 'pl-2',
-    title: 'Vibe Mix',
-    artist: 'Yemi Sax',
-    cover: '/AFRO.jpg',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-  },
-  {
-    id: 'pl-3',
-    title: 'Cool Session',
-    artist: 'Dunsin',
-    cover: '/AFRO.jpg',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-  },
-];
+interface Track {
+  id: string | number;
+  title: string;
+  artist?: string;
+  cover?: string;
+  url?: string;
+  coverUrl?: string;
+}
 
 const Playlist = () => {
   const { playTrack, currentIndex, playlist, isPlaying } = usePlayback();
-  const [tracks, setTracks] = useState(sampleTracks);
+  const [tracks, setTracks] = useState<Track[]>([]);
   const [draggedTrackId, setDraggedTrackId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSmartDialogOpen, setIsSmartDialogOpen] = useState(false);
+  const signedIn = useHasAuthSession();
+
+  // Fetch playlists from backend (Issue #617)
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch('/api/playlists');
+        if (!response.ok) throw new Error('Failed to fetch playlists');
+        const data = await response.json();
+        setTracks(data.tracks || []);
+      } catch (err) {
+        // Fallback to empty playlist if backend unavailable
+        console.error('Error fetching playlists:', err);
+        setTracks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlaylists();
+  }, []);
 
   const handleDrop = (targetTrackId: string) => {
     if (!draggedTrackId || draggedTrackId === targetTrackId) {
@@ -71,78 +87,66 @@ const Playlist = () => {
         </div>
       </div>
 
-      {tracks.length === 0 ? (
+      {signedIn && (
+        <div className="mb-6 flex justify-end">
+          <button
+            className="px-4 py-2 rounded-lg bg-[#D2045B] text-sm font-semibold text-white hover:bg-[#b80350] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9]"
+            type="button"
+            onClick={() => setIsSmartDialogOpen(true)}
+          >
+            New smart playlist
+          </button>
+          <CreateSmartPlaylistDialog
+            open={isSmartDialogOpen}
+            onClose={() => setIsSmartDialogOpen(false)}
+          />
+        </div>
+      )}
+
+      <FollowedPlaylistsList className="mb-6" />
+
+      {loading ? (
+        <div className="rounded-lg border border-border-dark p-8 text-center text-on-muted flex items-center justify-center gap-3">
+          <Loader2 size={20} className="animate-spin" />
+          Loading playlist...
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-red-400/50 bg-red-400/10 p-8 text-center text-red-400">
+          Failed to load playlist. Please try again.
+        </div>
+      ) : tracks.length === 0 ? (
         <div className="rounded-lg border border-border-dark p-8 text-center text-on-muted">
           Your playlist is empty.
         </div>
+      ) : !data?.data?.length ? (
+        <p>Your playlists are empty.</p>
       ) : (
-        <div aria-label="Playlist tracks" className="flex flex-col gap-2">
-          {tracks.map((track, i) => {
-            const globalIndex = playlist.findIndex(
-              (playlistTrack) => playlistTrack.url === track.url
-            );
-            const isActive = globalIndex >= 0 && globalIndex === currentIndex && isPlaying;
-
-            return (
-              <div
-                key={track.id}
-                draggable
-                className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
-                  isActive ? 'bg-surface border border-border-dark' : 'hover:bg-surface-hover'
-                } ${draggedTrackId === track.id ? 'opacity-50' : ''}`}
-                onDragEnd={() => setDraggedTrackId(null)}
-                onDragOver={(event) => event.preventDefault()}
-                onDragStart={() => setDraggedTrackId(track.id)}
-                onDrop={() => handleDrop(track.id)}
+        <ul className="grid gap-4 sm:grid-cols-2">
+          {data.data.map((playlist) => (
+            <li key={playlist.id}>
+              <Link
+                className="block rounded-xl border border-border-dark p-5"
+                href={`/dashboard/playlist/${encodeURIComponent(playlist.id)}`}
               >
-                <button
-                  aria-label={`Reorder ${track.title}`}
-                  className="cursor-grab text-on-muted hover:text-white touch-none"
-                  title="Drag to reorder"
-                  type="button"
-                >
-                  <GripVertical size={20} />
-                </button>
-
-                <button
-                  aria-label={`Play ${track.title}`}
-                  className="flex flex-1 min-w-0 items-center gap-4 text-left cursor-pointer"
-                  type="button"
-                  onClick={() => playTrack(track)}
-                >
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-brand shrink-0">
-                    <Play className="text-white ml-0.5" size={14} />
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span
-                      className={`block text-sm font-semibold truncate ${
-                        isActive ? 'text-brand' : 'text-white'
-                      }`}
-                    >
-                      {track.title}
-                    </span>
-                    <span className="block text-xs text-on-muted truncate">{track.artist}</span>
-                  </span>
-                </button>
-
-                <span className="text-xs text-on-muted shrink-0">{i + 1}</span>
-
-                <button
-                  aria-label={`Remove ${track.title} from playlist`}
-                  className="p-2 rounded-md text-on-muted hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                  title="Remove from playlist"
-                  type="button"
-                  onClick={() => handleRemove(track.id)}
-                >
-                  <Trash2 size={17} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                {playlist.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
+      <nav aria-label="Playlist pages" className="flex gap-4">
+        <button disabled={page === 1} type="button" onClick={() => setPage(page - 1)}>
+          Previous
+        </button>
+        <span>Page {page}</span>
+        <button
+          disabled={!data || page >= (data.pagination?.totalPages ?? 1)}
+          type="button"
+          onClick={() => setPage(page + 1)}
+        >
+          Next
+        </button>
+      </nav>
     </div>
   );
-};
-
-export default Playlist;
+}

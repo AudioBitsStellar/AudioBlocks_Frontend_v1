@@ -1,4 +1,4 @@
-import Hero from '../../components/common/home/Hero';
+import Hero from '@/components/common/home/Hero';
 import HomeSections from './HomeSections';
 import type { Metadata } from 'next';
 

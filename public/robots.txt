@@ -1,0 +1,24 @@
+# AudioBlocks SEO Configuration
+# Robots.txt for AudioBlocks Frontend
+
+# Allow all crawlers by default
+User-agent: *
+Allow: /
+
+# Disallow private/admin paths
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /onboarding/
+Disallow: /login/
+
+# Disallow query parameters that create duplicate content
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+Disallow: /*?*page=2
+
+# Sitemap location
+Sitemap: https://audioblocks.xyz/sitemap.xml
+
+# Crawl delay (optional - only if needed)
+# Crawl-delay: 1

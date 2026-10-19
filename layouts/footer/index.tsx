@@ -1,22 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Facebook, Twitter, Youtube, Mail } from 'lucide-react';
-
-const Instagram = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    viewBox="0 0 24 24"
-  >
-    <rect height="20" rx="5" ry="5" width="20" x="2" y="2" />
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-  </svg>
-);
+import Icon from '@/components/ui/Icon';
 
 const Footer = () => {
   return (
@@ -64,6 +49,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link className="hover:text-white" href="/dashboard/settings#privacy-data">
+                  Privacy settings
+                </Link>
+              </li>
+              <li>
                 <Link className="hover:text-white" href="#">
                   Terms of Service
                 </Link>
@@ -83,7 +73,7 @@ const Footer = () => {
                   <Youtube />
                 </Link>
                 <Link className="hover:text-white" href="#">
-                  <Instagram />
+                  <Icon aria-hidden="true" className="h-6 w-6" name="instagram" size="lg" />
                 </Link>
                 <Link className="hover:text-white" href="#">
                   <Facebook />

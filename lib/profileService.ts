@@ -1,5 +1,6 @@
 import apiClient from './apiClient';
 import { API_ENDPOINTS } from './constants';
+import type { AuthRole } from './authRoles';
 
 export interface UserProfile {
   id: string;
@@ -13,6 +14,8 @@ export interface UserProfile {
   joinedAt?: string;
   minutesListened?: number;
   listenerType?: string;
+  /** Role saved during onboarding (#596). Absent until the user picks one. */
+  accountType?: AuthRole;
 }
 
 export interface UpdateProfilePayload {
@@ -39,9 +42,19 @@ export function isValidProfileUrl(value: string): boolean {
   }
 }
 
+/** GET/PUT /api/users/profile respond with `{ success, data: profile }`; older shapes are still accepted. */
+function unwrapProfile(body: { user?: UserProfile; data?: UserProfile } | null): UserProfile {
+  return body?.user ?? body?.data ?? (body as UserProfile);
+}
+
 export async function getProfile(): Promise<UserProfile> {
   const res = await apiClient.get(API_ENDPOINTS.USER_PROFILE);
-  return res.data?.user ?? res.data;
+  return unwrapProfile(res.data);
+}
+
+/** Persists the role chosen during onboarding so the backend recognizes artists (#596). */
+export async function updateAccountType(accountType: AuthRole): Promise<void> {
+  await apiClient.put(API_ENDPOINTS.USER_ACCOUNT_TYPE, { accountType });
 }
 
 export async function updateProfile(payload: UpdateProfilePayload): Promise<UserProfile> {
@@ -50,5 +63,5 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<User
   }
 
   const res = await apiClient.put(API_ENDPOINTS.USER_PROFILE, payload);
-  return res.data?.user ?? res.data;
+  return unwrapProfile(res.data);
 }

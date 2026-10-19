@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { GripVertical, Trash2, X } from 'lucide-react';
+import { GripVertical, Trash2, X, Save } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { usePlayback } from '@/context/PlaybackContext';
 
@@ -19,6 +19,8 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
   const { queue, removeFromQueue, clearQueue, reorderQueue } = usePlayback();
   const [removeIndex, setRemoveIndex] = useState<number | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showSavePlaylist, setShowSavePlaylist] = useState(false);
+  const [playlistName, setPlaylistName] = useState('My Queue Playlist');
   const dragItem = useRef<DragItem | null>(null);
   const dragOverItem = useRef<DragItem | null>(null);
 
@@ -54,6 +56,21 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
     clearQueue();
     setShowClearConfirm(false);
   }, [clearQueue]);
+
+  const handleSavePlaylist = useCallback(() => {
+    if (queue.length === 0 || !playlistName.trim()) return;
+    const playlistData = {
+      name: playlistName.trim(),
+      tracks: queue,
+      createdAt: new Date().toISOString(),
+    };
+    const playlistsJson = localStorage.getItem('savedPlaylists') || '[]';
+    const playlists = JSON.parse(playlistsJson);
+    playlists.push(playlistData);
+    localStorage.setItem('savedPlaylists', JSON.stringify(playlists));
+    setShowSavePlaylist(false);
+    setPlaylistName('My Queue Playlist');
+  }, [queue, playlistName]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -153,8 +170,33 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
         </div>
 
         {queue.length > 0 && (
-          <div className="px-4 pb-4 border-t border-white/10 pt-3">
-            {showClearConfirm ? (
+          <div className="px-4 pb-4 border-t border-white/10 pt-3 space-y-2">
+            {showSavePlaylist ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={playlistName}
+                  onChange={(e) => setPlaylistName(e.target.value)}
+                  placeholder="Playlist name"
+                  className="w-full text-xs px-2 py-1 rounded bg-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20"
+                  autoFocus
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    className="text-xs text-green-400 hover:text-green-300 underline flex-1"
+                    onClick={handleSavePlaylist}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="text-xs text-gray-400 hover:text-white flex-1"
+                    onClick={() => setShowSavePlaylist(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : showClearConfirm ? (
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Clear all tracks?</span>
                 <div className="flex items-center gap-2">
@@ -173,12 +215,22 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                 </div>
               </div>
             ) : (
-              <button
-                className="text-xs text-gray-400 underline hover:text-white"
-                onClick={() => setShowClearConfirm(true)}
-              >
-                Clear queue
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  className="text-xs text-gray-400 hover:text-white underline flex-1 flex items-center justify-center gap-1"
+                  onClick={() => setShowSavePlaylist(true)}
+                  aria-label="Save queue as playlist"
+                >
+                  <Save size={12} />
+                  Save as playlist
+                </button>
+                <button
+                  className="text-xs text-gray-400 hover:text-white underline flex-1"
+                  onClick={() => setShowClearConfirm(true)}
+                >
+                  Clear queue
+                </button>
+              </div>
             )}
           </div>
         )}

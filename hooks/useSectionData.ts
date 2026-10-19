@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
 
 export interface SectionDataState<T> {
@@ -6,10 +6,11 @@ export interface SectionDataState<T> {
   isLoading: boolean;
   isError: boolean;
   isEmpty: boolean;
+  refetch: () => Promise<void>;
 }
 
 type UseSectionDataOptions<T> = {
-  queryKey: string[];
+  queryKey: readonly string[];
   fetchFn: () => Promise<T[]>;
   staleTime?: number;
   retry?: number;
@@ -23,7 +24,7 @@ export function useSectionData<T>({
   retry = RETRY_CONFIG.DEFAULT,
   enabled = true,
 }: UseSectionDataOptions<T>): SectionDataState<T> {
-  const { data, isLoading, isError } = useQuery<T[]>({
+  const { data, isLoading, isError, refetch } = useQuery<T[]>({
     queryKey,
     queryFn: fetchFn,
     staleTime,
@@ -36,5 +37,8 @@ export function useSectionData<T>({
     isLoading,
     isError,
     isEmpty: !isLoading && !isError && (!data || data.length === 0),
+    refetch: async () => {
+      await refetch();
+    },
   };
 }

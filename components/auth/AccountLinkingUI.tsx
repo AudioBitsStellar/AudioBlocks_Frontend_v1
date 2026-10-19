@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Mail, CheckCircle2, AlertCircle, Link2, Unlink2, Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
+import WalletHelpLink from '@/components/help/WalletHelpLink';
 
 export interface AccountLinkingUIProps {
   className?: string;
@@ -100,8 +101,8 @@ export default function AccountLinkingUI({
 
   return (
     <div
-      data-testid="account-linking-ui"
       className={`rounded-xl border border-gray-700 bg-[#1E1E1E] p-5 space-y-4 ${className}`}
+      data-testid="account-linking-ui"
     >
       <div className="flex items-center justify-between border-b border-gray-800 pb-3">
         <div className="flex items-center gap-2.5">
@@ -112,6 +113,7 @@ export default function AccountLinkingUI({
             <h3 className="text-sm font-semibold text-white">Wallet & Email Account Linking</h3>
             <p className="text-xs text-gray-400">
               Link your email to your connected wallet to enable notifications and account recovery.
+              <WalletHelpLink />
             </p>
           </div>
         </div>
@@ -121,7 +123,7 @@ export default function AccountLinkingUI({
       {userWallet && (
         <div className="flex items-center justify-between rounded-lg bg-[#141414] p-3 text-xs border border-gray-800">
           <div className="flex items-center gap-2 text-gray-300">
-            <Wallet size={16} className="text-[#D2045B]" />
+            <Wallet className="text-[#D2045B]" size={16} />
             <span className="font-medium text-white">Connected Wallet:</span>
             <span className="font-mono text-gray-400">
               {userWallet.slice(0, 6)}...{userWallet.slice(-4)}
@@ -144,8 +146,8 @@ export default function AccountLinkingUI({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-white">{userEmail}</span>
                 <span
-                  data-testid="email-linked-badge"
                   className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400"
+                  data-testid="email-linked-badge"
                 >
                   <CheckCircle2 size={10} /> Linked
                 </span>
@@ -156,14 +158,14 @@ export default function AccountLinkingUI({
             </div>
           </div>
           <button
-            type="button"
+            className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
             data-testid="unlink-email-btn"
             disabled={loading}
-            onClick={handleUnlinkEmail}
-            className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
             title="Unlink Email"
+            type="button"
+            onClick={handleUnlinkEmail}
           >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Unlink2 size={14} />}
+            {loading ? <Loader2 className="animate-spin" size={14} /> : <Unlink2 size={14} />}
             <span>Unlink</span>
           </button>
         </div>
@@ -181,15 +183,15 @@ export default function AccountLinkingUI({
             </div>
           </div>
           <button
-            type="button"
+            className="flex items-center justify-center gap-2 rounded-lg bg-[#D2045B] hover:bg-[#b0034c] px-4 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-50 shadow-md shadow-[#D2045B]/20"
             data-testid="link-email-btn"
             disabled={loading}
+            type="button"
             onClick={handleLinkEmail}
-            className="flex items-center justify-center gap-2 rounded-lg bg-[#D2045B] hover:bg-[#b0034c] px-4 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-50 shadow-md shadow-[#D2045B]/20"
           >
             {loading ? (
               <>
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 className="animate-spin" size={14} />
                 <span>Connecting...</span>
               </>
             ) : (
@@ -204,10 +206,10 @@ export default function AccountLinkingUI({
 
       {errorMsg && (
         <div
-          data-testid="account-linking-error"
           className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-400"
+          data-testid="account-linking-error"
         >
-          <AlertCircle size={14} className="shrink-0" />
+          <AlertCircle className="shrink-0" size={14} />
           <span>{errorMsg}</span>
         </div>
       )}

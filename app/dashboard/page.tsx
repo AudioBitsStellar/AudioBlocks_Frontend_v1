@@ -1,19 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
+import { Search } from 'lucide-react';
 import Artists from '@/components/common/dashboard/Artists';
 import CategorySection from '@/components/common/dashboard/CategorySection';
 import Collections from '@/components/common/dashboard/Collections';
 import EventSection from '@/components/common/dashboard/EventSection';
 import Merch from '@/components/common/dashboard/Merch';
-import RecentlyPlayed from '@/components/common/dashboard/RecentlyPlayed';
+import PersonalizationRow from '@/components/common/dashboard/PersonalizationRow';
+import { RecentlyPlayed } from '@/components/common/RecentlyPlayed';
 import DataErrorBoundary from '@/components/common/DataErrorBoundary';
+import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicator';
 import { ProfileCompletion } from '@/components/dashboard/ProfileCompletion';
-import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 
 const genreFilters = ['All', 'Pop', 'Contemporary', 'Rock', 'Afro', 'Jazz'];
 
@@ -22,6 +24,9 @@ const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('All');
   const queryClient = useQueryClient();
+  // #637: sections whose backend endpoints are not live yet.
+  const eventsEnabled = isFeatureEnabled('events');
+  const merchEnabled = isFeatureEnabled('merch');
   const pullToRefresh = usePullToRefresh({
     onRefresh: () => queryClient.refetchQueries({ type: 'active' }),
   });
@@ -72,28 +77,36 @@ const ExplorePage = () => {
         docs/ERROR_BOUNDARIES.md for applying this to Collection/Community/Playlist.
       */}
       <DataErrorBoundary name="Recently Played">
-        <RecentlyPlayed />
+        <RecentlyPlayed variant="dashboard" />
+      </DataErrorBoundary>
+
+      <DataErrorBoundary name="For You">
+        <PersonalizationRow />
       </DataErrorBoundary>
 
       <DataErrorBoundary name="Categories">
-        <CategorySection />
+        <CategorySection activeGenre={activeGenre} />
       </DataErrorBoundary>
 
       <DataErrorBoundary name="Collections">
         <Collections activeGenre={activeGenre} searchQuery={searchQuery} />
       </DataErrorBoundary>
 
-      <DataErrorBoundary name="Events">
-        <EventSection />
-      </DataErrorBoundary>
+      {eventsEnabled && (
+        <DataErrorBoundary name="Events">
+          <EventSection />
+        </DataErrorBoundary>
+      )}
 
       <DataErrorBoundary name="Artists">
         <Artists activeGenre={activeGenre} searchQuery={searchQuery} />
       </DataErrorBoundary>
 
-      <DataErrorBoundary name="Merch">
-        <Merch />
-      </DataErrorBoundary>
+      {merchEnabled && (
+        <DataErrorBoundary name="Merch">
+          <Merch />
+        </DataErrorBoundary>
+      )}
     </div>
   );
 };
