@@ -7,6 +7,7 @@ import { WaveformDisplay } from '@/components/ui/WaveformDisplay';
 import { AudioVisualizer } from '@/components/AudioVisualizer';
 import { useAudioBuffer } from '@/hooks/useAudioBuffer';
 import { MoreVertical } from 'lucide-react';
+import { OnChainInfo, type OnChainInfoProps } from '@/components/common/OnChainInfo';
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
 
@@ -36,6 +37,7 @@ export const FullScreenPlayer = ({
   artist,
   cover,
   trackKey,
+  onChain,
 }: {
   onClose: () => void;
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -45,6 +47,8 @@ export const FullScreenPlayer = ({
   artist?: string;
   cover?: string;
   trackKey: string;
+  /** On-chain provenance for the song. Omit when the song has no mint data. */
+  onChain?: OnChainInfoProps;
 }) => {
   const { buffer } = useAudioBuffer(audioSrc);
   const [currentTime, setCurrentTime] = useState(0);
@@ -192,6 +196,11 @@ export const FullScreenPlayer = ({
       </div>
       <div className="text-white text-2xl font-bold text-center">{title || 'Now Playing'}</div>
       {artist && <div className="text-gray-400 text-sm mb-6 text-center">{artist}</div>}
+      {onChain && (
+        <div className="w-full max-w-md px-4 mb-6">
+          <OnChainInfo {...onChain} />
+        </div>
+      )}
       <div className="w-full max-w-md px-4 mt-6">
         <WaveformDisplay
           currentTime={currentTime}
