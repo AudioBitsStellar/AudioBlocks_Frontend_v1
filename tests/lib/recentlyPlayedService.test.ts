@@ -7,6 +7,7 @@ import {
   getRemoteRecentlyPlayed,
   mergeRecentlyPlayed,
 } from '@/lib/recentlyPlayedService';
+import { ApiShapeError } from '@/lib/api/unwrap';
 
 vi.mock('@/lib/apiClient', () => ({
   default: { get: vi.fn(), delete: vi.fn() },
@@ -87,10 +88,10 @@ describe('recentlyPlayedService', () => {
     ]);
   });
 
-  it('returns an empty list when the response is not an array', async () => {
+  it('rejects a response without the envelope instead of returning [] (#564)', async () => {
     mockGet.mockResolvedValueOnce({ data: { message: 'nope' }, status: 200, headers: new Headers() });
 
-    await expect(getRemoteRecentlyPlayed()).resolves.toEqual([]);
+    await expect(getRemoteRecentlyPlayed()).rejects.toBeInstanceOf(ApiShapeError);
   });
 
   it('deletes the listening history on the backend', async () => {

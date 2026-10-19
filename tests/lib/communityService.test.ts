@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '@/lib/constants';
 import { castVote, getLeaderboard, getMyVotes } from '@/lib/communityService';
+import { ApiShapeError } from '@/lib/api/unwrap';
 
 vi.mock('@/lib/apiClient', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn() },
@@ -17,7 +18,7 @@ describe('communityService', () => {
 
   describe('getLeaderboard', () => {
     it('requests the leaderboard endpoint', async () => {
-      mockGet.mockResolvedValueOnce({ data: [] } as never);
+      mockGet.mockResolvedValueOnce({ data: { data: [] } } as never);
 
       await getLeaderboard();
 
@@ -35,7 +36,7 @@ describe('communityService', () => {
 
     it('keeps optional fields such as followerCount absent when not returned', async () => {
       const artist = { id: 1, name: 'Wiffi', genre: 'Pop', description: '', votes: 0, image: '' };
-      mockGet.mockResolvedValueOnce({ data: [artist] } as never);
+      mockGet.mockResolvedValueOnce({ data: { data: [artist] } } as never);
 
       const [result] = await getLeaderboard();
 
@@ -51,7 +52,7 @@ describe('communityService', () => {
 
   describe('castVote', () => {
     it('posts the artist id to the vote endpoint', async () => {
-      mockPost.mockResolvedValueOnce({ data: { artistId: 'a1', votes: 5 } } as never);
+      mockPost.mockResolvedValueOnce({ data: { data: { artistId: 'a1', votes: 5 } } } as never);
 
       await castVote('a1');
 
@@ -73,16 +74,16 @@ describe('communityService', () => {
 
   describe('getMyVotes', () => {
     it('requests the current user votes', async () => {
-      mockGet.mockResolvedValueOnce({ data: ['a1', 2] } as never);
+      mockGet.mockResolvedValueOnce({ data: { data: ['a1', 2] } } as never);
 
       await expect(getMyVotes()).resolves.toEqual(['a1', 2]);
       expect(mockGet).toHaveBeenCalledWith(API_ENDPOINTS.COMMUNITY_MY_VOTES);
     });
 
-    it('returns an empty list when the body is empty', async () => {
+    it('rejects an empty body with ApiShapeError instead of returning [] (#564)', async () => {
       mockGet.mockResolvedValueOnce({ data: null } as never);
 
-      await expect(getMyVotes()).resolves.toEqual([]);
+      await expect(getMyVotes()).rejects.toBeInstanceOf(ApiShapeError);
     });
 
     it('propagates request errors', async () => {

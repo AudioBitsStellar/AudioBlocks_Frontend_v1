@@ -9,6 +9,7 @@ import {
   getMerchListings,
   searchContent,
 } from '@/lib/exploreService';
+import { ApiShapeError } from '@/lib/api/unwrap';
 
 vi.mock('@/lib/apiClient', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn() },
@@ -39,7 +40,7 @@ describe('exploreService', () => {
 
   describe.each(listingCases)('$name', ({ fn, endpoint }) => {
     it('requests the matching endpoint', async () => {
-      mockGet.mockResolvedValueOnce({ data: [] } as never);
+      mockGet.mockResolvedValueOnce({ data: { data: [] } } as never);
 
       await fn();
 
@@ -52,16 +53,17 @@ describe('exploreService', () => {
       await expect(fn()).resolves.toEqual([{ id: '1' }]);
     });
 
-    it('accepts a bare array response', async () => {
+    // #564: a body without the envelope is a contract problem, not an empty list.
+    it('rejects a bare array response with ApiShapeError', async () => {
       mockGet.mockResolvedValueOnce({ data: [{ id: '2' }] } as never);
 
-      await expect(fn()).resolves.toEqual([{ id: '2' }]);
+      await expect(fn()).rejects.toBeInstanceOf(ApiShapeError);
     });
 
-    it('falls back to an empty list when the body is empty', async () => {
+    it('rejects an empty body with ApiShapeError instead of returning []', async () => {
       mockGet.mockResolvedValueOnce({ data: null } as never);
 
-      await expect(fn()).resolves.toEqual([]);
+      await expect(fn()).rejects.toBeInstanceOf(ApiShapeError);
     });
 
     it('propagates request errors instead of returning an empty list', async () => {
