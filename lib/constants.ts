@@ -169,6 +169,10 @@ export const API_ENDPOINTS = {
   // Song comments (#576). Song-scoped routes mount under /api/song alongside SongRoutes
   // (AudioBlock_Backend#749); comment-scoped routes are mounted at /api/comments.
   SONG_COMMENTS: (songId: string) => `/api/song/${encodeURIComponent(songId)}/comments`,
+
+  // Song lyrics (#583). Only served when the song's rights are confirmed; 404 otherwise.
+  // The backend route is being added, so the panel shows its error state until it lands.
+  SONG_LYRICS: (songId: string) => `/api/song/${encodeURIComponent(songId)}/lyrics`,
   COMMENT: (commentId: string) => `/api/comments/${encodeURIComponent(commentId)}`,
   COMMENT_REPLIES: (commentId: string) => `/api/comments/${encodeURIComponent(commentId)}/replies`,
 } as const;
