@@ -1,45 +1,56 @@
 /**
  * Component for displaying block explorer links
- * Issue #321: Add block explorer links
+ * Issue #547: Point explorer links to stellar.expert
  */
 
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
-import { getExplorerTxUrl, getExplorerAddressUrl } from '@/lib/web3Utils';
+import {
+  getStellarTxUrl,
+  getStellarAccountUrl,
+  getStellarContractUrl,
+} from '@/lib/stellarExplorer';
 
 interface ExplorerLinkProps {
-  hash?: string;
-  address?: string;
-  chainId?: number;
+  type: 'tx' | 'account' | 'contract';
+  value: string;
   children?: React.ReactNode;
   className?: string;
   showIcon?: boolean;
 }
 
 /**
- * Component to render a link to block explorer for transaction or address
+ * Component to render a link to stellar.expert for transaction, account, or contract
  * @param props - Component props
- * @returns Block explorer link
+ * @returns Stellar explorer link
  */
 export function ExplorerLink({
-  hash,
-  address,
-  chainId = 1,
+  type,
+  value,
   children,
   className = '',
   showIcon = true,
 }: ExplorerLinkProps) {
-  if (!hash && !address) {
+  if (!value) {
     return null;
   }
 
-  const url = hash
-    ? getExplorerTxUrl(hash, chainId)
-    : address
-      ? getExplorerAddressUrl(address, chainId)
-      : '#';
+  let url: string;
+  switch (type) {
+    case 'tx':
+      url = getStellarTxUrl(value);
+      break;
+    case 'account':
+      url = getStellarAccountUrl(value);
+      break;
+    case 'contract':
+      url = getStellarContractUrl(value);
+      break;
+    default:
+      url = '#';
+  }
 
-  const displayText = children || hash || address;
+  const displayText = children || value;
 
   return (
     <a
@@ -55,44 +66,36 @@ export function ExplorerLink({
 }
 
 /**
- * Shortened transaction hash with explorer link
+ * Shortened transaction hash with stellar.expert link
  */
-export function TxHashLink({
-  hash,
-  chainId = 1,
-  className = '',
-}: {
-  hash: string;
-  chainId?: number;
-  className?: string;
-}) {
+export function TxHashLink({ hash, className = '' }: { hash: string; className?: string }) {
   const shortHash = `${hash.slice(0, 6)}...${hash.slice(-4)}`;
 
   return (
-    <ExplorerLink chainId={chainId} className={className} hash={hash}>
+    <ExplorerLink className={className} type="tx" value={hash}>
       <code className="font-mono text-sm">{shortHash}</code>
     </ExplorerLink>
   );
 }
 
 /**
- * Shortened address with explorer link
+ * Shortened address with stellar.expert link
+ * Works for both Stellar accounts (G...) and contracts (C...)
  */
 export function AddressLink({
   address,
-  chainId = 1,
   className = '',
   children,
 }: {
   address: string;
-  chainId?: number;
   className?: string;
   children?: React.ReactNode;
 }) {
   const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const type = address.startsWith('C') ? 'contract' : 'account';
 
   return (
-    <ExplorerLink address={address} chainId={chainId} className={className}>
+    <ExplorerLink className={className} type={type} value={address}>
       {children || <code className="font-mono text-sm">{shortAddress}</code>}
     </ExplorerLink>
   );
