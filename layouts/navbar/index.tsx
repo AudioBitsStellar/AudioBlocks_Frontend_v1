@@ -7,12 +7,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Variants, motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
-import { ArrowRight, Folder, LogOut, Menu, User, X } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import { toast } from 'sonner';
+import AccountMenu from '@/components/auth/AccountMenu';
 import ConnectWalletPrompt from '@/components/auth/ConnectWalletPrompt';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import SearchOverlay from '@/components/common/SearchOverlay';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Auth } from '@/hooks/useAuth';
 import { useLogout } from '@/hooks/useLogout';
@@ -47,8 +48,6 @@ const Navbar = () => {
   const mobileCloseRef = useRef<HTMLButtonElement | null>(null);
   const mobileMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
   const mobileMenuWasOpenRef = useRef(false);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
-  const mobileUserMenuRef = useRef<HTMLDivElement | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const route = useRouter();
 
@@ -75,10 +74,12 @@ const Navbar = () => {
   const handleMobileMenuKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if ((e.target as HTMLElement).closest('[role="menu"]')) return;
         closeMobileMenu();
         return;
       }
       if (e.key === 'Tab') {
+        if ((e.target as HTMLElement).closest('[role="menu"]')) return;
         const focusable = mobileMenuRef.current?.querySelectorAll<HTMLElement>(
           'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
@@ -121,28 +122,6 @@ const Navbar = () => {
       }
     }
   }, [user?.userId, pathname]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      const inDesktopMenu = userMenuRef.current?.contains(target) ?? false;
-      const inMobileMenu = mobileUserMenuRef.current?.contains(target) ?? false;
-      if (!inDesktopMenu && !inMobileMenu) {
-        setIsUserMenuOpen(false);
-      }
-    };
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsUserMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, []);
 
   useEffect(() => {
     setIsUserMenuOpen(false);
@@ -259,53 +238,14 @@ const Navbar = () => {
               </button>
             </>
           ) : (
-            <div ref={userMenuRef} className="relative">
-              <button
-                aria-label="Open account menu"
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#D2045B] text-sm font-bold text-white transition-all duration-200 hover:scale-105"
-                onClick={() => setIsUserMenuOpen((open) => !open)}
-              >
-                {avatarInitial}
-              </button>
-              {isUserMenuOpen && (
-                <div className="absolute right-0 top-12 z-50 w-60 rounded-xl border border-gray-800 bg-[#0F0F0F] p-4 shadow-xl">
-                  <div className="mb-3 truncate border-b border-gray-800 pb-3">
-                    <p className="truncate text-sm font-semibold text-white">{user?.email}</p>
-                  </div>
-                  <div className="flex flex-col gap-1 text-sm">
-                    <Link
-                      className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                      href="/dashboard/profile"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <span className="flex items-center gap-3">
-                        <User className="h-4 w-4" />
-                        Profile
-                      </span>
-                    </Link>
-                    <Link
-                      className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                      href="/dashboard/collection"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <span className="flex items-center gap-3">
-                        <Folder className="h-4 w-4" />
-                        My Collections
-                      </span>
-                    </Link>
-                    <button
-                      className="cursor-pointer rounded-lg px-3 py-2 text-left text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                      onClick={logOut}
-                    >
-                      <span className="flex items-center gap-3">
-                        <LogOut className="h-4 w-4" />
-                        Log out
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <AccountMenu
+              email={user?.email}
+              initial={avatarInitial}
+              isOpen={isUserMenuOpen}
+              variant="desktop"
+              onLogout={logOut}
+              onOpenChange={setIsUserMenuOpen}
+            />
           )}
         </div>
 
@@ -339,8 +279,8 @@ const Navbar = () => {
             aria-modal="true"
             className="fixed inset-0 z-50 flex justify-end bg-black/60 md:hidden"
             exit={{ opacity: 0 }}
-            initial={{ opacity: 0 }}
             id="mobile-navigation-menu"
+            initial={{ opacity: 0 }}
             role="dialog"
             onClick={closeMobileMenu}
             onKeyDown={handleMobileMenuKeyDown}
@@ -365,93 +305,49 @@ const Navbar = () => {
                 </button>
               </div>
 
-            <div className="flex flex-col gap-4 px-6 py-6">
-              {navLinks.map(({ name, href }) => (
-                <motion.div key={href} variants={itemVariants}>
-                  <Link
-                    className={`block text-base ${linkClass(href)}`}
-                    href={href}
-                    onClick={closeMobileMenu}
-                  >
-                    {name}
-                  </Link>
-                </motion.div>
-              ))}
+              <div className="flex flex-col gap-4 px-6 py-6">
+                {navLinks.map(({ name, href }) => (
+                  <motion.div key={href} variants={itemVariants}>
+                    <Link
+                      className={`block text-base ${linkClass(href)}`}
+                      href={href}
+                      onClick={closeMobileMenu}
+                    >
+                      {name}
+                    </Link>
+                  </motion.div>
+                ))}
 
-              <motion.div variants={itemVariants}>
-                {!user?.userId ? (
-                  <>
-                    <button
-                      className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
-                      onClick={handleAuthentication}
-                    >
-                      Sign in
-                      <div className="bg-black rounded-full p-1">
-                        <ArrowRight className="h-4 w-4 rotate-[300deg]" />
-                      </div>
-                    </button>
-                    <SocialLoginButtons
-                      className="mt-3 justify-center"
-                      onLoginStart={() => setShouldTriggerSignature(true)}
-                    />
-                  </>
-                ) : (
-                  <div ref={mobileUserMenuRef} className="relative mt-6">
-                    <button
-                      aria-label="Open account menu"
-                      className="w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
-                      onClick={() => setIsUserMenuOpen((open) => !open)}
-                    >
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black text-xs font-bold">
-                        {avatarInitial}
-                      </span>
-                      <span className="max-w-[180px] truncate">{user?.email}</span>
-                    </button>
-                    {isUserMenuOpen && (
-                      <div className="mt-2 rounded-xl border border-gray-800 bg-[#0F0F0F] p-4 shadow-xl">
-                        <div className="flex flex-col gap-1 text-sm">
-                          <Link
-                            className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                            href="/dashboard/profile"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              setIsMenuOpen(false);
-                            }}
-                          >
-                            <span className="flex items-center gap-3">
-                              <User className="h-4 w-4" />
-                              Profile
-                            </span>
-                          </Link>
-                          <Link
-                            className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                            href="/dashboard/collection"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              setIsMenuOpen(false);
-                            }}
-                          >
-                            <span className="flex items-center gap-3">
-                              <Folder className="h-4 w-4" />
-                              My Collections
-                            </span>
-                          </Link>
-                          <button
-                            className="cursor-pointer rounded-lg px-3 py-2 text-left text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                            onClick={logOut}
-                          >
-                            <span className="flex items-center gap-3">
-                              <LogOut className="h-4 w-4" />
-                              Log out
-                            </span>
-                          </button>
+                <motion.div variants={itemVariants}>
+                  {!user?.userId ? (
+                    <>
+                      <button
+                        className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
+                        onClick={handleAuthentication}
+                      >
+                        Sign in
+                        <div className="bg-black rounded-full p-1">
+                          <ArrowRight className="h-4 w-4 rotate-[300deg]" />
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            </div>
+                      </button>
+                      <SocialLoginButtons
+                        className="mt-3 justify-center"
+                        onLoginStart={() => setShouldTriggerSignature(true)}
+                      />
+                    </>
+                  ) : (
+                    <AccountMenu
+                      email={user?.email}
+                      initial={avatarInitial}
+                      isOpen={isUserMenuOpen}
+                      variant="mobile"
+                      onLogout={logOut}
+                      onNavigate={closeMobileMenu}
+                      onOpenChange={setIsUserMenuOpen}
+                    />
+                  )}
+                </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         )}
