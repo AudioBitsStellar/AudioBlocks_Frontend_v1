@@ -124,6 +124,8 @@ export const API_ENDPOINTS = {
 
   // Profile
   USER_PROFILE: '/api/users/profile',
+  // All users (no filter). Used by gift recipient search until the backend offers one (#585).
+  USERS: '/api/users',
   // Role chosen during onboarding (#596). Confirm the path against the backend.
   USER_ACCOUNT_TYPE: '/api/user/account-type',
 

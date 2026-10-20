@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Check } from 'lucide-react';
 import ErrorState from '@/components/common/ErrorState';
+import GiftSubscriptionForm from '@/components/subscriptions/GiftSubscriptionForm';
 import {
   useCurrentSubscription,
   useStartSubscription,
@@ -162,6 +163,22 @@ export default function PlansPage() {
           ))}
         </ul>
       )}
+
+      <section aria-labelledby="gift-heading" className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-white" id="gift-heading">
+            Gift a subscription
+          </h2>
+          <p className="mt-1 text-sm text-gray-400">
+            Pick a plan for another listener. They can accept it from their settings.
+          </p>
+        </div>
+        {!isSignedIn ? (
+          <p className="text-sm text-gray-400">Sign in to gift a plan to another listener.</p>
+        ) : tiersQuery.data ? (
+          <GiftSubscriptionForm tiers={tiersQuery.data} />
+        ) : null}
+      </section>
     </div>
   );
 }

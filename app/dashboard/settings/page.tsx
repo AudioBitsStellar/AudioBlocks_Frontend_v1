@@ -15,6 +15,7 @@ import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
 import DataSaverToggle from '@/components/help/DataSaverToggle';
 import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
 import SubscriptionSection from '@/components/settings/SubscriptionSection';
+import GiftsSection from '@/components/settings/GiftsSection';
 
 function LinkedAccountsList() {
   const { user, handleUnlinkWallet } = useDynamicContext();
@@ -215,6 +216,8 @@ export default function SettingsPage() {
       </section>
 
       <SubscriptionSection />
+
+      <GiftsSection />
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Audio Quality</h2>
