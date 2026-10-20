@@ -17,6 +17,12 @@ export interface SongResponse {
   hlsMasterUrl?: string | null;
   streamUrl?: string | null;
   url?: string | null;
+  loudness?: number | null;
+  truePeakDb?: number | null;
+}
+
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 /** Matches SongController.streamSong; missing stream metadata fails closed at the API boundary. */
@@ -43,6 +49,8 @@ export function songToTrack(song: SongResponse | null | undefined, fallbackId = 
       !!stream,
     // Backend songs must use the signed streaming endpoint, never an S3 master URL.
     url: song?.url || undefined,
+    loudness: finiteNumber(song?.loudness),
+    truePeakDb: finiteNumber(song?.truePeakDb),
   };
 }
 

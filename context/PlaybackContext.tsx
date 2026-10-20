@@ -30,6 +30,10 @@ export type Track = {
   available?: boolean;
   flagged?: boolean;
   status?: string;
+  /** Integrated loudness in LUFS, measured by the backend (#582). Missing for older songs. */
+  loudness?: number;
+  /** True peak in dBTP, measured by the backend (#582). */
+  truePeakDb?: number;
 };
 
 // ── Queue types (#116) ────────────────────────────────────────────────────

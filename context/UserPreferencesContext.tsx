@@ -13,10 +13,15 @@ import {
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import apiClient from '@/lib/apiClient';
 import { normalizeAudioQuality, type AudioQuality } from '@/lib/streamQuality';
+import {
+  DEFAULT_NORMALIZATION_TARGET_LUFS,
+  normalizeTargetLufs,
+  type NormalizationTargetLufs,
+} from '@/lib/player/normalizationGain';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type { AudioQuality };
+export type { AudioQuality, NormalizationTargetLufs };
 export type ColorScheme = 'system' | 'light' | 'dark';
 
 export interface UserPreferences {
@@ -29,6 +34,8 @@ export interface UserPreferences {
   qualityAnalysisOptOut: boolean;
   emailNotifications: boolean;
   inAppNotifications: boolean;
+  /** Loudness that normalized playback aims for, in LUFS (#582). */
+  normalizationTargetLufs: NormalizationTargetLufs;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -40,6 +47,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   qualityAnalysisOptOut: false,
   emailNotifications: true,
   inAppNotifications: true,
+  normalizationTargetLufs: DEFAULT_NORMALIZATION_TARGET_LUFS,
 };
 
 export interface UserPreferencesContextValue {
@@ -70,6 +78,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     () => ({
       ...storedPreferences,
       audioQuality: normalizeAudioQuality(storedPreferences.audioQuality),
+      normalizationTargetLufs: normalizeTargetLufs(storedPreferences.normalizationTargetLufs),
     }),
     [storedPreferences]
   );

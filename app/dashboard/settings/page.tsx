@@ -5,7 +5,12 @@ import { Mail, Wallet, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useRecentlyPlayed } from '@/hooks/useRecentlyPlayed';
-import { useUserPreferences, type AudioQuality } from '@/context/UserPreferencesContext';
+import { usePlayback } from '@/context/PlaybackContext';
+import {
+  useUserPreferences,
+  type AudioQuality,
+  type NormalizationTargetLufs,
+} from '@/context/UserPreferencesContext';
 import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
 import DataSaverToggle from '@/components/help/DataSaverToggle';
 import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
@@ -122,6 +127,74 @@ const QUALITY_OPTIONS: { value: AudioQuality; label: string; description: string
   { value: 'high', label: 'High', description: 'Streams at up to 256 kbps. Uses the most data.' },
 ];
 
+const NORMALIZATION_TARGET_OPTIONS: {
+  value: NormalizationTargetLufs;
+  label: string;
+  description: string;
+}[] = [
+  { value: -23, label: 'Quiet', description: '−23 LUFS. Keeps more of the original dynamics.' },
+  { value: -14, label: 'Normal', description: '−14 LUFS. Close to most streaming services.' },
+  { value: -11, label: 'Loud', description: '−11 LUFS. Louder, with less dynamic range.' },
+];
+
+function VolumeNormalizationSection() {
+  const { preferences, setPreference } = useUserPreferences();
+  const { normalizeAudio, setNormalizeAudio } = usePlayback();
+
+  return (
+    <section className="mb-10">
+      <h2 className="text-lg font-semibold text-white mb-4">Volume Normalization</h2>
+      <p className="text-sm text-gray-400 mb-4">
+        Play tracks at a similar volume using each song&apos;s measured loudness. Tracks without a
+        measurement play at their original volume.
+      </p>
+      <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E] mb-4">
+        <div>
+          <div className="font-medium text-white">Normalize volume</div>
+          <div className="text-xs text-gray-400 mt-1">Also available from the player bar.</div>
+        </div>
+        <button
+          aria-label={`Normalize volume is ${normalizeAudio ? 'on' : 'off'}`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            normalizeAudio ? 'bg-[#D2045B]' : 'bg-gray-600'
+          }`}
+          onClick={() => setNormalizeAudio(!normalizeAudio)}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              normalizeAudio ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+      <div className="grid gap-3" role="group" aria-label="Normalization target level">
+        {NORMALIZATION_TARGET_OPTIONS.map((option) => {
+          const selected = preferences.normalizationTargetLufs === option.value;
+          return (
+            <button
+              key={option.value}
+              aria-pressed={selected}
+              className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                selected
+                  ? 'border-[#D2045B] bg-[#D2045B]/10 text-white'
+                  : 'border-gray-700 bg-[#1E1E1E] text-gray-300 hover:border-gray-500'
+              }`}
+              type="button"
+              onClick={() => setPreference('normalizationTargetLufs', option.value)}
+            >
+              <div className="text-left">
+                <div className="font-medium">{option.label}</div>
+                <div className="text-xs text-gray-400 mt-1">{option.description}</div>
+              </div>
+              {selected && <div className="h-3 w-3 rounded-full bg-[#D2045B]" />}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function SettingsPage() {
   const { preferences, setPreference } = useUserPreferences();
 
@@ -171,6 +244,8 @@ export default function SettingsPage() {
           ))}
         </div>
       </section>
+
+      <VolumeNormalizationSection />
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Playback</h2>
