@@ -1,210 +1,267 @@
-import { renderHook, act } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TransactionProvider, useTransaction } from '@/context/TransactionContext';
+import * as StellarSDK from '@stellar/stellar-sdk';
 
-const toastMock = vi.fn();
+// Mock Stellar SDK
+vi.mock('@stellar/stellar-sdk', () => {
+  const SorobanRpc = {
+    Api: {
+      GetTransactionStatus: {
+        SUCCESS: 'SUCCESS',
+        FAILED: 'FAILED',
+        NOT_FOUND: 'NOT_FOUND',
+      },
+    },
+    Server: vi.fn(),
+  };
+
+  return {
+    SorobanRpc,
+    Networks: {
+      TESTNET: 'Test SDF Network ; September 2015',
+      PUBLIC: 'Public Global Stellar Network ; September 2015',
+    },
+  };
+});
+
+// Mock toast context
 vi.mock('@/context/ToastContext', () => ({
-  useToast: () => ({ toast: toastMock }),
+  useToast: () => ({
+    toast: vi.fn(),
+  }),
 }));
 
-const wrapper = ({ children }: { children: ReactNode }) => (
-  <TransactionProvider>{children}</TransactionProvider>
-);
+function TestComponent() {
+  const { transactions, addTransaction, clearTransaction, clearAllTransactions } = useTransaction();
 
-const HASH = '0xabcdef1234567890';
-
-function mockStatus(body: Record<string, unknown>, ok = true) {
-  return vi.fn().mockResolvedValue({
-    ok,
-    json: () => Promise.resolve(body),
-  });
+  return (
+    <div>
+      <div data-testid="transaction-count">{transactions.length}</div>
+      <button onClick={() => addTransaction('test-hash-123', 'buy')}>Add Transaction</button>
+      <button onClick={() => addTransaction('test-hash-456', 'buy', true)}>
+        Add Final Transaction
+      </button>
+      {transactions.map((tx) => (
+        <div key={tx.id} data-testid={`transaction-${tx.id}`}>
+          <span data-testid={`status-${tx.id}`}>{tx.status}</span>
+          <span data-testid={`hash-${tx.id}`}>{tx.hash}</span>
+          <button onClick={() => clearTransaction(tx.id)}>Clear</button>
+        </div>
+      ))}
+      <button onClick={() => clearAllTransactions()}>Clear All</button>
+    </div>
+  );
 }
 
 describe('TransactionContext', () => {
+  let mockGetTransaction: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
     vi.useFakeTimers();
-    toastMock.mockClear();
+    localStorage.clear();
+
+    mockGetTransaction = vi.fn();
+    (StellarSDK.SorobanRpc.Server as any).mockImplementation(() => ({
+      getTransaction: mockGetTransaction,
+    }));
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.unstubAllGlobals();
+    vi.clearAllMocks();
   });
 
-  it('throws when useTransaction is used outside the provider', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => renderHook(() => useTransaction())).toThrow(
-      'useTransaction must be used inside TransactionProvider',
-    );
-    consoleSpy.mockRestore();
-  });
-
-  it('starts with no transactions', () => {
-    const { result } = renderHook(() => useTransaction(), { wrapper });
-    expect(result.current.transactions).toEqual([]);
-  });
-
-  it('adds a pending transaction, returns its id and shows an info toast', () => {
-    vi.stubGlobal('fetch', mockStatus({ status: 'pending' }));
-    const { result } = renderHook(() => useTransaction(), { wrapper });
-
-    let id = '';
-    act(() => {
-      id = result.current.addTransaction(HASH, 'buy');
+  it('should add a pending transaction', async () => {
+    mockGetTransaction.mockResolvedValue({
+      status: StellarSDK.SorobanRpc.Api.GetTransactionStatus.NOT_FOUND,
     });
 
-    expect(id).toMatch(/^tx-/);
-    expect(result.current.transactions).toHaveLength(1);
-    expect(result.current.transactions[0]).toMatchObject({
-      id,
-      hash: HASH,
-      type: 'buy',
-      status: 'pending',
-    });
-    expect(toastMock).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'info', title: 'Transaction pending' }),
-    );
-  });
-
-  it('keeps newest transactions first and caps the list at 20', () => {
-    vi.stubGlobal('fetch', mockStatus({ status: 'pending' }));
-    const { result } = renderHook(() => useTransaction(), { wrapper });
-
-    act(() => {
-      for (let i = 0; i < 25; i++) {
-        result.current.addTransaction(`0x${i}`, 'vote');
-      }
-    });
-
-    expect(result.current.transactions).toHaveLength(20);
-    expect(result.current.transactions[0].hash).toBe('0x24');
-  });
-
-  it('marks a transaction confirmed, shows a success toast and auto-clears it after 60s', async () => {
-    vi.stubGlobal('fetch', mockStatus({ confirmed: true }));
-    const { result } = renderHook(() => useTransaction(), { wrapper });
-
-    act(() => {
-      result.current.addTransaction(HASH, 'stake');
-    });
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-
-    expect(fetch).toHaveBeenCalledWith(
-      `/api/transactions/${HASH}/status`,
-      expect.objectContaining({ method: 'GET' }),
-    );
-    expect(result.current.transactions[0].status).toBe('confirmed');
-    expect(toastMock).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'success', title: 'Transaction confirmed' }),
+    render(
+      <TransactionProvider>
+        <TestComponent />
+      </TransactionProvider>
     );
 
+    const addButton = screen.getByText('Add Transaction');
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(60_000);
+      addButton.click();
     });
 
-    expect(result.current.transactions).toHaveLength(0);
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-count')).toHaveTextContent('1');
+    });
   });
 
-  it('marks a transaction failed and shows an error toast', async () => {
-    vi.stubGlobal('fetch', mockStatus({ status: 'failed' }));
-    const { result } = renderHook(() => useTransaction(), { wrapper });
-
-    act(() => {
-      result.current.addTransaction(HASH, 'buy');
-    });
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-
-    expect(result.current.transactions[0].status).toBe('failed');
-    expect(toastMock).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'error', title: 'Transaction failed' }),
+  it('should add a final (confirmed) transaction', async () => {
+    render(
+      <TransactionProvider>
+        <TestComponent />
+      </TransactionProvider>
     );
-  });
 
-  it('ignores non-ok poll responses and keeps the transaction pending', async () => {
-    vi.stubGlobal('fetch', mockStatus({}, false));
-    const { result } = renderHook(() => useTransaction(), { wrapper });
-
-    act(() => {
-      result.current.addTransaction(HASH, 'vote');
-    });
-
+    const addButton = screen.getByText('Add Final Transaction');
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
+      addButton.click();
     });
 
-    expect(result.current.transactions[0].status).toBe('pending');
+    await waitFor(() => {
+      const transactions = screen.getAllByTestId(/^transaction-/);
+      expect(transactions.length).toBe(1);
+      const statusElement = screen.getAllByTestId(/^status-/)[0];
+      expect(statusElement).toHaveTextContent('confirmed');
+    });
   });
 
-  it('updateTransactionStatus changes the status of a single transaction', () => {
-    vi.stubGlobal('fetch', mockStatus({ status: 'pending' }));
-    const { result } = renderHook(() => useTransaction(), { wrapper });
+  it('should update transaction status to confirmed via RPC polling', async () => {
+    mockGetTransaction
+      .mockResolvedValueOnce({
+        status: StellarSDK.SorobanRpc.Api.GetTransactionStatus.NOT_FOUND,
+      })
+      .mockResolvedValueOnce({
+        status: StellarSDK.SorobanRpc.Api.GetTransactionStatus.SUCCESS,
+      });
 
-    let id = '';
-    act(() => {
-      id = result.current.addTransaction(HASH, 'buy');
-    });
-    act(() => {
-      result.current.updateTransactionStatus(id, 'failed');
-    });
+    render(
+      <TransactionProvider>
+        <TestComponent />
+      </TransactionProvider>
+    );
 
-    expect(result.current.transactions[0].status).toBe('failed');
-  });
-
-  it('clearTransaction removes only the given transaction and stops its polling', async () => {
-    const fetchMock = mockStatus({ status: 'pending' });
-    vi.stubGlobal('fetch', fetchMock);
-    const { result } = renderHook(() => useTransaction(), { wrapper });
-
-    let first = '';
-    act(() => {
-      first = result.current.addTransaction('0xfirst', 'buy');
-      result.current.addTransaction('0xsecond', 'buy');
-    });
-
-    act(() => {
-      result.current.clearTransaction(first);
-    });
-
-    expect(result.current.transactions.map((tx) => tx.hash)).toEqual(['0xsecond']);
-
-    fetchMock.mockClear();
+    const addButton = screen.getByText('Add Transaction');
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
+      addButton.click();
     });
 
-    const polledHashes = fetchMock.mock.calls.map(([url]) => url);
-    expect(polledHashes).not.toContain('/api/transactions/0xfirst/status');
-    expect(polledHashes).toContain('/api/transactions/0xsecond/status');
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-count')).toHaveTextContent('1');
+    });
+
+    // Advance timer to trigger polling
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    await waitFor(() => {
+      const statusElements = screen.getAllByTestId(/^status-/);
+      expect(statusElements[0]).toHaveTextContent('confirmed');
+    });
   });
 
-  it('clearAllTransactions empties the list and stops all polling', async () => {
-    const fetchMock = mockStatus({ status: 'pending' });
-    vi.stubGlobal('fetch', fetchMock);
-    const { result } = renderHook(() => useTransaction(), { wrapper });
-
-    act(() => {
-      result.current.addTransaction('0xa', 'buy');
-      result.current.addTransaction('0xb', 'stake');
+  it('should update transaction status to failed via RPC', async () => {
+    mockGetTransaction.mockResolvedValue({
+      status: StellarSDK.SorobanRpc.Api.GetTransactionStatus.FAILED,
     });
 
-    act(() => {
-      result.current.clearAllTransactions();
-    });
+    render(
+      <TransactionProvider>
+        <TestComponent />
+      </TransactionProvider>
+    );
 
-    expect(result.current.transactions).toEqual([]);
-
-    fetchMock.mockClear();
+    const addButton = screen.getByText('Add Transaction');
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(4000);
+      addButton.click();
     });
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-count')).toHaveTextContent('1');
+    });
+
+    // Advance timer to trigger polling
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    await waitFor(() => {
+      const statusElements = screen.getAllByTestId(/^status-/);
+      expect(statusElements[0]).toHaveTextContent('failed');
+    });
+  });
+
+  it('should persist pending transactions to localStorage', async () => {
+    mockGetTransaction.mockResolvedValue({
+      status: StellarSDK.SorobanRpc.Api.GetTransactionStatus.NOT_FOUND,
+    });
+
+    render(
+      <TransactionProvider>
+        <TestComponent />
+      </TransactionProvider>
+    );
+
+    const addButton = screen.getByText('Add Transaction');
+    await act(async () => {
+      addButton.click();
+    });
+
+    await waitFor(() => {
+      const stored = localStorage.getItem('pending_transactions');
+      expect(stored).toBeTruthy();
+      const parsed = JSON.parse(stored!);
+      expect(parsed).toHaveLength(1);
+      expect(parsed[0].hash).toBe('test-hash-123');
+    });
+  });
+
+  it('should clear a specific transaction', async () => {
+    mockGetTransaction.mockResolvedValue({
+      status: StellarSDK.SorobanRpc.Api.GetTransactionStatus.NOT_FOUND,
+    });
+
+    render(
+      <TransactionProvider>
+        <TestComponent />
+      </TransactionProvider>
+    );
+
+    const addButton = screen.getByText('Add Transaction');
+    await act(async () => {
+      addButton.click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-count')).toHaveTextContent('1');
+    });
+
+    const clearButton = screen.getByText('Clear');
+    await act(async () => {
+      clearButton.click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-count')).toHaveTextContent('0');
+    });
+  });
+
+  it('should clear all transactions', async () => {
+    mockGetTransaction.mockResolvedValue({
+      status: StellarSDK.SorobanRpc.Api.GetTransactionStatus.NOT_FOUND,
+    });
+
+    render(
+      <TransactionProvider>
+        <TestComponent />
+      </TransactionProvider>
+    );
+
+    const addButton = screen.getByText('Add Transaction');
+    await act(async () => {
+      addButton.click();
+      addButton.click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-count')).toHaveTextContent('2');
+    });
+
+    const clearAllButton = screen.getByText('Clear All');
+    await act(async () => {
+      clearAllButton.click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-count')).toHaveTextContent('0');
+    });
   });
 });
