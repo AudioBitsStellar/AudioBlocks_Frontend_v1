@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import AvatarCrop from '@/components/common/dashboard/AvatarCrop';
+import { Modal } from '@/components/ui/Modal';
 import { useFormState } from '@/hooks/useFormState';
 import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { sanitizeUserInput } from '@/lib/sanitize';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -38,17 +40,30 @@ const EditProfile = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
   const [rawImageSrc, setRawImageSrc] = useState<string>('');
-  const [isDirty, setIsDirty] = useState(false);
+  const [initialValues, setInitialValues] = useState({
+    displayName: '',
+    bio: '',
+    website: '',
+    twitter: '',
+  });
+  const isDirty =
+    values.displayName !== initialValues.displayName ||
+    values.bio !== initialValues.bio ||
+    values.website !== initialValues.website ||
+    values.twitter !== initialValues.twitter;
+  const { isDialogOpen, leaveWithoutSaving, navigate, stay } = useUnsavedChangesGuard(isDirty);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
-      setValues({
+      const nextValues = {
         displayName: profile.name || profile.username || '',
         bio: profile.bio || '',
         website: profile.website || '',
         twitter: profile.twitter || '',
-      });
+      };
+      setValues(nextValues);
+      setInitialValues(nextValues);
     }
   }, [profile, setValues]);
 
@@ -96,7 +111,7 @@ const EditProfile = () => {
       },
       {
         onSuccess: () => {
-          setIsDirty(false);
+          setInitialValues(values);
           router.push('/dashboard/profile');
         },
       }
@@ -104,7 +119,7 @@ const EditProfile = () => {
   };
 
   const handleBack = () => {
-    router.push('/dashboard/profile');
+    navigate('/dashboard/profile');
   };
 
   return (
@@ -282,6 +297,30 @@ const EditProfile = () => {
         onCropComplete={handleCropComplete}
         onOpenChange={setCropOpen}
       />
+
+      <Modal
+        description="You have unsaved profile changes. Leave this page without saving?"
+        open={isDialogOpen}
+        title="Unsaved changes"
+        onClose={stay}
+      >
+        <div className="flex justify-end gap-3">
+          <button
+            className="rounded-md border border-border-dark px-4 py-2 text-sm text-white"
+            type="button"
+            onClick={stay}
+          >
+            Stay
+          </button>
+          <button
+            className="rounded-md bg-pink-600 px-4 py-2 text-sm font-semibold text-white"
+            type="button"
+            onClick={leaveWithoutSaving}
+          >
+            Leave without saving
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
