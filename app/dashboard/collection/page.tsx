@@ -3,9 +3,10 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { ListFilter, Music, Search, UsersRound, Send } from 'lucide-react';
+import { ListFilter, Music, Search, UsersRound, Send, DollarSign } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { NftTransfer } from '@/components/NftTransfer';
+import { ListNFTDialog } from '@/components/marketplace/ListNFTDialog';
 import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -26,6 +27,7 @@ const CollectionsPage = () => {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedNFT, setSelectedNFT] = useState<bigint | null>(null);
+  const [listingNFT, setListingNFT] = useState<OwnedNFT | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const songs: OwnedNFT[] = useMemo(() => {
@@ -210,6 +212,14 @@ const CollectionsPage = () => {
                         {song.totalStreams.toString()} streams
                       </span>
                       <button
+                        className="p-1.5 text-xs bg-brand/20 border border-brand/40 rounded-full hover:bg-brand/30 transition-colors"
+                        title="List for sale"
+                        type="button"
+                        onClick={() => setListingNFT(song)}
+                      >
+                        <DollarSign size={12} />
+                      </button>
+                      <button
                         className="p-1.5 text-xs bg-surface border border-border-dark rounded-full hover:bg-[#333] transition-colors"
                         title="Transfer NFT"
                         type="button"
@@ -241,6 +251,18 @@ const CollectionsPage = () => {
             </>
           )}
         </div>
+      )}
+
+      {listingNFT && (
+        <ListNFTDialog
+          songId={listingNFT.songId}
+          songTitle={listingNFT.title}
+          onClose={() => setListingNFT(null)}
+          onSuccess={() => {
+            // Refetch owned collection to update the UI
+            // The useOwnedCollection hook should refetch automatically
+          }}
+        />
       )}
     </div>
   );
