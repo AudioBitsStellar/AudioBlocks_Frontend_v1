@@ -11,6 +11,7 @@ import { liskSepolia, mainnet, sepolia } from 'viem/chains';
 import { createConfig, WagmiProvider } from 'wagmi';
 import SessionExpiryModal from '@/components/common/SessionExpiryModal';
 import WrongNetworkBanner from '@/components/common/WrongNetworkBanner';
+import PremiumUpsellListener from '@/components/subscriptions/PremiumUpsellListener';
 import { LoadingProvider } from '@/context/LoadingContext';
 import { PlaybackProvider } from '@/context/PlaybackContext';
 import { ThemeProvider } from '@/context/ThemeProvider';
@@ -105,6 +106,7 @@ const Provider = ({ children }: { children: ReactNode }) => {
                         <UserPreferencesProvider>
                           <WrongNetworkBanner />
                           <SessionExpiryModal />
+                          <PremiumUpsellListener />
                           {children}
                         </UserPreferencesProvider>
                       </ThemeProvider>

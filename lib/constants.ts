@@ -157,6 +157,16 @@ export const API_ENDPOINTS = {
   PLAYLIST_FOLLOW: (playlistId: string) => `/api/playlists/${playlistId}/follow`,
   PLAYLISTS_FOLLOWED: '/api/playlists/followed',
 
+  // Subscriptions (#584, #585). The current-plan and create/cancel routes are mounted. The tier
+  // list (subscriptionTierConfigRoutes) and the gift routes (giftSubscriptionRoutes) are not.
+  SUBSCRIPTION_TIERS: '/api/subscriptions/tiers',
+  SUBSCRIPTION_CURRENT: '/api/subscriptions/me/subscription',
+  SUBSCRIPTIONS: '/api/subscriptions',
+  SUBSCRIPTION_GIFTS: '/api/subscriptions/gifts',
+  SUBSCRIPTION_GIFT: '/api/subscriptions/gift',
+  SUBSCRIPTION_GIFT_ACTION: (giftId: string, action: 'accept' | 'decline') =>
+    `/api/subscriptions/gift/${encodeURIComponent(giftId)}/${action}`,
+
   // Listening history (#581). Not mounted on the backend yet; the client falls back to local history.
   RECENTLY_PLAYED: '/api/users/me/recently-played',
 
