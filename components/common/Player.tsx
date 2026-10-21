@@ -249,6 +249,7 @@ const Player = () => {
             cover={coverSrc}
             duration={duration}
             sleepTimer={sleepTimer}
+            songId={currentTrack?.id}
             title={currentTrack?.title}
             trackKey={trackId}
             onCancelSleepTimer={cancelSleepTimer}

@@ -124,6 +124,8 @@ export const API_ENDPOINTS = {
 
   // Profile
   USER_PROFILE: '/api/users/profile',
+  // All users (no filter). Used by gift recipient search until the backend offers one (#585).
+  USERS: '/api/users',
   // Role chosen during onboarding (#596). Confirm the path against the backend.
   USER_ACCOUNT_TYPE: '/api/user/account-type',
 
@@ -157,6 +159,16 @@ export const API_ENDPOINTS = {
   PLAYLIST_FOLLOW: (playlistId: string) => `/api/playlists/${playlistId}/follow`,
   PLAYLISTS_FOLLOWED: '/api/playlists/followed',
 
+  // Subscriptions (#584, #585). The current-plan and create/cancel routes are mounted. The tier
+  // list (subscriptionTierConfigRoutes) and the gift routes (giftSubscriptionRoutes) are not.
+  SUBSCRIPTION_TIERS: '/api/subscriptions/tiers',
+  SUBSCRIPTION_CURRENT: '/api/subscriptions/me/subscription',
+  SUBSCRIPTIONS: '/api/subscriptions',
+  SUBSCRIPTION_GIFTS: '/api/subscriptions/gifts',
+  SUBSCRIPTION_GIFT: '/api/subscriptions/gift',
+  SUBSCRIPTION_GIFT_ACTION: (giftId: string, action: 'accept' | 'decline') =>
+    `/api/subscriptions/gift/${encodeURIComponent(giftId)}/${action}`,
+
   // Listening history (#581). Not mounted on the backend yet; the client falls back to local history.
   RECENTLY_PLAYED: '/api/users/me/recently-played',
 
@@ -169,6 +181,10 @@ export const API_ENDPOINTS = {
   // Song comments (#576). Song-scoped routes mount under /api/song alongside SongRoutes
   // (AudioBlock_Backend#749); comment-scoped routes are mounted at /api/comments.
   SONG_COMMENTS: (songId: string) => `/api/song/${encodeURIComponent(songId)}/comments`,
+
+  // Song lyrics (#583). Only served when the song's rights are confirmed; 404 otherwise.
+  // The backend route is being added, so the panel shows its error state until it lands.
+  SONG_LYRICS: (songId: string) => `/api/song/${encodeURIComponent(songId)}/lyrics`,
   COMMENT: (commentId: string) => `/api/comments/${encodeURIComponent(commentId)}`,
   COMMENT_REPLIES: (commentId: string) => `/api/comments/${encodeURIComponent(commentId)}/replies`,
 } as const;

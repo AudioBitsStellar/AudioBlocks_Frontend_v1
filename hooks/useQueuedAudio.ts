@@ -15,6 +15,11 @@ import {
   saveResumePosition,
   shouldRestorePosition,
 } from '@/lib/resumePosition';
+import {
+  computeNormalizationGainDb,
+  DEFAULT_NORMALIZATION_TARGET_LUFS,
+  gainDbToLinear,
+} from '@/lib/player/normalizationGain';
 import { describeStreamQuality, resolveBitrateCap } from '@/lib/streamQuality';
 import { isTrackAvailable } from '@/lib/tracks';
 
@@ -33,6 +38,9 @@ export function useQueuedAudio() {
   const quality = useOptionalUserPreferences()?.preferences.audioQuality ?? 'auto';
   const bitrateCap = resolveBitrateCap(quality, dataSaver);
   const streamQuality = describeStreamQuality(quality, dataSaver);
+  const normalizationTargetLufs =
+    useOptionalUserPreferences()?.preferences.normalizationTargetLufs ??
+    DEFAULT_NORMALIZATION_TARGET_LUFS;
   const deckARef = useRef<HTMLAudioElement | null>(null);
   const deckBRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -52,7 +60,11 @@ export function useQueuedAudio() {
   const compressors = useRef(
     new Map<
       HTMLAudioElement,
-      { source: MediaElementAudioSourceNode; compressor: DynamicsCompressorNode }
+      {
+        source: MediaElementAudioSourceNode;
+        compressor: DynamicsCompressorNode;
+        gain: GainNode;
+      }
     >()
   );
   const [duration, setDuration] = useState(0);
@@ -80,6 +92,7 @@ export function useQueuedAudio() {
     nextUrl,
     playbackSpeed,
     bitrateCap,
+    normalizationTargetLufs,
   });
   live.current = {
     playback,
@@ -89,6 +102,7 @@ export function useQueuedAudio() {
     nextUrl,
     playbackSpeed,
     bitrateCap,
+    normalizationTargetLufs,
   };
 
   useEffect(() => {
@@ -137,6 +151,12 @@ export function useQueuedAudio() {
       if (!url || !track) return undefined;
       return (track.url || getStreamUrl(track.id)) === url ? track.id : undefined;
     };
+    // Loudness gain follows the track loaded in the element (#582). An incoming
+    // element holds `nextTrack` until it is promoted.
+    const trackForUrl = (url: string | undefined) =>
+      [live.current.currentTrack, live.current.nextTrack].find(
+        (track) => !!url && !!track && (track.url || getStreamUrl(track.id)) === url
+      );
     const persistResume = (element: HTMLAudioElement, force = false) => {
       if (element !== audioRef.current || !element.duration) return;
       const trackId = trackIdFor(loaded.current.get(element));
@@ -176,9 +196,11 @@ export function useQueuedAudio() {
         if (!graph) {
           const source = ctx.createMediaElementSource(element);
           const compressor = ctx.createDynamicsCompressor();
+          const gain = ctx.createGain();
           source.connect(compressor);
-          compressor.connect(ctx.destination);
-          graph = { source, compressor };
+          compressor.connect(gain);
+          gain.connect(ctx.destination);
+          graph = { source, compressor, gain };
           compressors.current.set(element, graph);
         }
         const enabled = live.current.playback.normalizeAudio;
@@ -187,6 +209,11 @@ export function useQueuedAudio() {
         graph.compressor.ratio.value = enabled ? 12 : 1;
         graph.compressor.attack.value = enabled ? 0.003 : 0;
         graph.compressor.release.value = enabled ? 0.25 : 0;
+        const gainDb = computeNormalizationGainDb(
+          trackForUrl(loaded.current.get(element)),
+          live.current.normalizationTargetLufs
+        );
+        graph.gain.gain.value = enabled ? gainDbToLinear(gainDb) : 1;
         if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
       } catch {
         /* Browsers without Web Audio keep element playback. */
@@ -400,9 +427,10 @@ export function useQueuedAudio() {
       window.removeEventListener('pagehide', release);
       commands.current = null;
       if (skipTimer.current) clearTimeout(skipTimer.current);
-      graphNodes.forEach(({ source, compressor }) => {
+      graphNodes.forEach(({ source, compressor, gain }) => {
         source.disconnect();
         compressor.disconnect();
+        gain.disconnect();
       });
       graphNodes.clear();
       void audioContext.current?.close().catch(() => {});
@@ -484,7 +512,7 @@ export function useQueuedAudio() {
     if (audioRef.current) commands.current?.configureAudio(audioRef.current);
     if (incomingAudioRef.current && playback.isCrossfading)
       commands.current?.configureAudio(incomingAudioRef.current);
-  }, [playback.normalizeAudio, playback.isCrossfading, streamUrl]);
+  }, [playback.normalizeAudio, playback.isCrossfading, streamUrl, normalizationTargetLufs]);
   // Sources loaded later pick up the cap from `live`; re-cap the ones already playing (#590).
   const appliedCap = useRef(bitrateCap);
   useEffect(() => {

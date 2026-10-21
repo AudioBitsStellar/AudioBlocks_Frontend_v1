@@ -9,6 +9,8 @@ import { useAudioBuffer } from '@/hooks/useAudioBuffer';
 import { MoreVertical } from 'lucide-react';
 import { OnChainInfo, type OnChainInfoProps } from '@/components/common/OnChainInfo';
 import { SleepTimerMenu } from '@/components/player/SleepTimerMenu';
+import { LyricsDisplay } from '@/components/LyricsDisplay';
+import { useSongLyrics } from '@/hooks/useSongLyrics';
 import type { SleepTimer, SleepTimerOption } from '@/lib/sleepTimer';
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
@@ -39,6 +41,7 @@ export const FullScreenPlayer = ({
   artist,
   cover,
   trackKey,
+  songId,
   onChain,
   sleepTimer,
   onSelectSleepTimer,
@@ -52,6 +55,8 @@ export const FullScreenPlayer = ({
   artist?: string;
   cover?: string;
   trackKey: string;
+  /** Backend song ID used to fetch lyrics (#583). Omit for tracks without one. */
+  songId?: string;
   /** On-chain provenance for the song. Omit when the song has no mint data. */
   onChain?: OnChainInfoProps;
   /** Sleep timer controls (#589). Omit both handlers to hide the controls. */
@@ -64,6 +69,8 @@ export const FullScreenPlayer = ({
   const [analyserNode, setAnalyserNode] = useState<AnalyserNode | undefined>();
   const [visualizerEnabled, setVisualizerEnabled] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
+  const lyricsQuery = useSongLyrics(songId, showLyrics);
   const audioContextRef = React.useRef<AudioContext | null>(null);
 
   const peaks = useMemo(() => (buffer ? getWaveformPeaks(buffer) : undefined), [buffer]);
@@ -207,16 +214,39 @@ export const FullScreenPlayer = ({
         </div>
       )}
 
-      <div className="w-64 h-64 relative rounded-md mb-8 overflow-hidden bg-gray-800">
-        <Image
-          fill
-          alt={title ?? 'Now playing'}
-          className="object-cover"
-          src={cover || COVER_FALLBACK}
-        />
-      </div>
+      {showLyrics ? (
+        // Keeps scrolling the lyrics from starting the drag-to-close gesture on the player.
+        <div
+          className="w-full max-w-md h-64 mb-8 px-4 flex items-center justify-center"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <LyricsDisplay
+            isError={lyricsQuery.isError}
+            isLoading={lyricsQuery.isLoading}
+            lyrics={lyricsQuery.data}
+            onRetry={() => void lyricsQuery.refetch()}
+          />
+        </div>
+      ) : (
+        <div className="w-64 h-64 relative rounded-md mb-8 overflow-hidden bg-gray-800">
+          <Image
+            fill
+            alt={title ?? 'Now playing'}
+            className="object-cover"
+            src={cover || COVER_FALLBACK}
+          />
+        </div>
+      )}
       <div className="text-white text-2xl font-bold text-center">{title || 'Now Playing'}</div>
-      {artist && <div className="text-gray-400 text-sm mb-6 text-center">{artist}</div>}
+      {artist && <div className="text-gray-400 text-sm mb-4 text-center">{artist}</div>}
+      <button
+        aria-pressed={showLyrics}
+        className="mb-6 px-3 py-1 text-xs font-semibold text-white border border-gray-600 rounded-full hover:bg-white/10 transition-colors"
+        type="button"
+        onClick={() => setShowLyrics((open) => !open)}
+      >
+        {showLyrics ? 'Hide lyrics' : 'Show lyrics'}
+      </button>
       {onChain && (
         <div className="w-full max-w-md px-4 mb-6">
           <OnChainInfo {...onChain} />

@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
 import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS } from './constants';
 import { getValidatedEnv } from './env';
+import { isPremiumRequiredResponse, notifyPremiumRequired } from './subscriptionUpsell';
 
 const { NEXT_PUBLIC_API_URL } = getValidatedEnv();
 
@@ -58,18 +59,27 @@ export class NotFoundError extends Error {
 export class ApiError extends Error {
   /** HTTP status code returned by the API. */
   status: number;
+  /** The `message` from the API's error body, when it sent one (e.g. a gift rule violation). */
+  serverMessage?: string;
 
   /**
    * Creates an API response error.
    *
    * @param message - Human-readable explanation of the API failure.
    * @param status - HTTP status code returned by the API.
+   * @param serverMessage - The API's own message from the error body, if any.
    */
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, serverMessage?: string) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.serverMessage = serverMessage;
   }
+}
+
+/** The API's own message when it sent one, otherwise `fallback`. */
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiError && error.serverMessage ? error.serverMessage : fallback;
 }
 
 interface FetchOptions extends RequestInit {
@@ -128,6 +138,17 @@ export async function refreshAccessToken(): Promise<string> {
   return refreshPromise;
 }
 
+/** Reads `message` from a JSON error body. Clones the response so the caller can still read it. */
+async function readErrorMessage(response: Response): Promise<string | undefined> {
+  try {
+    const body: unknown = await response.clone().json();
+    const message = (body as { message?: unknown } | null)?.message;
+    return typeof message === 'string' ? message : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function fetchWithRetry(
   url: string,
   options: FetchOptions = {},
@@ -175,7 +196,12 @@ async function fetchWithRetry(
         return fetchWithRetry(url, options, retries, attempt + 1);
       }
 
-      throw new ApiError(`HTTP error! status: ${response.status}`, response.status);
+      const serverMessage = await readErrorMessage(response);
+      // Premium-gated endpoints answer 402, or 403 with an upgrade message (#584).
+      if (isPremiumRequiredResponse(response.status, serverMessage)) {
+        notifyPremiumRequired(serverMessage);
+      }
+      throw new ApiError(`HTTP error! status: ${response.status}`, response.status, serverMessage);
     }
 
     return response;
