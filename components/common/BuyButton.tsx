@@ -1,15 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { parseEther } from 'viem';
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import WalletHelpLink from '@/components/help/WalletHelpLink';
-import { Modal } from '@/components/ui/Modal';
-import { contractAddress, abi } from '@/config/abi';
-import { useStellarBalance } from '@/hooks/useStellarBalance';
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useStellarWallet } from '@/context/StellarWalletContext';
 
 interface BuyButtonProps {
   tokenId: string;
@@ -18,115 +12,49 @@ interface BuyButtonProps {
 }
 
 const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
-  const { writeContract, data: hash, isPending } = useWriteContract();
-  const queryClient = useQueryClient();
-  // Issue #319: confirm before submitting the transaction, so a stray click
-  // never sends an on-chain purchase without the user seeing price/token first.
-  const [showConfirm, setShowConfirm] = useState(false);
-  const { data: stellarBalance } = useStellarBalance();
-
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
-
-  // #142 — without this, a confirmed purchase never invalidates the NFT
-  // collection reads (useNFTCollection's balanceOf/getArtistSongs/getSongById
-  // calls), so the profile/collection pages keep showing stale ownership
-  // data until a full page refresh. wagmi's contract-read hooks are backed
-  // by the same TanStack Query cache these queryKey prefixes address, so
-  // this invalidates them wherever they're mounted — including on a
-  // completely different page than the one the purchase happened on.
-  useEffect(() => {
-    if (isSuccess) {
-      toast.success('Purchase confirmed! Your collection has been updated.');
-      queryClient.invalidateQueries({ queryKey: ['readContract'] });
-      queryClient.invalidateQueries({ queryKey: ['readContracts'] });
-    }
-  }, [isSuccess, queryClient]);
+  const { publicKey, signTransaction } = useStellarWallet();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleBuy = async () => {
-    setShowConfirm(false);
+    if (!publicKey) {
+      toast.error('Please connect your Stellar wallet first');
+      return;
+    }
+
     try {
-      // Extract numeric ID from 'music-1', 'event-1', etc.
-      const numericId = parseInt(tokenId.split('-')[1]);
-
-      writeContract({
-        address: contractAddress,
-        abi: abi,
-        functionName: 'purchase',
-        args: [BigInt(numericId)],
-        value: parseEther(price.split(' ')[0]),
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setIsProcessing(true);
+      // TODO: Integrate with backend to get unsigned XDR transaction
+      // const response = await fetch('/api/transactions/buy', {
+      //   method: 'POST',
+      //   body: JSON.stringify({ tokenId, price }),
+      // });
+      // const { xdr } = await response.json();
+      // const signedXdr = await signTransaction(xdr);
+      // Submit signed transaction to backend
+      
+      toast.info('Stellar transaction integration pending - backend required');
     } catch (error: any) {
       toast.error(error?.message || 'Transaction failed');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  // Helper to parse ETH
-  // function parseEther(value: string) {
-  //   return BigInt(parseFloat(value) * 10 ** 18);
-  // }
-
-  const isProcessing = isPending || isConfirming;
-
-  // #555: Check if the user has enough Stellar XLM to cover the price.
-  // Parse the price (e.g., "0.5 ETH" -> 0.5) and assume a small fee (~0.01 XLM).
-  const priceXlm = parseFloat(price.split(' ')[0]);
-  const estimatedFee = 0.01; // Stellar transaction fee estimate
-  const totalRequired = priceXlm + estimatedFee;
-  const hasInsufficientFunds =
-    stellarBalance?.isFunded && stellarBalance.spendableXlm < totalRequired;
-
   return (
-    <>
-      <button
-        className="border-gray-600 border text-white px-4 py-2 rounded-2xl transition-colors text-sm mb-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        disabled={isProcessing}
-        onClick={() => setShowConfirm(true)}
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="h-3 w-3 animate-spin" />
-            {isConfirming ? 'Confirming...' : 'Pending...'}
-          </>
-        ) : (
-          label
-        )}
-      </button>
-
-      <Modal
-        description="This will submit an on-chain transaction and cannot be undone."
-        open={showConfirm}
-        size="sm"
-        title="Confirm purchase"
-        onClose={() => setShowConfirm(false)}
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-on-muted">
-            You&apos;re about to buy <span className="text-white font-medium">{label}</span> for{' '}
-            <span className="text-white font-medium">{price}</span>.
-          </p>
-          <WalletHelpLink />
-          <div className="flex justify-end gap-3">
-            <button
-              className="px-4 py-2 rounded-2xl text-sm text-on-muted hover:text-white transition-colors"
-              onClick={() => setShowConfirm(false)}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-4 py-2 rounded-2xl text-sm bg-brand text-white hover:bg-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={hasInsufficientFunds}
-              onClick={handleBuy}
-            >
-              Confirm purchase
-            </button>
-          </div>
-        </div>
-      </Modal>
-    </>
+    <button 
+      onClick={handleBuy}
+      disabled={isProcessing || !publicKey}
+      className="border-gray-600 border text-white px-4 py-2 rounded-2xl transition-colors text-sm mb-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+    >
+      {isProcessing ? (
+        <>
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Processing...
+        </>
+      ) : (
+        label
+      )}
+    </button>
   );
 };
 

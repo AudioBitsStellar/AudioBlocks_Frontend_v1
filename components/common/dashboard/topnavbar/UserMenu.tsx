@@ -1,31 +1,29 @@
 'use client';
 
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { FiUser, FiRepeat, FiFolder, FiX, FiLogIn } from 'react-icons/fi';
+import { FaWallet } from 'react-icons/fa';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { motion, AnimatePresence } from 'framer-motion';
-import Cookies from 'js-cookie';
-import { Wallet, User, Repeat, Folder, X, ExternalLink } from 'lucide-react';
-import { EmbeddedWalletCreator } from '@/components/auth/EmbeddedWalletCreator';
-import { WalletConnectButtons } from '@/components/auth/WalletConnectButtons';
 import { Auth } from '@/hooks/useAuth';
-import { useLogout } from '@/hooks/useLogout';
-import { useStellarBalance } from '@/hooks/useStellarBalance';
-import { ACTIVE_STELLAR_NETWORK } from '@/lib/stellarConfig';
+import { useRouter, usePathname } from 'next/navigation';
+import Cookies from 'js-cookie';
+import { useStellarWallet } from '@/context/StellarWalletContext';
+import AddressDisplay from '@/components/AddressDisplay';
 
 const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const { user, setShowDynamicUserProfile } = useDynamicContext();
+  const { user } = useDynamicContext();
   const { handleLogOut } = Auth();
   const route = useRouter();
   const pathname = usePathname();
   const isAuthenticated = !!user;
-  const { data: stellarBalance, isLoading: balanceLoading } = useStellarBalance();
+  const { publicKey, connect, disconnect, isConnecting } = useStellarWallet();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -47,94 +45,94 @@ const UserMenu = () => {
     }
   }, [isOpen]);
 
-  const handlePanelKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setIsOpen(false);
-      toggleRef.current?.focus();
-      return;
-    }
-    if (e.key === 'Tab') {
-      const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
-        'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
-      );
-      if (!focusable || focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
+  const handlePanelKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable || focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       }
-    }
-  }, []);
+    },
+    []
+  );
 
-  const { logout } = useLogout();
-
-  const logOut = async () => {
-    setIsOpen(false);
-    await logout({ redirectTo: '/' });
+  const logOut = () => {
+    Cookies.remove('audioblocks_jwt');
+    handleLogOut();
+    route.push('/');
   };
 
   return (
-    <div ref={menuRef} className="relative z-50">
+    <div className="relative z-50" ref={menuRef}>
       <button
+        onClick={() => setIsOpen(true)}
         ref={toggleRef}
         aria-label="Open user menu"
         className="w-8 h-8 rounded-full overflow-hidden border border-gray-700 cursor-pointer"
-        onClick={() => setIsOpen(true)}
       >
         <Image
-          alt="User"
-          className="object-cover w-full h-full"
-          height={40}
           src="/tech.jpg"
+          alt="User"
           width={40}
+          height={40}
+          className="object-cover w-full h-full"
         />
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            animate={{ x: 0 }}
-            aria-label="User menu"
-            aria-modal="true"
-            className="fixed top-0 right-0 w-60 h-screen bg-[#111111] shadow-lg border-l border-[#2B2B2B] px-5 py-6 flex flex-col"
-            exit={{ x: '100%' }}
             initial={{ x: '100%' }}
-            role="dialog"
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             onKeyDown={handlePanelKeyDown}
+            role="dialog"
+            aria-modal="true"
+            aria-label="User menu"
+            className="fixed top-0 right-0 w-60 h-screen bg-[#111111] shadow-lg border-l border-[#2B2B2B] px-5 py-6 flex flex-col"
           >
             <button
+              onClick={() => setIsOpen(false)}
               ref={closeButtonRef}
               aria-label="Close user menu"
               className="text-[#A3A3A3] cursor-pointer hover:text-white absolute top-4 right-4"
-              onClick={() => setIsOpen(false)}
             >
-              <X size={22} />
+              <FiX size={22} />
             </button>
 
             {isAuthenticated ? (
               <>
                 <div className="flex items-center truncate border-b pb-3 gap-3 mb-8 mt-2">
                   <Image
-                    alt="User Avatar"
-                    className="rounded-full"
-                    height={50}
                     src="/tech.jpg"
+                    alt="User Avatar"
                     width={50}
+                    height={50}
+                    className="rounded-full"
                   />
                   <div>
                     <p className="font-semibold text-white text-sm">
-                      {(user as unknown as Record<string, string>)?.name ||
-                        user?.email?.split('@')[0] ||
-                        'User'}
+                      {(user as Record<string, any>)?.name || user?.email?.split('@')[0] || 'User'}
                     </p>
                     <p className="text-xs overflow-hidden text-ellipsis text-[#A3A3A3]">
                       {user?.email}
@@ -144,72 +142,64 @@ const UserMenu = () => {
 
                 <div className="space-y-6 text-sm text-[#A3A3A3] font-semibold">
                   <Link
-                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                     href="/dashboard/profile"
                     onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                   >
-                    <User />
+                    <FiUser />
                     <span>Profile</span>
                   </Link>
-                  <button
-                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
-                    onClick={() => {
-                      setIsOpen(false);
-                      setShowDynamicUserProfile(true);
-                    }}
-                  >
-                    <Repeat />
-                    <span>Switch Account</span>
-                  </button>
                   <Link
+                    href="#"
+                    onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
+                  >
+                    <FiRepeat />
+                    <span>Swap</span>
+                  </Link>
+                  <Link
                     href="/dashboard/collection"
                     onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 cursor-pointer hover:text-[#666C6C] transition"
                   >
-                    <Folder />
+                    <FiFolder />
                     <span>My Collections</span>
                   </Link>
-
-                  {/* Stellar balance (#555) */}
-                  <div className="mt-8 space-y-2">
-                    <div className="flex items-center gap-2 text-gray-400 text-sm">
-                      <Wallet size={16} />
-                      <span>Stellar Balance:</span>
-                    </div>
-                    {balanceLoading ? (
-                      <p className="text-xs text-[#A3A3A3] pl-6">Loading...</p>
-                    ) : !stellarBalance ? (
-                      <p className="text-xs text-[#A3A3A3] pl-6">No wallet connected</p>
-                    ) : !stellarBalance.isFunded ? (
-                      <div className="pl-6 space-y-1">
-                        <p className="text-xs text-amber-400">Account not activated</p>
-                        <p className="text-xs text-[#A3A3A3]">
-                          Stellar accounts need a minimum balance to be created.
-                        </p>
-                        {ACTIVE_STELLAR_NETWORK.testnet && (
-                          <a
-                            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1"
-                            href={`${ACTIVE_STELLAR_NETWORK.friendbotUrl}?addr=${user?.verifiedCredentials?.[0]?.address ?? ''}`}
-                            rel="noopener noreferrer"
-                            target="_blank"
-                          >
-                            Fund with Friendbot <ExternalLink size={12} />
-                          </a>
-                        )}
+                  
+                  {/* Stellar Wallet Section */}
+                  <div className="border-t border-[#2B2B2B] pt-4 mt-4">
+                    <p className="text-xs text-[#A3A3A3] mb-2">Stellar Wallet</p>
+                    {publicKey ? (
+                      <div className="space-y-2">
+                        <AddressDisplay 
+                          address={publicKey} 
+                          showExplorerLink={true}
+                          className="text-xs"
+                        />
+                        <button
+                          onClick={disconnect}
+                          className="w-full text-left text-xs text-red-400 hover:text-red-300 transition"
+                        >
+                          Disconnect Wallet
+                        </button>
                       </div>
                     ) : (
-                      <div className="pl-6 space-y-1">
-                        <p className="text-sm font-medium text-white">
-                          {stellarBalance.xlm.toFixed(2)} XLM
-                        </p>
-                        <p className="text-xs text-[#A3A3A3]">
-                          Spendable: {stellarBalance.spendableXlm.toFixed(2)} XLM
-                        </p>
-                      </div>
+                      <button
+                        onClick={connect}
+                        disabled={isConnecting}
+                        className="w-full flex items-center justify-center gap-2 bg-[#D2045B] text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-[#b80348] transition disabled:opacity-50"
+                      >
+                        <FaWallet />
+                        <span>{isConnecting ? 'Connecting...' : 'Connect Stellar Wallet'}</span>
+                      </button>
                     )}
                   </div>
 
-                  <EmbeddedWalletCreator />
+                  <div className="flex items-center gap-3 text-gray-400 mt-8">
+                    <FaWallet />
+                    <span>Balance:</span>
+                    <span className="font-medium text-[#666C6C]">11000 ABT</span>
+                  </div>
                   <button
                     className="cursor-pointer hover:text-[#666C6C] transition"
                     onClick={logOut}
@@ -221,7 +211,7 @@ const UserMenu = () => {
             ) : (
               <div className="flex flex-col items-center justify-center flex-1 gap-6">
                 <div className="w-16 h-16 rounded-full bg-[#1A1A1A] flex items-center justify-center">
-                  <User className="text-[#A3A3A3]" size={28} />
+                  <FiUser size={28} className="text-[#A3A3A3]" />
                 </div>
                 <div className="text-center">
                   <p className="text-white font-semibold mb-1">Welcome</p>
@@ -229,7 +219,14 @@ const UserMenu = () => {
                     Connect your wallet to access your dashboard
                   </p>
                 </div>
-                <WalletConnectButtons className="w-full" onLoginStart={() => setIsOpen(false)} />
+                <Link
+                  href="/"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 bg-[#D2045B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#b80348] transition cursor-pointer"
+                >
+                  <FiLogIn />
+                  <span>Connect Wallet</span>
+                </Link>
               </div>
             )}
           </motion.div>

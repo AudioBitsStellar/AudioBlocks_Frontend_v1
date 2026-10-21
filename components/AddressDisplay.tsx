@@ -1,46 +1,74 @@
-/**
- * Component for displaying Ethereum addresses with ENS resolution
- * Issue #317: Add ENS name resolution
- */
+'use client';
 
-import React from 'react';
-import { useDisplayName } from '@/hooks/useENS';
-import { AddressLink } from './ExplorerLink';
-
-interface ProviderLike {
-  resolveName?: (name: string) => Promise<string | null>;
-  lookupAddress?: (address: string) => Promise<string | null>;
-}
+import { useState } from 'react';
+import { Copy, Check, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
+import { shortenAddress } from '@/lib/stellarAddress';
+import { getAccountExplorerUrl, getContractExplorerUrl } from '@/lib/stellarNetwork';
 
 interface AddressDisplayProps {
   address: string;
-  provider?: ProviderLike;
   showExplorerLink?: boolean;
-  chainId?: number;
   className?: string;
+  prefixLength?: number;
+  suffixLength?: number;
 }
 
-/**
- * Component to display address with ENS name resolution and optional explorer link
- * @param props - Component props
- * @returns Address display with ENS name if available
- */
-export function AddressDisplay({
+export default function AddressDisplay({
   address,
-  provider,
-  showExplorerLink = true,
-  chainId = 1,
+  showExplorerLink = false,
   className = '',
+  prefixLength = 4,
+  suffixLength = 4,
 }: AddressDisplayProps) {
-  const displayName = useDisplayName(address, provider);
+  const [copied, setCopied] = useState(false);
 
-  if (showExplorerLink) {
-    return (
-      <AddressLink address={address} chainId={chainId} className={className}>
-        {displayName}
-      </AddressLink>
-    );
-  }
+  const shortAddress = shortenAddress(address, prefixLength, suffixLength);
+  
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      toast.success('Address copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error('Failed to copy address');
+    }
+  };
 
-  return <span className={`font-mono ${className}`}>{displayName}</span>;
+  const explorerUrl = address.startsWith('C')
+    ? getContractExplorerUrl(address)
+    : getAccountExplorerUrl(address);
+
+  return (
+    <div className={`inline-flex items-center gap-2 ${className}`}>
+      <span
+        className="font-mono text-sm"
+        title={address}
+      >
+        {shortAddress}
+      </span>
+      
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="text-gray-400 hover:text-white transition-colors"
+        aria-label="Copy address"
+      >
+        {copied ? <Check size={14} /> : <Copy size={14} />}
+      </button>
+
+      {showExplorerLink && (
+        <a
+          href={explorerUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-400 hover:text-white transition-colors"
+          aria-label="View on explorer"
+        >
+          <ExternalLink size={14} />
+        </a>
+      )}
+    </div>
+  );
 }
