@@ -48,22 +48,39 @@ export function ShareButton({ url, title, text, className = '', timestamp }: Sha
 
     setIsLoading(true);
 
+    let canUseNativeShare = false;
     try {
-      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      canUseNativeShare =
+        typeof navigator !== 'undefined' &&
+        typeof navigator.share === 'function' &&
+        navigator.canShare?.({ url: shareUrl }) === true;
+
+      if (canUseNativeShare) {
         await navigator.share({ title, text, url: shareUrl });
         toast.success('Shared successfully');
       } else if (
         typeof navigator !== 'undefined' &&
-        navigator.clipboard &&
-        typeof navigator.clipboard.writeText === 'function'
+        typeof navigator.clipboard?.writeText === 'function'
       ) {
         await navigator.clipboard.writeText(shareUrl);
         showCopiedFeedback();
       } else {
         throw new Error('Clipboard access is not available');
       }
-    } catch {
-      toast.error('Unable to share. Please try again.');
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'name' in error &&
+        error.name === 'AbortError'
+      ) {
+        return;
+      }
+      toast.error(
+        canUseNativeShare
+          ? 'Unable to share. Please try again.'
+          : 'Unable to copy link. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }

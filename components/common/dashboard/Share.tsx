@@ -6,8 +6,17 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Copy, Facebook, Share, X } from 'lucide-react';
 import { toast } from 'sonner';
 import Icon from '@/components/ui/Icon';
+import ShareButton from '@/components/ui/ShareButton';
 
-const ShareModal = ({ link, timestamp }: { link: string; timestamp?: number }) => {
+const ShareModal = ({
+  link,
+  timestamp,
+  artistName,
+}: {
+  link: string;
+  timestamp?: number;
+  artistName: string;
+}) => {
   const shareUrl =
     timestamp != null && timestamp > 0
       ? `${link}${link.includes('?') ? '&' : '?'}t=${Math.floor(timestamp)}`
@@ -45,13 +54,20 @@ const ShareModal = ({ link, timestamp }: { link: string; timestamp?: number }) =
               Share with your friends!
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button className="hover:text-gray-400 transition">
-                <X className="w-5 h-5" />
+              <button aria-label="Close share dialog" className="hover:text-gray-400 transition">
+                <X aria-hidden="true" className="w-5 h-5" />
               </button>
             </Dialog.Close>
           </div>
 
           <p className="text-sm text-gray-300 mb-3">Share this link via</p>
+
+          <ShareButton
+            className="mb-4 min-h-11 w-full rounded-md bg-[#D2045B] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#b80348]"
+            text={`Listen to ${artistName} on AudioBlocks`}
+            title={`Listen to ${artistName} on AudioBlocks`}
+            url={shareUrl}
+          />
 
           <div className="flex gap-4 mb-4">
             <Link
@@ -114,11 +130,12 @@ const ShareModal = ({ link, timestamp }: { link: string; timestamp?: number }) =
               value={shareUrl}
             />
             <button
+              aria-label="Copy link"
               className="bg-[#D2045B] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b80348] transition flex items-center gap-1"
               onClick={handleCopy}
             >
-              <Copy className="w-4 h-4" />
-              {copied ? 'Copied' : 'Copy'}
+              <Copy aria-hidden="true" className="w-4 h-4" />
+              {copied ? 'Copied' : 'Copy link'}
             </button>
           </div>
         </Dialog.Content>
