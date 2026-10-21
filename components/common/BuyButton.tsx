@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ExplorerLink } from '@/components/ExplorerLink';
 import { NetworkFeeDisplay } from '@/components/NetworkFeeDisplay';
@@ -10,12 +10,9 @@ import { Modal } from '@/components/ui/Modal';
 import { useSorobanRelay } from '@/hooks/useSorobanRelay';
 import { extractFeeFromPrepareResponse } from '@/lib/sorobanFee';
 import { getSorobanErrorMessage, extractErrorCode } from '@/lib/walletErrors';
-import { parseEther } from 'viem';
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import WalletHelpLink from '@/components/help/WalletHelpLink';
-import { Modal } from '@/components/ui/Modal';
-import { contractAddress, abi } from '@/config/abi';
 import { useStellarBalance } from '@/hooks/useStellarBalance';
+import { useStellarWallet } from '@/context/StellarWalletContext';
 
 interface BuyButtonProps {
   tokenId: string;
@@ -28,21 +25,20 @@ interface BuyButtonProps {
 const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonProps) => {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [networkFee, setNetworkFee] = useState<number | null>(null);
   const { data: stellarBalance } = useStellarBalance();
+  const { publicKey } = useStellarWallet();
 
-  // Placeholder for wallet connection check
-  // TODO: Integrate with actual Stellar wallet context when available
-  const isWalletConnected = false;
+  const isWalletConnected = !!publicKey;
 
   const { run, status, txHash, error, reset } = useSorobanRelay({
     prepare: async () => {
-      // Call backend prepare endpoint
       const response = await fetch('/api/marketplace/buy/prepare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tokenId,
-          // buyerPublicKey would come from wallet context
+          buyerPublicKey: publicKey,
         }),
       });
 
@@ -56,7 +52,6 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
 
       const data = await response.json();
 
-      // Extract and store fee for display
       if (data.fee) {
         const feeInfo = extractFeeFromPrepareResponse(data);
         setNetworkFee(feeInfo.xlm);
@@ -65,7 +60,6 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
       return data;
     },
     submit: async (signedXdr: string) => {
-      // Call backend submit endpoint
       const response = await fetch('/api/marketplace/buy/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +88,6 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
         </div>
       );
 
-      // Invalidate React Query caches
       queryClient.invalidateQueries({ queryKey: ['marketplace'] });
       queryClient.invalidateQueries({ queryKey: ['nft'] });
       queryClient.invalidateQueries({ queryKey: ['collection'] });
@@ -130,10 +123,8 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
     status === 'preparing' || status === 'awaiting-signature' || status === 'submitting';
   const isOwned = txHash != null;
 
-  // #555: Check if the user has enough Stellar XLM to cover the price.
-  // Parse the price (e.g., "0.5 ETH" -> 0.5) and assume a small fee (~0.01 XLM).
   const priceXlm = parseFloat(price.split(' ')[0]);
-  const estimatedFee = 0.01; // Stellar transaction fee estimate
+  const estimatedFee = 0.01;
   const totalRequired = priceXlm + estimatedFee;
   const hasInsufficientFunds =
     stellarBalance?.isFunded && stellarBalance.spendableXlm < totalRequired;
@@ -142,7 +133,7 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
     <>
       <button
         className="border-gray-600 border text-white px-4 py-2 rounded-2xl transition-colors text-sm mb-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        disabled={isProcessing || isOwned}
+        disabled={isProcessing || isOwned || !isWalletConnected}
         onClick={() => setShowConfirm(true)}
       >
         {isProcessing ? (
@@ -218,7 +209,7 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
             </button>
             <button
               className="px-4 py-2 rounded-2xl text-sm bg-brand text-white hover:bg-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={hasInsufficientFunds}
+              disabled={hasInsufficientFunds || !isWalletConnected}
               onClick={handleBuy}
             >
               {!isWalletConnected ? 'Wallet not connected' : 'Confirm purchase'}

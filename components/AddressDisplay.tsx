@@ -1,6 +1,6 @@
 /**
  * Component for displaying Stellar addresses
- * Issue #547: Updated for Stellar addresses (G... or C...)
+ * Integrated with Stellar wallet context
  */
 
 import React from 'react';
@@ -10,19 +10,21 @@ interface AddressDisplayProps {
   address: string;
   showExplorerLink?: boolean;
   className?: string;
+  prefixLength?: number;
+  suffixLength?: number;
 }
 
 /**
  * Component to display Stellar address with optional explorer link
- * @param props - Component props
- * @returns Address display with shortened format
  */
 export function AddressDisplay({
   address,
   showExplorerLink = true,
   className = '',
+  prefixLength = 4,
+  suffixLength = 4,
 }: AddressDisplayProps) {
-  const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const shortAddress = `${address.slice(0, prefixLength + 2)}...${address.slice(-suffixLength)}`;
 
   if (showExplorerLink) {
     return (
@@ -34,3 +36,5 @@ export function AddressDisplay({
 
   return <span className={`font-mono ${className}`}>{shortAddress}</span>;
 }
+
+export default AddressDisplay;

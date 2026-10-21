@@ -1,146 +1,42 @@
 import { useQuery } from '@tanstack/react-query';
-import { useReadContract, useReadContracts } from 'wagmi';
-import { abi, contractAddress } from '@/config/abi';
-import { QUERY_KEYS, CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
-import {
-  getMerchListings,
-  getEventListings,
-  getExploreCategories,
-  getExploreCollections,
-  getExploreArtists,
-} from '@/lib/exploreService';
-import { isFeatureEnabled } from '@/lib/featureFlags';
+import { getMerchListings, getEventListings } from '@/lib/exploreService';
 
 export function useGetMerch() {
   return useQuery({
-    queryKey: QUERY_KEYS.EXPLORE_MERCH,
+    queryKey: ['explore-merch'],
     queryFn: getMerchListings,
-    staleTime: CACHE_DURATIONS.MEDIUM,
-    retry: RETRY_CONFIG.DEFAULT,
-    // #637: /api/merch is not implemented yet, so never request it while the
-    // Merch flag is off.
-    enabled: isFeatureEnabled('merch'),
-  });
-}
-
-export function useGetExploreCategories() {
-  return useQuery({
-    queryKey: QUERY_KEYS.EXPLORE_CATEGORIES,
-    queryFn: getExploreCategories,
-    staleTime: CACHE_DURATIONS.MEDIUM,
-    retry: RETRY_CONFIG.DEFAULT,
-  });
-}
-
-export function useGetExploreCollections() {
-  return useQuery({
-    queryKey: QUERY_KEYS.EXPLORE_COLLECTIONS,
-    queryFn: getExploreCollections,
-    staleTime: CACHE_DURATIONS.MEDIUM,
-    retry: RETRY_CONFIG.DEFAULT,
-  });
-}
-
-export function useGetExploreArtists() {
-  return useQuery({
-    queryKey: QUERY_KEYS.EXPLORE_ARTISTS,
-    queryFn: getExploreArtists,
-    staleTime: CACHE_DURATIONS.MEDIUM,
-    retry: RETRY_CONFIG.DEFAULT,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 }
 
 export function useGetEvents() {
   return useQuery({
-    queryKey: QUERY_KEYS.EXPLORE_EVENTS,
+    queryKey: ['explore-events'],
     queryFn: getEventListings,
-    staleTime: CACHE_DURATIONS.MEDIUM,
-    retry: RETRY_CONFIG.DEFAULT,
-    // #637: /api/events is not implemented yet, so never request it while the
-    // Events flag is off.
-    enabled: isFeatureEnabled('events'),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 }
 
+/**
+ * Get artists from Stellar/Soroban contracts
+ * TODO: Integrate with backend API for Soroban contract reads
+ */
 export function useGetChainArtists() {
-  const { data: ids, isLoading: idsLoading } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi,
-    functionName: 'getAllArtirstIds',
-  });
-
-  const artistIds = (ids as bigint[] | undefined) ?? [];
-
-  const { data: artistResults, isLoading: artistsLoading } = useReadContracts({
-    contracts: artistIds.map((id) => ({
-      address: contractAddress as `0x${string}`,
-      abi,
-      functionName: 'getArtistById',
-      args: [id],
-    })),
-    query: { enabled: artistIds.length > 0 },
-  });
-
-  const artists = (artistResults ?? [])
-    .map(
-      (r) =>
-        r.result as
-          | { artistId: bigint; artistAddress: string; artistCid: string; balance: bigint }
-          | undefined
-    )
-    .filter(Boolean) as {
-    artistId: bigint;
-    artistAddress: string;
-    artistCid: string;
-    balance: bigint;
-  }[];
-
-  return { artists, isLoading: idsLoading || artistsLoading };
+  return { 
+    artists: [], 
+    isLoading: false 
+  };
 }
 
+/**
+ * Get collections from Stellar/Soroban contracts
+ * TODO: Integrate with backend API for Soroban contract reads
+ */
 export function useGetChainCollections() {
-  const { data: ids, isLoading: idsLoading } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi,
-    functionName: 'getAllAlbums',
-  });
-
-  const albumIds = (ids as bigint[] | undefined) ?? [];
-
-  const { data: albumResults, isLoading: albumsLoading } = useReadContracts({
-    contracts: albumIds.map((id) => ({
-      address: contractAddress as `0x${string}`,
-      abi,
-      functionName: 'getAlbumById',
-      args: [id],
-    })),
-    query: { enabled: albumIds.length > 0 },
-  });
-
-  const albums = (albumResults ?? [])
-    .map(
-      (r) =>
-        r.result as
-          | {
-              albumId: bigint;
-              albumCID: string;
-              artistAddress: string;
-              songIds: bigint[];
-              published: boolean;
-              createdAt: bigint;
-              publishedAt: bigint;
-            }
-          | undefined
-    )
-    .filter(Boolean) as {
-    albumId: bigint;
-    albumCID: string;
-    artistAddress: string;
-    songIds: bigint[];
-    published: boolean;
-    createdAt: bigint;
-    publishedAt: bigint;
-  }[];
-
-  return { albums, isLoading: idsLoading || albumsLoading };
+  return { 
+    albums: [], 
+    isLoading: false 
+  };
 }
