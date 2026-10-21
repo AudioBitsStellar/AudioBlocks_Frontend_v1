@@ -1,9 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { ExplorerLink } from '@/components/ExplorerLink';
+import { NetworkFeeDisplay } from '@/components/NetworkFeeDisplay';
+import { Modal } from '@/components/ui/Modal';
+import { useSorobanRelay } from '@/hooks/useSorobanRelay';
+import { extractFeeFromPrepareResponse } from '@/lib/sorobanFee';
+import { getSorobanErrorMessage, extractErrorCode } from '@/lib/walletErrors';
 import { parseEther } from 'viem';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import WalletHelpLink from '@/components/help/WalletHelpLink';
@@ -15,61 +21,114 @@ interface BuyButtonProps {
   tokenId: string;
   price: string;
   label: string;
+  artistName?: string;
+  songTitle?: string;
 }
 
-const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
-  const { writeContract, data: hash, isPending } = useWriteContract();
+const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonProps) => {
   const queryClient = useQueryClient();
-  // Issue #319: confirm before submitting the transaction, so a stray click
-  // never sends an on-chain purchase without the user seeing price/token first.
   const [showConfirm, setShowConfirm] = useState(false);
   const { data: stellarBalance } = useStellarBalance();
 
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+  // Placeholder for wallet connection check
+  // TODO: Integrate with actual Stellar wallet context when available
+  const isWalletConnected = false;
 
-  // #142 — without this, a confirmed purchase never invalidates the NFT
-  // collection reads (useNFTCollection's balanceOf/getArtistSongs/getSongById
-  // calls), so the profile/collection pages keep showing stale ownership
-  // data until a full page refresh. wagmi's contract-read hooks are backed
-  // by the same TanStack Query cache these queryKey prefixes address, so
-  // this invalidates them wherever they're mounted — including on a
-  // completely different page than the one the purchase happened on.
-  useEffect(() => {
-    if (isSuccess) {
-      toast.success('Purchase confirmed! Your collection has been updated.');
-      queryClient.invalidateQueries({ queryKey: ['readContract'] });
-      queryClient.invalidateQueries({ queryKey: ['readContracts'] });
-    }
-  }, [isSuccess, queryClient]);
-
-  const handleBuy = async () => {
-    setShowConfirm(false);
-    try {
-      // Extract numeric ID from 'music-1', 'event-1', etc.
-      const numericId = parseInt(tokenId.split('-')[1]);
-
-      writeContract({
-        address: contractAddress,
-        abi: abi,
-        functionName: 'purchase',
-        args: [BigInt(numericId)],
-        value: parseEther(price.split(' ')[0]),
+  const { run, status, txHash, error, reset } = useSorobanRelay({
+    prepare: async () => {
+      // Call backend prepare endpoint
+      const response = await fetch('/api/marketplace/buy/prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokenId,
+          // buyerPublicKey would come from wallet context
+        }),
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      toast.error(error?.message || 'Transaction failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorCode = extractErrorCode(errorData);
+        throw new Error(
+          errorCode ? getSorobanErrorMessage(errorCode) : 'Failed to prepare transaction'
+        );
+      }
+
+      const data = await response.json();
+
+      // Extract and store fee for display
+      if (data.fee) {
+        const feeInfo = extractFeeFromPrepareResponse(data);
+        setNetworkFee(feeInfo.xlm);
+      }
+
+      return data;
+    },
+    submit: async (signedXdr: string) => {
+      // Call backend submit endpoint
+      const response = await fetch('/api/marketplace/buy/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signedXdr }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorCode = extractErrorCode(errorData);
+        throw new Error(
+          errorCode ? getSorobanErrorMessage(errorCode) : 'Failed to submit transaction'
+        );
+      }
+
+      return await response.json();
+    },
+    onSuccess: (result) => {
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <span>Purchase successful!</span>
+          {result.txHash && (
+            <ExplorerLink className="text-xs" type="tx" value={result.txHash}>
+              View transaction
+            </ExplorerLink>
+          )}
+        </div>
+      );
+
+      // Invalidate React Query caches
+      queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['nft'] });
+      queryClient.invalidateQueries({ queryKey: ['collection'] });
+
+      setShowConfirm(false);
+      setNetworkFee(null);
+    },
+    onError: (err) => {
+      const errorCode = extractErrorCode(err);
+      const message = errorCode ? getSorobanErrorMessage(errorCode) : err.message;
+
+      toast.error(message);
+      setShowConfirm(false);
+      setNetworkFee(null);
+    },
+  });
+
+  const handleBuy = async () => {
+    if (!isWalletConnected) {
+      toast.error('Please connect your Stellar wallet to continue');
+      return;
     }
+
+    await run();
   };
 
-  // Helper to parse ETH
-  // function parseEther(value: string) {
-  //   return BigInt(parseFloat(value) * 10 ** 18);
-  // }
+  const handleConfirm = () => {
+    setShowConfirm(false);
+    handleBuy();
+  };
 
-  const isProcessing = isPending || isConfirming;
+  const isProcessing =
+    status === 'preparing' || status === 'awaiting-signature' || status === 'submitting';
+  const isOwned = txHash != null;
 
   // #555: Check if the user has enough Stellar XLM to cover the price.
   // Parse the price (e.g., "0.5 ETH" -> 0.5) and assume a small fee (~0.01 XLM).
@@ -83,36 +142,77 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
     <>
       <button
         className="border-gray-600 border text-white px-4 py-2 rounded-2xl transition-colors text-sm mb-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        disabled={isProcessing}
+        disabled={isProcessing || isOwned}
         onClick={() => setShowConfirm(true)}
       >
         {isProcessing ? (
           <>
             <Loader2 className="h-3 w-3 animate-spin" />
-            {isConfirming ? 'Confirming...' : 'Pending...'}
+            {status === 'preparing' && 'Preparing...'}
+            {status === 'awaiting-signature' && 'Awaiting signature...'}
+            {status === 'submitting' && 'Submitting...'}
           </>
+        ) : isOwned ? (
+          'Owned'
         ) : (
           label
         )}
       </button>
 
       <Modal
-        description="This will submit an on-chain transaction and cannot be undone."
+        description="This will submit a Soroban transaction on the Stellar network."
         open={showConfirm}
         size="sm"
         title="Confirm purchase"
-        onClose={() => setShowConfirm(false)}
+        onClose={() => {
+          setShowConfirm(false);
+          reset();
+        }}
       >
         <div className="space-y-4">
-          <p className="text-sm text-on-muted">
-            You&apos;re about to buy <span className="text-white font-medium">{label}</span> for{' '}
-            <span className="text-white font-medium">{price}</span>.
+          <div className="space-y-2 text-sm text-on-muted">
+            {songTitle && (
+              <p>
+                <span className="text-gray-400">Song:</span>{' '}
+                <span className="text-white font-medium">{songTitle}</span>
+              </p>
+            )}
+            {artistName && (
+              <p>
+                <span className="text-gray-400">Artist:</span>{' '}
+                <span className="text-white font-medium">{artistName}</span>
+              </p>
+            )}
+            <p>
+              <span className="text-gray-400">Price:</span>{' '}
+              <span className="text-white font-medium">{price}</span>
+            </p>
+            {networkFee && (
+              <div className="pt-2 border-t border-gray-700">
+                <NetworkFeeDisplay className="text-sm" feeXLM={networkFee} />
+              </div>
+            )}
+          </div>
+
+          <p className="text-xs text-gray-400 bg-gray-800/50 p-3 rounded-lg">
+            You are buying an NFT on the Stellar{' '}
+            {process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet' ? 'mainnet' : 'testnet'}.
           </p>
+
+          {error && (
+            <p className="text-xs text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-800">
+              {error}
+            </p>
+          )}
+
           <WalletHelpLink />
           <div className="flex justify-end gap-3">
             <button
               className="px-4 py-2 rounded-2xl text-sm text-on-muted hover:text-white transition-colors"
-              onClick={() => setShowConfirm(false)}
+              onClick={() => {
+                setShowConfirm(false);
+                reset();
+              }}
             >
               Cancel
             </button>
@@ -121,7 +221,7 @@ const BuyButton = ({ tokenId, price, label }: BuyButtonProps) => {
               disabled={hasInsufficientFunds}
               onClick={handleBuy}
             >
-              Confirm purchase
+              {!isWalletConnected ? 'Wallet not connected' : 'Confirm purchase'}
             </button>
           </div>
         </div>

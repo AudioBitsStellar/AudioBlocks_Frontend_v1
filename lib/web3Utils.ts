@@ -1,16 +1,8 @@
 /**
  * Web3 utility functions for AudioBlocks
- * Provides ENS resolution, block explorer links, gas estimation, and event listening
+ * Provides ENS resolution, gas estimation, and event listening
+ * Note: Block explorer links migrated to lib/stellarExplorer.ts (Issue #547)
  */
-
-// Network configuration for block explorers
-const BLOCK_EXPLORERS: Record<number, string> = {
-  1: 'https://etherscan.io',
-  5: 'https://goerli.etherscan.io',
-  11155111: 'https://sepolia.etherscan.io',
-  137: 'https://polygonscan.com',
-  80001: 'https://mumbai.polygonscan.com',
-};
 
 interface EnsProviderLike {
   resolveName?: (name: string) => Promise<string | null>;
@@ -33,28 +25,6 @@ interface ContractLike {
     fromBlock: number,
     toBlock: number | string
   ) => Promise<unknown[]>;
-}
-
-/**
- * Get block explorer URL for a transaction hash
- * @param txHash - Transaction hash
- * @param chainId - Chain ID (defaults to 1 for mainnet)
- * @returns Full URL to block explorer
- */
-export function getExplorerTxUrl(txHash: string, chainId: number = 1): string {
-  const baseUrl = BLOCK_EXPLORERS[chainId] || BLOCK_EXPLORERS[1];
-  return `${baseUrl}/tx/${txHash}`;
-}
-
-/**
- * Get block explorer URL for an address
- * @param address - Ethereum address
- * @param chainId - Chain ID (defaults to 1 for mainnet)
- * @returns Full URL to block explorer
- */
-export function getExplorerAddressUrl(address: string, chainId: number = 1): string {
-  const baseUrl = BLOCK_EXPLORERS[chainId] || BLOCK_EXPLORERS[1];
-  return `${baseUrl}/address/${address}`;
 }
 
 /**

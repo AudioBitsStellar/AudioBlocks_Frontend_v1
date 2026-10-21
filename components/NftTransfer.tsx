@@ -19,7 +19,50 @@ export function NftTransfer({ songId, onSuccess }: NftTransferProps) {
   const [recipientAddress, setRecipientAddress] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSelfTransfer, setIsSelfTransfer] = useState(false);
-  const { relay, isPending } = useSorobanRelay();
+
+  const { run, status, error: relayError } = useSorobanRelay({
+    prepare: async () => {
+      const response = await fetch('/api/nft/transfer/prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          songId: songId.toString(),
+          recipientAddress,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to prepare NFT transfer');
+      }
+
+      return await response.json();
+    },
+    submit: async (signedXdr: string) => {
+      const response = await fetch('/api/nft/transfer/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signedXdr }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit NFT transfer');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast.success('NFT transferred successfully! This action is irreversible.');
+      setRecipientAddress('');
+      setShowConfirmation(false);
+      setIsSelfTransfer(false);
+      onSuccess?.();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
+  });
+
+  const isPending = status === 'preparing' || status === 'awaiting-signature' || status === 'submitting';
 
   const isValidAddress = validateStrKey(recipientAddress);
   const isSelf = recipientAddress === (typeof window !== 'undefined' ? localStorage.getItem('userStellarAddress') : '');
@@ -39,25 +82,7 @@ export function NftTransfer({ songId, onSuccess }: NftTransferProps) {
 
   const handleConfirmTransfer = async () => {
     if (!isValidAddress) return;
-
-    try {
-      await relay({
-        operation: 'transfer_nft',
-        params: {
-          songId: songId.toString(),
-          recipientAddress,
-        },
-      });
-
-      toast.success('NFT transferred successfully! This action is irreversible.');
-      setRecipientAddress('');
-      setShowConfirmation(false);
-      setIsSelfTransfer(false);
-      onSuccess?.();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Transfer failed';
-      toast.error(message);
-    }
+    await run();
   };
 
   if (showConfirmation) {
