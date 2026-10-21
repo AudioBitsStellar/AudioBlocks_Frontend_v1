@@ -7,11 +7,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Variants, motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
-import { ArrowRight, Folder, LogOut, Menu, User, X } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import { toast } from 'sonner';
+import AccountMenu from '@/components/auth/AccountMenu';
 import ConnectWalletPrompt from '@/components/auth/ConnectWalletPrompt';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
+import SearchOverlay from '@/components/common/SearchOverlay';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { SearchOverlay } from '@/components/ui/SearchOverlay';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Auth } from '@/hooks/useAuth';
 import { useLogout } from '@/hooks/useLogout';
@@ -41,45 +43,68 @@ const Navbar = () => {
   // Auth() mounts the signature flow and the #476 role-selection listener for
   // every public page; nothing is destructured because the prompt now owns the
   // sign-in trigger UI.
-  Auth();
+  const { setShouldTriggerSignature } = Auth();
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileCloseRef = useRef<HTMLButtonElement | null>(null);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
-  const mobileUserMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const mobileMenuWasOpenRef = useRef(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const route = useRouter();
 
-  useEffect(() => {
-    if (isMenuOpen) {
-      mobileCloseRef.current?.focus();
-    }
-  }, [isMenuOpen]);
+  const closeMobileMenu = useCallback(() => setIsMenuOpen(false), []);
 
-  const handleMobileMenuKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setIsMenuOpen(false);
+  useEffect(() => {
+    if (!isMenuOpen) {
+      if (mobileMenuWasOpenRef.current) {
+        mobileMenuTriggerRef.current?.focus();
+        mobileMenuWasOpenRef.current = false;
+      }
       return;
     }
-    if (e.key === 'Tab') {
-      const focusable = mobileMenuRef.current?.querySelectorAll<HTMLElement>(
-        'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
-      );
-      if (!focusable || focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
+
+    mobileMenuWasOpenRef.current = true;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    mobileCloseRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMenuOpen]);
+
+  const handleMobileMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if ((e.target as HTMLElement).closest('[role="menu"]')) return;
+        closeMobileMenu();
+        return;
+      }
+      if (e.key === 'Tab') {
+        if ((e.target as HTMLElement).closest('[role="menu"]')) return;
+        const focusable = mobileMenuRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable || focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (
+          e.shiftKey &&
+          (document.activeElement === first ||
+            !mobileMenuRef.current?.contains(document.activeElement))
+        ) {
           e.preventDefault();
           last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
+        } else if (
+          !e.shiftKey &&
+          (document.activeElement === last ||
+            !mobileMenuRef.current?.contains(document.activeElement))
+        ) {
           e.preventDefault();
           first.focus();
         }
       }
-    }
-  }, []);
+    },
+    [closeMobileMenu]
+  );
 
   const { setShowDynamicUserProfile, user } = useDynamicContext();
   const { logout } = useLogout();
@@ -99,28 +124,6 @@ const Navbar = () => {
   }, [user?.userId, pathname]);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      const inDesktopMenu = userMenuRef.current?.contains(target) ?? false;
-      const inMobileMenu = mobileUserMenuRef.current?.contains(target) ?? false;
-      if (!inDesktopMenu && !inMobileMenu) {
-        setIsUserMenuOpen(false);
-      }
-    };
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsUserMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, []);
-
-  useEffect(() => {
     setIsUserMenuOpen(false);
   }, [pathname]);
 
@@ -138,8 +141,8 @@ const Navbar = () => {
         'No wallet extension detected. You can still sign in with email below, or install a wallet like MetaMask.',
         {
           action: {
-            label: 'Get MetaMask',
-            onClick: () => window.open('https://metamask.io/download/', '_blank'),
+            label: 'Wallet guide',
+            onClick: () => window.location.assign('/help/wallet'),
           },
           duration: 8000,
         }
@@ -235,61 +238,27 @@ const Navbar = () => {
               </button>
             </>
           ) : (
-            <div ref={userMenuRef} className="relative">
-              <button
-                aria-label="Open account menu"
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#D2045B] text-sm font-bold text-white transition-all duration-200 hover:scale-105"
-                onClick={() => setIsUserMenuOpen((open) => !open)}
-              >
-                {avatarInitial}
-              </button>
-              {isUserMenuOpen && (
-                <div className="absolute right-0 top-12 z-50 w-60 rounded-xl border border-gray-800 bg-[#0F0F0F] p-4 shadow-xl">
-                  <div className="mb-3 truncate border-b border-gray-800 pb-3">
-                    <p className="truncate text-sm font-semibold text-white">{user?.email}</p>
-                  </div>
-                  <div className="flex flex-col gap-1 text-sm">
-                    <Link
-                      className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                      href="/dashboard/profile"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <span className="flex items-center gap-3">
-                        <User className="h-4 w-4" />
-                        Profile
-                      </span>
-                    </Link>
-                    <Link
-                      className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                      href="/dashboard/collection"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <span className="flex items-center gap-3">
-                        <Folder className="h-4 w-4" />
-                        My Collections
-                      </span>
-                    </Link>
-                    <button
-                      className="cursor-pointer rounded-lg px-3 py-2 text-left text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                      onClick={logOut}
-                    >
-                      <span className="flex items-center gap-3">
-                        <LogOut className="h-4 w-4" />
-                        Log out
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <AccountMenu
+              email={user?.email}
+              initial={avatarInitial}
+              isOpen={isUserMenuOpen}
+              variant="desktop"
+              onLogout={logOut}
+              onOpenChange={setIsUserMenuOpen}
+            />
           )}
         </div>
 
         {/* Mobile Menu Button */}
         <div className="flex md:hidden">
           <button
+            ref={mobileMenuTriggerRef}
+            aria-controls="mobile-navigation-menu"
+            aria-expanded={isMenuOpen}
+            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             className="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#D2045B]"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            type="button"
+            onClick={() => setIsMenuOpen((open) => !open)}
           >
             {isMenuOpen ? (
               <X className="h-6 w-6 text-white" />
@@ -305,114 +274,81 @@ const Navbar = () => {
         {isMenuOpen && (
           <motion.div
             ref={mobileMenuRef}
-            animate="visible"
+            animate={{ opacity: 1 }}
             aria-label="Navigation menu"
             aria-modal="true"
-            className="fixed top-0 right-0 bottom-0 w-4/5 max-w-xs bg-[#000] z-50 shadow-lg border-l border-gray-900"
-            exit="exit"
-            initial="hidden"
+            className="fixed inset-0 z-50 flex justify-end bg-black/60 md:hidden"
+            exit={{ opacity: 0 }}
+            id="mobile-navigation-menu"
+            initial={{ opacity: 0 }}
             role="dialog"
-            variants={menuVariants}
+            onClick={closeMobileMenu}
             onKeyDown={handleMobileMenuKeyDown}
           >
-            <div className="flex justify-between items-center p-4 border-b border-gray-700">
-              <Image alt="AudioBlocks Logo" height={40} src="/logo2.png" width={40} />
-              <button
-                ref={mobileCloseRef}
-                aria-label="Close navigation menu"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <X className="h-6 w-6 text-white" />
-              </button>
-            </div>
+            <motion.div
+              animate="visible"
+              className="fixed top-0 right-0 bottom-0 w-4/5 max-w-xs bg-[#000] z-50 shadow-lg border-l border-gray-900"
+              exit="exit"
+              initial="hidden"
+              variants={menuVariants}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex justify-between items-center p-4 border-b border-gray-700">
+                <Image alt="AudioBlocks Logo" height={40} src="/logo2.png" width={40} />
+                <button
+                  ref={mobileCloseRef}
+                  aria-label="Close navigation menu"
+                  type="button"
+                  onClick={closeMobileMenu}
+                >
+                  <X className="h-6 w-6 text-white" />
+                </button>
+              </div>
 
-            <div className="flex flex-col gap-4 px-6 py-6">
-              {navLinks.map(({ name, href }) => (
-                <motion.div key={href} variants={itemVariants}>
-                  <Link
-                    className={`block text-base ${linkClass(href)}`}
-                    href={href}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {name}
-                  </Link>
-                </motion.div>
-              ))}
+              <div className="flex flex-col gap-4 px-6 py-6">
+                {navLinks.map(({ name, href }) => (
+                  <motion.div key={href} variants={itemVariants}>
+                    <Link
+                      className={`block text-base ${linkClass(href)}`}
+                      href={href}
+                      onClick={closeMobileMenu}
+                    >
+                      {name}
+                    </Link>
+                  </motion.div>
+                ))}
 
-              <motion.div variants={itemVariants}>
-                {!user?.userId ? (
-                  <>
-                    <button
-                      className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
-                      onClick={handleAuthentication}
-                    >
-                      Sign in
-                      <div className="bg-black rounded-full p-1">
-                        <ArrowRight className="h-4 w-4 rotate-[300deg]" />
-                      </div>
-                    </button>
-                    <SocialLoginButtons
-                      className="mt-3 justify-center"
-                      onLoginStart={() => setShouldTriggerSignature(true)}
-                    />
-                  </>
-                ) : (
-                  <div ref={mobileUserMenuRef} className="relative mt-6">
-                    <button
-                      aria-label="Open account menu"
-                      className="w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
-                      onClick={() => setIsUserMenuOpen((open) => !open)}
-                    >
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black text-xs font-bold">
-                        {avatarInitial}
-                      </span>
-                      <span className="max-w-[180px] truncate">{user?.email}</span>
-                    </button>
-                    {isUserMenuOpen && (
-                      <div className="mt-2 rounded-xl border border-gray-800 bg-[#0F0F0F] p-4 shadow-xl">
-                        <div className="flex flex-col gap-1 text-sm">
-                          <Link
-                            className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                            href="/dashboard/profile"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              setIsMenuOpen(false);
-                            }}
-                          >
-                            <span className="flex items-center gap-3">
-                              <User className="h-4 w-4" />
-                              Profile
-                            </span>
-                          </Link>
-                          <Link
-                            className="rounded-lg px-3 py-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                            href="/dashboard/collection"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              setIsMenuOpen(false);
-                            }}
-                          >
-                            <span className="flex items-center gap-3">
-                              <Folder className="h-4 w-4" />
-                              My Collections
-                            </span>
-                          </Link>
-                          <button
-                            className="cursor-pointer rounded-lg px-3 py-2 text-left text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-                            onClick={logOut}
-                          >
-                            <span className="flex items-center gap-3">
-                              <LogOut className="h-4 w-4" />
-                              Log out
-                            </span>
-                          </button>
+                <motion.div variants={itemVariants}>
+                  {!user?.userId ? (
+                    <>
+                      <button
+                        className="mt-6 w-full px-4 py-2 rounded-full bg-[#D2045B] hover:bg-[#B8043F] text-white font-medium text-sm flex justify-center items-center gap-2"
+                        onClick={handleAuthentication}
+                      >
+                        Sign in
+                        <div className="bg-black rounded-full p-1">
+                          <ArrowRight className="h-4 w-4 rotate-[300deg]" />
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            </div>
+                      </button>
+                      <SocialLoginButtons
+                        className="mt-3 justify-center"
+                        onLoginStart={() => setShouldTriggerSignature(true)}
+                      />
+                    </>
+                  ) : (
+                    <AccountMenu
+                      email={user?.email}
+                      initial={avatarInitial}
+                      isOpen={isUserMenuOpen}
+                      variant="mobile"
+                      onLogout={logOut}
+                      onNavigate={closeMobileMenu}
+                      onOpenChange={setIsUserMenuOpen}
+                    />
+                  )}
+                </motion.div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

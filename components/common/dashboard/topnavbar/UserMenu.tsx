@@ -7,11 +7,13 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
-import { Wallet, User, Repeat, Folder, X } from 'lucide-react';
+import { Wallet, User, Repeat, Folder, X, ExternalLink } from 'lucide-react';
 import { EmbeddedWalletCreator } from '@/components/auth/EmbeddedWalletCreator';
 import { WalletConnectButtons } from '@/components/auth/WalletConnectButtons';
 import { Auth } from '@/hooks/useAuth';
 import { useLogout } from '@/hooks/useLogout';
+import { useStellarBalance } from '@/hooks/useStellarBalance';
+import { ACTIVE_STELLAR_NETWORK } from '@/lib/stellarConfig';
 
 const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +25,7 @@ const UserMenu = () => {
   const route = useRouter();
   const pathname = usePathname();
   const isAuthenticated = !!user;
+  const { data: stellarBalance, isLoading: balanceLoading } = useStellarBalance();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -166,11 +169,46 @@ const UserMenu = () => {
                     <Folder />
                     <span>My Collections</span>
                   </Link>
-                  <div className="flex items-center gap-3 text-gray-400 mt-8">
-                    <Wallet />
-                    <span>Balance:</span>
-                    <span className="font-medium text-[#666C6C]">11000 ABT</span>
+
+                  {/* Stellar balance (#555) */}
+                  <div className="mt-8 space-y-2">
+                    <div className="flex items-center gap-2 text-gray-400 text-sm">
+                      <Wallet size={16} />
+                      <span>Stellar Balance:</span>
+                    </div>
+                    {balanceLoading ? (
+                      <p className="text-xs text-[#A3A3A3] pl-6">Loading...</p>
+                    ) : !stellarBalance ? (
+                      <p className="text-xs text-[#A3A3A3] pl-6">No wallet connected</p>
+                    ) : !stellarBalance.isFunded ? (
+                      <div className="pl-6 space-y-1">
+                        <p className="text-xs text-amber-400">Account not activated</p>
+                        <p className="text-xs text-[#A3A3A3]">
+                          Stellar accounts need a minimum balance to be created.
+                        </p>
+                        {ACTIVE_STELLAR_NETWORK.testnet && (
+                          <a
+                            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1"
+                            href={`${ACTIVE_STELLAR_NETWORK.friendbotUrl}?addr=${user?.verifiedCredentials?.[0]?.address ?? ''}`}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                          >
+                            Fund with Friendbot <ExternalLink size={12} />
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="pl-6 space-y-1">
+                        <p className="text-sm font-medium text-white">
+                          {stellarBalance.xlm.toFixed(2)} XLM
+                        </p>
+                        <p className="text-xs text-[#A3A3A3]">
+                          Spendable: {stellarBalance.spendableXlm.toFixed(2)} XLM
+                        </p>
+                      </div>
+                    )}
                   </div>
+
                   <EmbeddedWalletCreator />
                   <button
                     className="cursor-pointer hover:text-[#666C6C] transition"

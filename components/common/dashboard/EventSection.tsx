@@ -1,9 +1,9 @@
 'use client';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight, Star } from 'lucide-react';
 import Slider from 'react-slick';
 import { NextArrow, PrevArrow } from '@/components/common/collective/Members/navigation';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { useGetEvents } from '@/hooks/useExplore';
 import { isFeatureEnabled } from '@/lib/featureFlags';
 
@@ -72,12 +72,13 @@ const EventSection = () => {
                 <div key={event.id} className="px-4 shadow-2xl">
                   <div className="rounded-2xl relative overflow-hidden">
                     <div className="w-full relative h-44 rounded-lg overflow-hidden mx-auto">
-                      <Image
+                      <ArtworkImage
+                        fill
                         alt={event.name}
-                        className="w-full h-full object-cover"
-                        height={256}
+                        className="object-cover"
+                        sizes="256px"
                         src={event.image}
-                        width={256}
+                        title={event.name}
                       />
                     </div>
                     <div className="p-2 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#1A1A1A] to-transparent space-y-1">

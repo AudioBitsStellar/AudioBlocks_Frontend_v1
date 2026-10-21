@@ -1,3 +1,5 @@
+@import 'tailwindcss';
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -28,6 +30,9 @@
 }
 
 @theme {
+  --color-brand: #d2045b;
+  --color-on-muted: var(--on-muted);
+  --color-border-dark: var(--border-dark);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   /* Issue #46: shared dark-theme design tokens. `muted` is the recurring
@@ -36,20 +41,27 @@
 }
 
 :root {
+  --on-muted: #595959;
+  --border-dark: #d4d4d4;
   --background: #ffffff;
   --foreground: #000000;
   --muted: #a3a3a3;
 }
 
 .dark {
+  --on-muted: #b8b8b8;
+  --border-dark: #333333;
   --background: #000000;
   --foreground: #ffffff;
 }
 
-html, body {
+html,
+body {
   background-color: var(--background);
   color: var(--foreground);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 /* Issue #163: baseline visible focus indicator for every focusable element,

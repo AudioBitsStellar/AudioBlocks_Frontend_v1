@@ -84,7 +84,7 @@ export function useInfiniteScroll({
 
     return () => {
       observer.disconnect();
-      if (observerRef.current === observer) observerRef.current = null;
+      observerRef.current = null;
     };
   }, [enabled, hasMore, isLoading, node, rootMargin, threshold]);
 

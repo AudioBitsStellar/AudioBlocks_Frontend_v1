@@ -100,6 +100,8 @@ const createMockContext = (
   isCrossfading: false,
   normalizeAudio: true,
   gapless: true,
+  sleepTimer: null,
+  sleepFade: 1,
   play: vi.fn(),
   pause: vi.fn(),
   next: vi.fn(),
@@ -208,30 +210,31 @@ describe('Player — gapless playback (#329)', () => {
     vi.restoreAllMocks();
   });
 
-  it('preloads the next track while playing', () => {
+  it('prefetches the next track near the end only with event-based play counting', () => {
+    vi.stubEnv('NEXT_PUBLIC_STREAM_PLAY_COUNT_MODE', 'event');
+    vi.stubEnv('NEXT_PUBLIC_PLAYBACK_EVENT_URL', '/plays/:id');
     renderWithContext({ isPlaying: true, currentIndex: 0 });
-
-    const audios = document.querySelectorAll('audio');
-    expect(audios.length).toBe(2);
-    expect(audios[1].getAttribute('src')).toContain('/2.mp3');
+    const [primary, incoming] = document.querySelectorAll('audio');
+    Object.defineProperty(primary, 'duration', { configurable: true, value: 10 });
+    fireEvent.loadedMetadata(primary);
+    expect(incoming.getAttribute('src')).toContain('/2.mp3');
+    vi.unstubAllEnvs();
   });
 
-  it('hands off to the preloaded track on ended without a gap', () => {
+  it('promotes the buffered element on ended without reassigning its src', () => {
+    vi.stubEnv('NEXT_PUBLIC_STREAM_PLAY_COUNT_MODE', 'event');
+    vi.stubEnv('NEXT_PUBLIC_PLAYBACK_EVENT_URL', '/plays/:id');
     const nextMock = vi.fn();
     renderWithContext({ isPlaying: true, currentIndex: 0, next: nextMock });
-
     const [primary, incoming] = document.querySelectorAll('audio');
-    expect(incoming.getAttribute('src')).toContain('/2.mp3');
-
-    // The incoming element becomes ready to play once buffered.
+    Object.defineProperty(primary, 'duration', { configurable: true, value: 10 });
+    fireEvent.loadedMetadata(primary);
     fireEvent.canPlay(incoming);
-
     fireEvent.ended(primary);
-
     expect(nextMock).toHaveBeenCalledTimes(1);
-    expect(primary.getAttribute('src')).toContain('/2.mp3');
-    // The preload element is cleaned up after the handoff.
-    expect(document.querySelectorAll('audio').length).toBe(1);
+    expect(primary.getAttribute('src')).toBeNull();
+    expect(incoming.getAttribute('src')).toContain('/2.mp3');
+    vi.unstubAllEnvs();
   });
 
   it('falls back to the normal next() when the preload is not ready', () => {
@@ -247,7 +250,7 @@ describe('Player — gapless playback (#329)', () => {
   it('does not preload when gapless is disabled', () => {
     renderWithContext({ isPlaying: true, currentIndex: 0, gapless: false });
 
-    expect(document.querySelectorAll('audio').length).toBe(1);
+    expect(document.querySelectorAll('audio')[1].hasAttribute('src')).toBe(false);
   });
 });
 

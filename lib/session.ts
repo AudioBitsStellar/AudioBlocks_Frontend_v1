@@ -1,3 +1,15 @@
+import Cookies from 'js-cookie';
+import { AUTH } from './constants';
+
+/**
+ * Whether the browser holds an AudioBlocks auth cookie. This only checks that a
+ * session exists locally; the API still decides whether the token is valid.
+ */
+export function hasAuthSession(): boolean {
+  if (typeof document === 'undefined') return false;
+  return !!(Cookies.get(AUTH.COOKIE_NAME) || Cookies.get(AUTH.SESSION_COOKIE_NAME));
+}
+
 /**
  * Reads the `exp` claim from a JWT without verifying it. Verification is the
  * API's job — the client only needs the expiry to warn the user before the

@@ -4,7 +4,10 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import TrackList, { type TrackListItem } from '@/components/common/dashboard/TrackList';
 
 const playTrack = vi.fn();
-vi.mock('@/context/PlaybackContext', () => ({ usePlayback: () => ({ playTrack }) }));
+vi.mock('@/context/PlaybackContext', () => ({
+  usePlayback: () => ({ playTrack }),
+  usePlaybackActions: () => ({ playTrack }),
+}));
 
 vi.mock('next/image', () => ({
   default: (props: React.ComponentProps<'img'>) => {

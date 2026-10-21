@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { GripVertical, Trash2, X, Save } from 'lucide-react';
+import { ChevronDown, ChevronUp, GripVertical, Trash2, X, Save } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { usePlayback } from '@/context/PlaybackContext';
+import { usePlaybackActions, usePlaybackSelector } from '@/context/PlaybackContext';
+import { useAnnounce } from '@/hooks/useAnnounce';
 
 interface QueueDrawerProps {
   open: boolean;
@@ -16,11 +17,18 @@ interface DragItem {
 }
 
 export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
-  const { queue, removeFromQueue, clearQueue, reorderQueue } = usePlayback();
+  // Only the queue is needed from state; actions are stable, so unrelated
+  // updates (volume, progress flags) do not re-render the drawer.
+  const queue = usePlaybackSelector((s) => s.queue);
+  const { removeFromQueue, clearQueue, reorderQueue } = usePlaybackActions();
   const [removeIndex, setRemoveIndex] = useState<number | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showSavePlaylist, setShowSavePlaylist] = useState(false);
   const [playlistName, setPlaylistName] = useState('My Queue Playlist');
+  const announce = useAnnounce();
+  const listRef = useRef<HTMLUListElement | null>(null);
+  // Row and button to focus once the queue has re-rendered after a move.
+  const pendingFocus = useRef<{ index: number; direction: 'up' | 'down' } | null>(null);
   const dragItem = useRef<DragItem | null>(null);
   const dragOverItem = useRef<DragItem | null>(null);
 
@@ -43,6 +51,37 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
     dragItem.current = null;
     dragOverItem.current = null;
   }, [reorderQueue]);
+
+  /**
+   * Keyboard / touch alternative to dragging: moves a track one position up or
+   * down, announces the result and keeps focus on the moved row's button.
+   */
+  const handleMove = useCallback(
+    (index: number, direction: 'up' | 'down') => {
+      const target = direction === 'up' ? index - 1 : index + 1;
+      if (target < 0 || target >= queue.length) return;
+      reorderQueue(index, target);
+      pendingFocus.current = { index: target, direction };
+      announce(`Moved '${queue[index].title}' to position ${target + 1} of ${queue.length}`);
+    },
+    [announce, queue, reorderQueue]
+  );
+
+  useEffect(() => {
+    const pending = pendingFocus.current;
+    if (!pending) return;
+    pendingFocus.current = null;
+    const row = listRef.current?.querySelector<HTMLElement>(
+      `[data-queue-index="${pending.index}"]`
+    );
+    // The button we just used is disabled when the track reached the end of the
+    // list, so fall back to the opposite one.
+    const preferred = row?.querySelector<HTMLButtonElement>(`[data-move="${pending.direction}"]`);
+    const other = row?.querySelector<HTMLButtonElement>(
+      `[data-move="${pending.direction === 'up' ? 'down' : 'up'}"]`
+    );
+    (preferred && !preferred.disabled ? preferred : other)?.focus();
+  }, [queue]);
 
   const handleRemove = useCallback(
     (index: number) => {
@@ -96,10 +135,11 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
               <p className="text-xs mt-1">Add tracks from the player or browse page.</p>
             </div>
           ) : (
-            <ul className="space-y-1" role="list">
+            <ul ref={listRef} className="space-y-1" role="list">
               {queue.map((track, index) => (
                 <li
                   key={`${track.id}-${index}`}
+                  data-queue-index={index}
                   draggable
                   className="flex items-center gap-2 rounded-md bg-white/5 px-2 py-2 hover:bg-white/10 transition cursor-default"
                   onDragEnd={handleDragEnd}
@@ -107,16 +147,10 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                   onDragOver={(e) => e.preventDefault()}
                   onDragStart={() => handleDragStart(index)}
                 >
+                  {/* Mouse drag handle only; keyboard and touch users use the move buttons. */}
                   <div
-                    aria-label={`Drag to reorder ${track.title}`}
+                    aria-hidden="true"
                     className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-white shrink-0"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                      }
-                    }}
                   >
                     <GripVertical size={16} />
                   </div>
@@ -136,6 +170,29 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-white">{track.title}</p>
                     <p className="truncate text-xs text-gray-400">{track.artist}</p>
+                  </div>
+
+                  <div className="flex shrink-0 flex-col">
+                    <button
+                      aria-label={`Move ${track.title} up`}
+                      className="flex h-5 w-8 items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+                      data-move="up"
+                      disabled={index === 0}
+                      type="button"
+                      onClick={() => handleMove(index, 'up')}
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      aria-label={`Move ${track.title} down`}
+                      className="flex h-5 w-8 items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+                      data-move="down"
+                      disabled={index === queue.length - 1}
+                      type="button"
+                      onClick={() => handleMove(index, 'down')}
+                    >
+                      <ChevronDown size={14} />
+                    </button>
                   </div>
 
                   {removeIndex === index ? (

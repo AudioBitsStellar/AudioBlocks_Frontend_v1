@@ -386,6 +386,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -482,7 +484,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -868,6 +877,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -964,7 +975,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -1361,6 +1379,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -1457,7 +1477,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -1854,6 +1881,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -1950,7 +1979,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -2336,6 +2372,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -2432,7 +2470,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -2829,6 +2874,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -2925,7 +2972,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -3322,6 +3376,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -3418,7 +3474,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -3804,6 +3867,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -3900,7 +3965,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"
@@ -4297,6 +4369,8 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <button
+          aria-expanded="false"
+          aria-haspopup="true"
           aria-label="More options"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -4393,7 +4467,14 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </div>
       </div>
       <audio
-        src="http://localhost:3000/stream/track-1"
+        aria-hidden="true"
+        data-audio-deck="a"
+        preload="none"
+      />
+      <audio
+        aria-hidden="true"
+        data-audio-deck="b"
+        preload="none"
       />
       <span
         class="sr-only"

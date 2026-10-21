@@ -1,81 +1,105 @@
 import { useQuery } from '@tanstack/react-query';
+import { unwrapPaginated } from '@/lib/api/unwrap';
+import apiClient, { NotFoundError } from '@/lib/apiClient';
 import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
+import {
+  isCollectionRelease,
+  releaseToCollection,
+  type Collection,
+} from '@/lib/mappers/collection';
+import { isPublishedRelease, type Release } from '@/lib/releases';
+
+export type { Collection } from '@/lib/mappers/collection';
 
 // Query Keys
 export const collectionKeys = {
   all: ['collections'] as const,
   explore: () => ['collections', 'explore'] as const,
+  page: (page: number, limit: number) => ['collections', 'page', page, limit] as const,
   user: (userId: string) => ['collections', 'user', userId] as const,
   detail: (id: string) => ['collections', 'detail', id] as const,
 };
 
-// Types
-export interface Collection {
-  id: string;
-  title: string;
-  artist: string;
-  cover: string;
-  trackCount: number;
-  published: boolean;
-  createdAt: string;
+/**
+ * Collections are EP/album releases (see lib/mappers/collection.ts).
+ *
+ * The backend releases router is not mounted yet (AudioBlock_Backend#752),
+ * so these endpoints currently 404. A 404 is treated as "no collections" for
+ * lists and "not found" for details rather than surfacing an error.
+ */
+const EXPLORE_LIMIT = 50;
+const PAGE_LIMIT = 100;
+
+interface ReleaseListBody {
+  data?: Release[];
+  pagination?: { totalPages?: number };
 }
 
-// Mock data for reference pattern
-const mockCollections: Collection[] = [
-  {
-    id: 'col-1',
-    title: 'Afrobeats Essentials',
-    artist: 'Various Artists',
-    cover: '/AFRO.jpg',
-    trackCount: 12,
-    published: true,
-    createdAt: '2024-01-15',
-  },
-  {
-    id: 'col-2',
-    title: 'Chill Vibes',
-    artist: 'DJ Smooth',
-    cover: '/tech.jpg',
-    trackCount: 8,
-    published: true,
-    createdAt: '2024-02-20',
-  },
-];
+function toCollections(releases: Release[]): Collection[] {
+  return releases
+    .filter((r) => isCollectionRelease(r) && isPublishedRelease(r))
+    .sort((a, b) => Date.parse(b.releaseDate) - Date.parse(a.releaseDate))
+    .map(releaseToCollection);
+}
+
+async function getReleasePage(query: string): Promise<ReleaseListBody | null> {
+  try {
+    const res = await apiClient.get(`/api/releases?${query}`);
+    return (res.data ?? null) as ReleaseListBody | null;
+  } catch (error) {
+    if (error instanceof NotFoundError) return null;
+    throw error;
+  }
+}
 
 // Query Functions
-async function fetchExploreCollections(): Promise<Collection[]> {
-  // TODO: Replace with actual API call
-  // const res = await apiClient.get('/api/collections/explore');
-  // return res.data;
-  
-  // Mock implementation for reference
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(mockCollections), 300);
-  });
+export async function fetchExploreCollections(): Promise<Collection[]> {
+  const body = await getReleasePage(`limit=${EXPLORE_LIMIT}&page=1`);
+  return toCollections(body?.data ?? []);
 }
 
-async function fetchUserCollections(userId: string): Promise<Collection[]> {
-  // TODO: Replace with actual API call
-  // const res = await apiClient.get(`/api/users/${userId}/collections`);
-  // return res.data;
-  
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(mockCollections.slice(0, 1)), 300);
-  });
+export interface PaginatedCollections {
+  items: Collection[];
+  total: number;
 }
 
+export async function fetchCollections(page: number, limit: number): Promise<PaginatedCollections> {
+  const response = await apiClient.get(`/api/releases?type=ep,album&page=${page}&limit=${limit}`);
+  const { items, pagination } = unwrapPaginated<Release>(response);
+  const total = Number(pagination.total);
+
+  if (!Number.isFinite(total) || total < 0) {
+    throw new Error('The collections response did not include a valid total count.');
+  }
+
+  return { items: toCollections(items), total };
+}
+
+/** All EP/album releases for one artist, following pagination. */
+export async function fetchUserCollections(userId: string): Promise<Collection[]> {
+  const releases: Release[] = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const body = await getReleasePage(
+      `artistId=${encodeURIComponent(userId)}&limit=${PAGE_LIMIT}&page=${page}`
+    );
+    if (!body) break;
+    releases.push(...(body.data ?? []));
+    totalPages = body.pagination?.totalPages ?? 1;
+    page++;
+  } while (page <= totalPages);
+  return toCollections(releases);
+}
+
+/** A single collection; rejects with NotFoundError for unknown, unpublished or single releases. */
 export async function fetchCollectionDetail(id: string): Promise<Collection> {
-  // TODO: Replace with actual API call
-  // const res = await apiClient.get(`/api/collections/${id}`);
-  // return res.data;
-  
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const collection = mockCollections.find((c) => c.id === id);
-      if (collection) resolve(collection);
-      else reject(new Error('Collection not found'));
-    }, 300);
-  });
+  const res = await apiClient.get(`/api/releases/${encodeURIComponent(id)}`);
+  const release = (res.data as { data?: Release } | null)?.data;
+  if (!release || !isCollectionRelease(release) || !isPublishedRelease(release)) {
+    throw new NotFoundError('Collection not found');
+  }
+  return releaseToCollection(release);
 }
 
 // Hooks
@@ -83,6 +107,15 @@ export function useExploreCollections() {
   return useQuery({
     queryKey: collectionKeys.explore(),
     queryFn: fetchExploreCollections,
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
+  });
+}
+
+export function useCollections(page: number, limit = 12) {
+  return useQuery({
+    queryKey: collectionKeys.page(page, limit),
+    queryFn: () => fetchCollections(page, limit),
     staleTime: CACHE_DURATIONS.MEDIUM,
     retry: RETRY_CONFIG.DEFAULT,
   });
@@ -103,7 +136,9 @@ export function useCollectionDetail(id: string) {
     queryKey: collectionKeys.detail(id),
     queryFn: () => fetchCollectionDetail(id),
     staleTime: CACHE_DURATIONS.LONG,
-    retry: RETRY_CONFIG.IMPORTANT,
+    // A missing collection won't appear on retry.
+    retry: (failureCount, error) =>
+      !(error instanceof NotFoundError) && failureCount < RETRY_CONFIG.IMPORTANT,
     enabled: !!id,
   });
 }

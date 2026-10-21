@@ -40,8 +40,10 @@ API.
 - A built-in NFT marketplace for collecting tokenized music
 - A community space with artist voting and listening-time leaderboards
 - A personal collection view of owned music NFTs
+- Global search (Cmd/Ctrl+K) across tracks, artists, and collections, with
+  keyboard navigation and recent-search history
 - Persistent play-queue with shuffle, repeat, seek-with-preview, crossfade,
-  gapless playback, and loudness-normalization controls .
+  gapless playback, and loudness-normalization controls
 
 **For Artists** (via the companion `AudioBlocks_For_Artist` app)
 
@@ -71,7 +73,7 @@ API.
 
 Before setting up the project locally, ensure you have the following installed:
 
-- **Node.js** — version 18.17 or later (the project uses Next.js 15 which requires Node 18.17+)
+- **Node.js** — version 20 or later (see `.nvmrc`)
 - **npm** — comes with Node.js (or use `pnpm` / `yarn` as an alternative)
 - **A wallet extension** — [MetaMask](https://metamask.io/download/) or any EVM-compatible browser wallet (required for authentication via Dynamic Labs)
 - **Git** — for cloning the repository
@@ -405,6 +407,21 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Run with Docker
+
+Build the standalone production image and run it on port 3000. Set the public
+API URL to the backend endpoint the app should use:
+
+```bash
+docker build --build-arg NEXT_PUBLIC_API_URL=https://api.example.com -t audioblocks-web .
+docker run --rm -p 3000:3000 audioblocks-web
+```
+
+Open [http://localhost:3000](http://localhost:3000). The runtime image contains
+the standalone Next.js server and static assets, runs as a non-root user, and
+does not include `.env*` files. Only `NEXT_PUBLIC_*` build arguments are
+embedded in the client build; never pass secrets as build arguments.
+
 ### 6. Connect a wallet
 
 Install [MetaMask](https://metamask.io/download/) (or any EVM wallet),
@@ -547,8 +564,13 @@ Open a GitHub issue with:
   read/write feature.
 - `@tanstack/react-query` is wired into the provider tree (required
   internally by `wagmi`) but isn't yet used for the app's own data fetching.
-- Dynamic Labs `environmentId` is hardcoded in `context/provider.tsx` and
-  should be moved to an environment variable.
+- Several frontend API calls don't match a mounted backend route. See the
+  [API contract map](docs/api-contract.md) for each call's status (ok, path
+  mismatch, missing on backend, or mocked) and the backend issue tracking it.
+- Search (`searchContent` in `lib/exploreService.ts`) filters a hard-coded
+  mock list. It already accepts an `AbortSignal`, which `useSearch` uses to
+  cancel superseded queries; pass that signal through to `apiClient.get` when
+  it is wired to the backend.
 
 ## Testing
 
@@ -558,8 +580,14 @@ AudioBlocks Frontend includes an automated test suite powered by **Vitest** for 
 
 ```
 tests/
-├── components/          # Component unit tests (Player, Controls, Dashboard)
-├── context/             # React context & hook tests (PlaybackContext)
+├── app/                 # Page-level tests for routes under app/
+├── components/          # Component unit tests (Player, Controls, SearchOverlay, ...)
+├── context/             # React context tests (PlaybackContext)
+├── hooks/               # Custom hook tests (useSearch, useSearchHistory, ...)
+├── lib/                 # Service and utility tests
+├── fixtures/            # Shared test data
+├── e2e/                 # Playwright end-to-end tests
+├── playback-harness/    # Playwright playback test harness
 └── visual/              # Visual regression and UI layout tests (PlayerBar)
 ```
 
@@ -585,6 +613,12 @@ tests/
   ```bash
   npm run test:e2e:ui
   ```
+
+Pull requests run the Playwright Chromium suite against a production build on
+`ubuntu-24.04`. Player-bar pixel snapshots are currently marked skipped because
+the repository has no checked-in reference images. They should be regenerated
+on this pinned runner before being enabled in CI. Failed E2E runs upload the
+HTML report and Playwright traces as artifacts.
 
 ---
 
@@ -624,7 +658,7 @@ npx lint-staged  # Run linting and formatting on staged files
 npx tsc --noEmit # Run TypeScript type checking
 ```
 
-### Skipping Hooks (Not Recommended) .
+### Skipping Hooks (Not Recommended)
 
 If you absolutely need to skip the hooks (not recommended):
 
@@ -633,11 +667,6 @@ git commit --no-verify -m "your message"
 ```
 
 **Note:** Commits that bypass hooks may fail CI checks and be rejected during code review.
-
-Fixing issue 72
-
-Fixing issue 72
-.
 
 ## Privy Integration
 

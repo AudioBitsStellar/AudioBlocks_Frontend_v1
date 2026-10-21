@@ -1,12 +1,14 @@
 'use client';
-
-import { useUserPreferences } from '@/context/UserPreferencesContext';
-import type { AudioQuality } from '@/context/UserPreferencesContext';
-import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
-import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import Link from 'next/link';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Mail, Wallet, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useRecentlyPlayed } from '@/hooks/useRecentlyPlayed';
+import { useUserPreferences, type AudioQuality } from '@/context/UserPreferencesContext';
+import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
+import DataSaverToggle from '@/components/help/DataSaverToggle';
+import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
 
 function LinkedAccountsList() {
   const { user, handleUnlinkWallet } = useDynamicContext();
@@ -31,8 +33,8 @@ function LinkedAccountsList() {
           </div>
           <button
             className="text-red-500 hover:text-red-400 p-2 rounded-full hover:bg-red-500/10 transition-colors"
-            onClick={() => handleUnlinkWallet(wallet.id)}
             title="Unlink Wallet"
+            onClick={() => handleUnlinkWallet(wallet.id)}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -60,11 +62,64 @@ function LinkedAccountsList() {
   );
 }
 
+function ListeningHistorySection() {
+  const { clearHistory } = useRecentlyPlayed();
+  const [isClearing, setIsClearing] = useState(false);
+
+  const handleClear = async () => {
+    if (!window.confirm('Clear your listening history? This also applies to your other devices.')) {
+      return;
+    }
+    setIsClearing(true);
+    try {
+      await clearHistory();
+      toast.success('Listening history cleared');
+    } catch {
+      toast.error('Could not clear your listening history. Please try again.');
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  return (
+    <section className="mb-10">
+      <h2 className="text-lg font-semibold text-white mb-4">Listening History</h2>
+      <p className="text-sm text-gray-400 mb-4">
+        Recently played tracks follow your account across browsers.
+      </p>
+      <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E]">
+        <div>
+          <div className="font-medium text-white">Clear listening history</div>
+          <div className="text-xs text-gray-400 mt-1">
+            Removes recently played tracks from your account and this browser.
+          </div>
+        </div>
+        <button
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-500/60 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isClearing}
+          type="button"
+          onClick={handleClear}
+        >
+          {isClearing ? 'Clearing…' : 'Clear history'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 const QUALITY_OPTIONS: { value: AudioQuality; label: string; description: string }[] = [
-  { value: 'auto', label: 'Auto', description: 'Adapt quality based on your connection speed' },
-  { value: 'low', label: 'Low', description: 'Uses less data, lower audio fidelity' },
-  { value: 'medium', label: 'Medium', description: 'Balanced quality and data usage' },
-  { value: 'high', label: 'High', description: 'Best audio quality, uses more data' },
+  {
+    value: 'auto',
+    label: 'Auto',
+    description: 'Adapt quality to your connection. Uses data saver when Save-Data is on.',
+  },
+  {
+    value: 'data-saver',
+    label: 'Data saver',
+    description: 'Streams at up to 64 kbps. Best for metered mobile data.',
+  },
+  { value: 'normal', label: 'Normal', description: 'Streams at up to 128 kbps.' },
+  { value: 'high', label: 'High', description: 'Streams at up to 256 kbps. Uses the most data.' },
 ];
 
 export default function SettingsPage() {
@@ -89,6 +144,10 @@ export default function SettingsPage() {
         <h2 className="text-lg font-semibold text-white mb-4">Audio Quality</h2>
         <p className="text-sm text-gray-400 mb-4">
           Choose the default audio streaming quality for your playback experience.
+        </p>
+        <p className="text-xs text-gray-400 mb-4">
+          Safari plays streams natively and cannot cap the bitrate, so these limits only apply in
+          other browsers.
         </p>
         <div className="grid gap-3">
           {QUALITY_OPTIONS.map((option) => (
@@ -115,6 +174,7 @@ export default function SettingsPage() {
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Playback</h2>
+        <DataSaverToggle />
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-lg border border-gray-700 bg-[#1E1E1E]">
             <div>
@@ -162,6 +222,8 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      <ListeningHistorySection />
+
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Quality Checks</h2>
         <div className="space-y-4">
@@ -204,8 +266,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <Link
-              href="/dashboard/settings/quality"
               className="px-3 py-1.5 text-xs font-semibold text-white bg-[#D2045B] hover:bg-[#b0034c] rounded-lg transition-colors shrink-0"
+              href="/dashboard/settings/quality"
             >
               Tune Thresholds
             </Link>

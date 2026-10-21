@@ -7,6 +7,9 @@ import { WaveformDisplay } from '@/components/ui/WaveformDisplay';
 import { AudioVisualizer } from '@/components/AudioVisualizer';
 import { useAudioBuffer } from '@/hooks/useAudioBuffer';
 import { MoreVertical } from 'lucide-react';
+import { OnChainInfo, type OnChainInfoProps } from '@/components/common/OnChainInfo';
+import { SleepTimerMenu } from '@/components/player/SleepTimerMenu';
+import type { SleepTimer, SleepTimerOption } from '@/lib/sleepTimer';
 
 const COVER_FALLBACK = '/placeholder-cover.svg';
 
@@ -36,6 +39,10 @@ export const FullScreenPlayer = ({
   artist,
   cover,
   trackKey,
+  onChain,
+  sleepTimer,
+  onSelectSleepTimer,
+  onCancelSleepTimer,
 }: {
   onClose: () => void;
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -45,6 +52,12 @@ export const FullScreenPlayer = ({
   artist?: string;
   cover?: string;
   trackKey: string;
+  /** On-chain provenance for the song. Omit when the song has no mint data. */
+  onChain?: OnChainInfoProps;
+  /** Sleep timer controls (#589). Omit both handlers to hide the controls. */
+  sleepTimer?: SleepTimer | null;
+  onSelectSleepTimer?: (option: SleepTimerOption) => void;
+  onCancelSleepTimer?: () => void;
 }) => {
   const { buffer } = useAudioBuffer(audioSrc);
   const [currentTime, setCurrentTime] = useState(0);
@@ -172,6 +185,18 @@ export const FullScreenPlayer = ({
               {visualizerEnabled ? '✓ ' : ''}
               Visualizer {visualizerEnabled ? 'On' : 'Off'}
             </button>
+            {onSelectSleepTimer && onCancelSleepTimer && (
+              <div className="border-t border-gray-700 p-3">
+                <SleepTimerMenu
+                  sleepTimer={sleepTimer ?? null}
+                  onCancel={onCancelSleepTimer}
+                  onSelect={(option) => {
+                    onSelectSleepTimer(option);
+                    setShowMenu(false);
+                  }}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -192,6 +217,11 @@ export const FullScreenPlayer = ({
       </div>
       <div className="text-white text-2xl font-bold text-center">{title || 'Now Playing'}</div>
       {artist && <div className="text-gray-400 text-sm mb-6 text-center">{artist}</div>}
+      {onChain && (
+        <div className="w-full max-w-md px-4 mb-6">
+          <OnChainInfo {...onChain} />
+        </div>
+      )}
       <div className="w-full max-w-md px-4 mt-6">
         <WaveformDisplay
           currentTime={currentTime}

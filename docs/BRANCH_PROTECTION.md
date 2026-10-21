@@ -26,14 +26,17 @@ These map to jobs defined under [`.github/workflows`](../.github/workflows):
 |---|---|---|---|
 | `test / lint` | `test.yml` | `lint` | ESLint failures |
 | `test / coverage` | `test.yml` | `coverage` | Test failures, or coverage dropping below the thresholds in `vitest.config.ts` |
-| `security / dependency-audit` | `security.yml` | `dependency-audit` | `npm audit` findings at or above the configured severity |
+| `security / dependency-audit` | `security.yml` | `dependency-audit` | `npm audit --audit-level=high` findings |
 | `security / codeql` | `security.yml` | `codeql` | CodeQL static-analysis alerts |
-| `Dependency Vulnerability Scanning / audit` | `dependency-scan.yml` | `audit` | Known-vulnerable dependency versions |
 
 As CI gains new required jobs (see #290 Storybook build, #288 TypeScript
 type checking, #297 coverage reporting), add their check names to this table
 and to the branch protection rule at the same time — a status check that
 exists in CI but isn't marked required doesn't block a merge.
+
+Dependency audits run as the `security / dependency-audit` check in
+`security.yml`. It blocks on high or critical advisories, runs for pull
+requests that change `package.json` or `package-lock.json`, and runs weekly.
 
 ## Rationale
 

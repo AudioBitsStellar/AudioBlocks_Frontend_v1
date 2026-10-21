@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { House, ListMusic, BarChart2, Users, Receipt } from 'lucide-react';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { FollowedPlaylistsList } from '@/components/playlist/FollowedPlaylistsList';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { filterEnabledByFlag } from '@/lib/featureFlags';
 
 const navItems = [
   { name: 'Explore', href: '/dashboard', icon: House },
+  { name: 'Library', href: '/dashboard/library', icon: ListMusic },
   { name: 'My Playlist', href: '/dashboard/playlist', icon: ListMusic },
   { name: 'Transaction History', href: '/dashboard/transactions', icon: Receipt },
   { name: 'Metrics', href: '#', icon: BarChart2 },
@@ -57,6 +59,8 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
           );
         })}
       </nav>
+
+      <FollowedPlaylistsList className="mb-10 max-h-[40vh] overflow-y-auto" />
 
       <div className="absolute flex flex-col bottom-20 left-4 text-xs font-bold text-gray-400 space-y-4">
         <Link

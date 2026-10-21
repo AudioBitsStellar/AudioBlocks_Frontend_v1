@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createQueryClient } from '@/lib/queryClient';
+import { ApiShapeError } from '@/lib/api/unwrap';
 
 describe('createQueryClient', () => {
   it('uses a 30s staleTime and 5m gcTime by default', () => {
@@ -10,9 +11,21 @@ describe('createQueryClient', () => {
     expect(defaults?.gcTime).toBe(5 * 60 * 1000);
   });
 
-  it('retries failed queries 3 times', () => {
+  it('retries failed queries 3 times, but never an ApiShapeError (#564)', () => {
     const client = createQueryClient();
-    expect(client.getDefaultOptions().queries?.retry).toBe(3);
+    const retry = client.getDefaultOptions().queries?.retry as (n: number, e: Error) => boolean;
+    expect(retry(0, new Error('x'))).toBe(true);
+    expect(retry(2, new Error('x'))).toBe(true);
+    expect(retry(3, new Error('x'))).toBe(false);
+    expect(retry(0, new ApiShapeError('bad', { data: [] }))).toBe(false);
+  });
+
+  it('throws only ApiShapeError to error boundaries (#564)', () => {
+    const throwOnError = createQueryClient().getDefaultOptions().queries?.throwOnError as (
+      e: Error
+    ) => boolean;
+    expect(throwOnError(new ApiShapeError('bad', { data: [] }))).toBe(true);
+    expect(throwOnError(new Error('network'))).toBe(false);
   });
 
   it('uses exponential backoff for retryDelay', () => {

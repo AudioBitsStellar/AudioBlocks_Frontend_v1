@@ -2,13 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import SearchOverlay from '@/components/common/SearchOverlay';
+import { SearchOverlay } from '@/components/common/SearchOverlay';
+
+vi.mock('@dynamic-labs/sdk-react-core', () => ({ useDynamicContext: () => ({ user: null }) }));
 
 describe('SearchOverlay Integration Tests', () => {
   const user = userEvent.setup();
 
   beforeEach(() => {
-    // Render the component
+    localStorage.clear();
     render(
       <div>
         <button data-testid="outside-button">Outside</button>
@@ -27,42 +29,39 @@ describe('SearchOverlay Integration Tests', () => {
 
   it('Cmd+K opens the search overlay', async () => {
     expect(screen.queryByRole('dialog', { name: /search overlay/i })).not.toBeInTheDocument();
-    
+
     await openOverlay();
-    
+
     expect(screen.getByRole('dialog', { name: /search overlay/i })).toBeInTheDocument();
   });
 
   it('Focus moves to search input on open', async () => {
     await openOverlay();
-    
+
     const searchInput = screen.getByRole('searchbox');
     expect(searchInput).toHaveFocus();
   });
 
   it('Down arrow moves to first result', async () => {
     await openOverlay();
-    
+
     const searchInput = screen.getByRole('searchbox');
-    
-    // Type query to show results
-    await user.type(searchInput, 'the');
-    
-    // Results should appear
-    const listbox = screen.getByRole('listbox');
-    expect(listbox).toBeInTheDocument();
-    
-    const options = screen.getAllByRole('option');
+
+    // Type query to show results (debounced useSearch)
+    await user.type(searchInput, 'wif');
+
+    const options = await screen.findAllByRole('option');
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
     expect(options.length).toBeGreaterThan(0);
-    
+
     // Initially, none are selected
-    options.forEach(opt => {
+    options.forEach((opt) => {
       expect(opt).toHaveAttribute('aria-selected', 'false');
     });
-    
+
     // Press down arrow
     await user.keyboard('{ArrowDown}');
-    
+
     // First option should be selected
     expect(options[0]).toHaveAttribute('aria-selected', 'true');
     expect(options[1]).toHaveAttribute('aria-selected', 'false');
@@ -71,19 +70,19 @@ describe('SearchOverlay Integration Tests', () => {
   it('Up/Down arrows navigate between results', async () => {
     await openOverlay();
     const searchInput = screen.getByRole('searchbox');
-    await user.type(searchInput, 'the');
-    
-    const options = screen.getAllByRole('option');
-    
+    await user.type(searchInput, 'wif');
+
+    const options = await screen.findAllByRole('option');
+
     // Navigate down
     await user.keyboard('{ArrowDown}');
     expect(options[0]).toHaveAttribute('aria-selected', 'true');
-    
+
     // Navigate down again
     await user.keyboard('{ArrowDown}');
     expect(options[0]).toHaveAttribute('aria-selected', 'false');
     expect(options[1]).toHaveAttribute('aria-selected', 'true');
-    
+
     // Navigate up
     await user.keyboard('{ArrowUp}');
     expect(options[0]).toHaveAttribute('aria-selected', 'true');
@@ -93,11 +92,12 @@ describe('SearchOverlay Integration Tests', () => {
   it('Enter on result triggers selection and closes overlay', async () => {
     await openOverlay();
     const searchInput = screen.getByRole('searchbox');
-    await user.type(searchInput, 'the');
-    
+    await user.type(searchInput, 'wif');
+    await screen.findAllByRole('option');
+
     await user.keyboard('{ArrowDown}');
     await user.keyboard('{Enter}');
-    
+
     // The overlay should close
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /search overlay/i })).not.toBeInTheDocument();
@@ -109,18 +109,18 @@ describe('SearchOverlay Integration Tests', () => {
     const outsideBtn = screen.getByTestId('outside-button');
     outsideBtn.focus();
     expect(outsideBtn).toHaveFocus();
-    
+
     // Open overlay
     await openOverlay();
-    
+
     const searchInput = screen.getByRole('searchbox');
     expect(searchInput).toHaveFocus();
-    
+
     // Escape to close
     await user.keyboard('{Escape}');
-    
+
     expect(screen.queryByRole('dialog', { name: /search overlay/i })).not.toBeInTheDocument();
-    
+
     // Focus should be restored
     await waitFor(() => {
       expect(outsideBtn).toHaveFocus();
@@ -129,14 +129,102 @@ describe('SearchOverlay Integration Tests', () => {
 
   it('Focus trap prevents Tab from leaving overlay', async () => {
     await openOverlay();
-    
+
     const searchInput = screen.getByRole('searchbox');
     expect(searchInput).toHaveFocus();
-    
-    // Press Tab
+
+    // Tab moves to the close control, then wraps back to the search input.
     await user.keyboard('{Tab}');
-    
-    // Focus should remain on the search input
+    expect(screen.getByRole('button', { name: 'Close search overlay' })).toHaveFocus();
+    await user.keyboard('{Tab}');
+
     expect(searchInput).toHaveFocus();
+  });
+
+  it('Groups results by type in track, artist, collection order', async () => {
+    await openOverlay();
+    await user.type(screen.getByRole('searchbox'), 'wif');
+
+    const groups = await screen.findAllByRole('group');
+    expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual([
+      'tracks',
+      'artists',
+      'collections',
+    ]);
+  });
+
+  it('Enter without a highlighted result submits the typed query', async () => {
+    await openOverlay();
+    await user.type(screen.getByRole('searchbox'), 'xyz{Enter}');
+
+    expect(screen.queryByRole('dialog', { name: /search overlay/i })).not.toBeInTheDocument();
+  });
+
+  it('Cmd+K toggles the overlay closed again', async () => {
+    await openOverlay();
+    await openOverlay();
+
+    expect(screen.queryByRole('dialog', { name: /search overlay/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('SearchOverlay individual history removal (#732)', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('removes a history entry with the keyboard', async () => {
+    localStorage.setItem(
+      'audioblocks_search_history',
+      JSON.stringify([
+        { query: 'jazz', timestamp: 1 },
+        { query: 'rock', timestamp: 2 },
+      ])
+    );
+    const user = userEvent.setup();
+    render(<SearchOverlay />);
+    await user.keyboard('{Control>}k{/Control}');
+
+    const removeButton = await screen.findByRole('button', { name: "Remove 'jazz' from history" });
+    const closeButton = screen.getByRole('button', { name: 'Close search overlay' });
+    closeButton.focus();
+    await user.keyboard('{Tab}');
+    await user.keyboard('{Tab}');
+    await user.keyboard('{Tab}');
+
+    expect(removeButton).toHaveFocus();
+    await user.keyboard('{Enter}');
+
+    expect(
+      screen.queryByRole('button', { name: "Remove 'jazz' from history" })
+    ).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('audioblocks_search_history') ?? '[]')).toEqual([
+      { query: 'rock', timestamp: 2 },
+    ]);
+  });
+
+  it('removes a history entry with the mouse', async () => {
+    localStorage.setItem(
+      'audioblocks_search_history',
+      JSON.stringify([{ query: 'jazz', timestamp: 1 }])
+    );
+    const user = userEvent.setup();
+    render(<SearchOverlay />);
+    await user.keyboard('{Control>}k{/Control}');
+    await user.click(await screen.findByRole('button', { name: "Remove 'jazz' from history" }));
+
+    expect(
+      screen.queryByRole('button', { name: "Remove 'jazz' from history" })
+    ).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('audioblocks_search_history') ?? '[]')).toEqual([]);
+  });
+});
+
+describe('SearchOverlay "See all results" link (#569)', () => {
+  it('links the current query to the full /search page', async () => {
+    const user = userEvent.setup();
+    render(<SearchOverlay />);
+    await user.keyboard('{Control>}k{/Control}');
+    await user.type(screen.getByRole('searchbox'), 'love you');
+    const link = screen.getByRole('link', { name: /See all results for "love you"/ });
+    expect(link).toHaveAttribute('href', '/search?q=love%20you');
   });
 });

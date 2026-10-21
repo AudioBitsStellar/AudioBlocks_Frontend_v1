@@ -1,5 +1,6 @@
 import apiClient from './apiClient';
 import { API_ENDPOINTS } from './constants';
+import { unwrapList } from './api/unwrap';
 
 export interface MerchItem {
   id: string;
@@ -20,12 +21,12 @@ export interface EventItem {
 
 export async function getMerchListings(): Promise<MerchItem[]> {
   const res = await apiClient.get(API_ENDPOINTS.MERCH);
-  return res.data?.data ?? res.data ?? [];
+  return unwrapList(res);
 }
 
 export async function getEventListings(): Promise<EventItem[]> {
   const res = await apiClient.get(API_ENDPOINTS.EVENTS);
-  return res.data?.data ?? res.data ?? [];
+  return unwrapList(res);
 }
 
 export interface ExploreCategory {
@@ -52,17 +53,17 @@ export interface ExploreArtistItem {
 
 export async function getExploreCategories(): Promise<ExploreCategory[]> {
   const res = await apiClient.get(API_ENDPOINTS.EXPLORE_CATEGORIES);
-  return res.data?.data ?? res.data ?? [];
+  return unwrapList(res);
 }
 
 export async function getExploreCollections(): Promise<ExploreCollectionItem[]> {
   const res = await apiClient.get(API_ENDPOINTS.EXPLORE_COLLECTIONS);
-  return res.data?.data ?? res.data ?? [];
+  return unwrapList(res);
 }
 
 export async function getExploreArtists(): Promise<ExploreArtistItem[]> {
   const res = await apiClient.get(API_ENDPOINTS.EXPLORE_ARTISTS);
-  return res.data?.data ?? res.data ?? [];
+  return unwrapList(res);
 }
 
 export interface SearchResult {
@@ -73,7 +74,16 @@ export interface SearchResult {
   image: string;
 }
 
-export async function searchContent(query: string): Promise<SearchResult[]> {
+export interface SearchOptions {
+  /** Aborts the search; forward it to `apiClient.get` once this hits the backend. */
+  signal?: AbortSignal;
+}
+
+export async function searchContent(
+  query: string,
+  { signal }: SearchOptions = {}
+): Promise<SearchResult[]> {
+  signal?.throwIfAborted();
   if (!query || query.length < 3) return [];
 
   // Mock data for search

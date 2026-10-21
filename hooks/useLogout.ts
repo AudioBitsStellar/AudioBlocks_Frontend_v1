@@ -8,6 +8,7 @@ import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { useDisconnect } from 'wagmi';
 import { AUTH } from '@/lib/constants';
+import { SEARCH_HISTORY_STORAGE_KEY } from '@/hooks/useSearchHistory';
 
 export interface LogoutOptions {
   /** Target path to redirect after logout. Defaults to '/' */
@@ -19,7 +20,7 @@ export interface LogoutOptions {
 /**
  * Clears client-side auth cookies and storage artifacts.
  */
-export async function clearAuthSessionArtifacts(): Promise<void> {
+export async function clearAuthSessionArtifacts(userId?: string | null): Promise<void> {
   Cookies.remove(AUTH.COOKIE_NAME, { path: '/' });
   Cookies.remove(AUTH.REFRESH_COOKIE_NAME, { path: '/' });
   Cookies.remove('audioblocks_jwt', { path: '/' });
@@ -27,6 +28,11 @@ export async function clearAuthSessionArtifacts(): Promise<void> {
   if (typeof window !== 'undefined') {
     try {
       localStorage.removeItem('audioblocks_wallet_connected');
+      localStorage.removeItem(SEARCH_HISTORY_STORAGE_KEY);
+      localStorage.removeItem('search-history');
+      if (userId) {
+        localStorage.removeItem(`${SEARCH_HISTORY_STORAGE_KEY}:${encodeURIComponent(userId)}`);
+      }
     } catch {
       // Storage access might be restricted in some environments; ignore gracefully
     }
@@ -60,7 +66,7 @@ export function useLogout() {
     router = null;
   }
 
-  const { handleLogOut: dynamicLogOut } = useDynamicContext();
+  const { handleLogOut: dynamicLogOut, user } = useDynamicContext();
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -79,7 +85,7 @@ export function useLogout() {
       setIsLoggingOut(true);
 
       try {
-        await clearAuthSessionArtifacts();
+        await clearAuthSessionArtifacts(user?.userId);
 
         try {
           wagmiDisconnect?.();
@@ -120,7 +126,7 @@ export function useLogout() {
         setIsLoggingOut(false);
       }
     },
-    [dynamicLogOut, privyLogout, wagmiDisconnect, router]
+    [dynamicLogOut, privyLogout, wagmiDisconnect, router, user?.userId]
   );
 
   return { logout, isLoggingOut };

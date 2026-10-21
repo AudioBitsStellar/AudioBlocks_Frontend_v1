@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { ExplorerLink } from '@/components/ExplorerLink';
 import { NetworkFeeDisplay } from '@/components/NetworkFeeDisplay';
@@ -10,6 +10,12 @@ import { Modal } from '@/components/ui/Modal';
 import { useSorobanRelay } from '@/hooks/useSorobanRelay';
 import { extractFeeFromPrepareResponse } from '@/lib/sorobanFee';
 import { getSorobanErrorMessage, extractErrorCode } from '@/lib/walletErrors';
+import { parseEther } from 'viem';
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import WalletHelpLink from '@/components/help/WalletHelpLink';
+import { Modal } from '@/components/ui/Modal';
+import { contractAddress, abi } from '@/config/abi';
+import { useStellarBalance } from '@/hooks/useStellarBalance';
 
 interface BuyButtonProps {
   tokenId: string;
@@ -22,7 +28,7 @@ interface BuyButtonProps {
 const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonProps) => {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
-  const [networkFee, setNetworkFee] = useState<string | null>(null);
+  const { data: stellarBalance } = useStellarBalance();
 
   // Placeholder for wallet connection check
   // TODO: Integrate with actual Stellar wallet context when available
@@ -124,6 +130,14 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
     status === 'preparing' || status === 'awaiting-signature' || status === 'submitting';
   const isOwned = txHash != null;
 
+  // #555: Check if the user has enough Stellar XLM to cover the price.
+  // Parse the price (e.g., "0.5 ETH" -> 0.5) and assume a small fee (~0.01 XLM).
+  const priceXlm = parseFloat(price.split(' ')[0]);
+  const estimatedFee = 0.01; // Stellar transaction fee estimate
+  const totalRequired = priceXlm + estimatedFee;
+  const hasInsufficientFunds =
+    stellarBalance?.isFunded && stellarBalance.spendableXlm < totalRequired;
+
   return (
     <>
       <button
@@ -191,6 +205,7 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
             </p>
           )}
 
+          <WalletHelpLink />
           <div className="flex justify-end gap-3">
             <button
               className="px-4 py-2 rounded-2xl text-sm text-on-muted hover:text-white transition-colors"
@@ -202,9 +217,9 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
               Cancel
             </button>
             <button
-              className="px-4 py-2 rounded-2xl text-sm bg-brand text-white hover:bg-pink-700 transition-colors disabled:opacity-50"
-              disabled={!isWalletConnected}
-              onClick={handleConfirm}
+              className="px-4 py-2 rounded-2xl text-sm bg-brand text-white hover:bg-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={hasInsufficientFunds}
+              onClick={handleBuy}
             >
               {!isWalletConnected ? 'Wallet not connected' : 'Confirm purchase'}
             </button>

@@ -28,7 +28,9 @@ Environment variables are loaded from `.env.local` at startup. Missing required 
 
 | Variable | Type | Description | Example |
 |----------|------|-------------|---------|
-| `NEXT_PUBLIC_DYNAMIC_ENV_ID` | string | Dynamic Labs environment ID for wallet connection | `YOUR_ENV_ID` |
+| `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` | string | Dynamic Labs environment ID for wallet connection. Use a separate Dynamic environment for local, staging and production so test logins never mix with real users | `YOUR_ENV_ID` |
+
+If the variable is missing, `EnvCheck` logs a warning in the browser console instead of crashing the app, but login will not work until it is set.
 
 ### Third-party Services
 
@@ -37,6 +39,19 @@ Environment variables are loaded from `.env.local` at startup. Missing required 
 | `NEXT_PUBLIC_SEGMENT_WRITE_KEY` | string | Segment analytics write key (optional for analytics) | `YOUR_KEY` |
 
 Analytics is not requested until the visitor's first interaction, then loads with Next.js `lazyOnload`. App fonts use `next/font` with `display: 'swap'`.
+
+### Feature Flags
+
+Flags gate sections whose backend endpoints are not live yet. They live in `lib/featureFlags.ts`. An unset (or unrecognized) value falls back to the environment default: **on** in development and test, **off** in production. Accepted values are `true`/`false`, `1`/`0`, `on`/`off` and `yes`/`no` (case-insensitive).
+
+| Flag | Variable | Default (dev / test) | Default (production) | Gates | Waiting on |
+|------|----------|----------------------|----------------------|-------|------------|
+| `merch` | `NEXT_PUBLIC_FEATURE_MERCH` | on | off | Merch section on the Explore page | `/api/merch` |
+| `events` | `NEXT_PUBLIC_FEATURE_EVENTS` | on | off | Events section on the Explore page | `/api/events` |
+| `communityVoting` | `NEXT_PUBLIC_FEATURE_COMMUNITY_VOTING` | on | off | Community voting and leaderboard page (the route 404s when off) | `/api/community/leaderboard`, `/api/community/vote`, `/api/community/votes/me` |
+| `artistPerks` | `NEXT_PUBLIC_FEATURE_ARTIST_PERKS` | on | off | Fan perks section on the public artist page (#586) | `/api/artists/:artistId/perks` |
+
+`.env.example` keeps these four lines commented out so a copy to `.env.local` gets the environment default. Setting a variable to `false` in `.env.local` hides that section locally, so uncomment a line only when you want to override the default. Restart the dev server after changing it. See "Feature flags" in `CONTRIBUTING.md` for how to add a flag.
 
 ### Privy Authentication
 
@@ -51,6 +66,7 @@ See `docs/PRIVY_SETUP.md` for the full setup guide.
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
+| `NEXT_PUBLIC_USE_DEMO_DATA` | boolean | unset (off) | Show demo fixture data from `lib/fixtures/` (default playlist, marketplace listings, sample artists and collections). Keep it unset in production, where those screens show empty states until the backend is wired up |
 | `NEXT_PUBLIC_LOG_LEVEL` | string | `"info"` | Logging level: `debug`, `info`, `warn`, `error` |
 | `NEXT_PUBLIC_ENABLE_DEVTOOLS` | boolean | `"false"` | Enable React Query DevTools | `"true"` |
 | `NEXT_PUBLIC_CACHE_TTL` | number | `300000` | Cache time-to-live in milliseconds | `600000` |
@@ -125,7 +141,7 @@ NEXT_PUBLIC_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
 NEXT_PUBLIC_CONTRACT_ADDRESS=0x...
 NEXT_PUBLIC_USDC_ADDRESS=0x...
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
-NEXT_PUBLIC_DYNAMIC_ENV_ID=your-env-id
+NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your-env-id
 NEXT_PUBLIC_LOG_LEVEL=debug
 NEXT_PUBLIC_ENABLE_DEVTOOLS=true
 ```

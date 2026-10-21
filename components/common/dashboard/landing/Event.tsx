@@ -1,7 +1,7 @@
 'use client';
-import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import Slider from 'react-slick';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { NextArrow, PrevArrow } from './NavigationArrow';
 
 const Event = () => {
@@ -76,13 +76,14 @@ const Event = () => {
               {upcomingEvents.map((event, index) => (
                 <div key={index} className="px-2 shadow-2xl">
                   <div className="bg-[#1E1E1E3D] rounded-2xl  p-4">
-                    <div className="w-full h-50 rounded-lg overflow-hidden mx-auto">
-                      <Image
+                    <div className="relative w-full h-50 rounded-lg overflow-hidden mx-auto">
+                      <ArtworkImage
+                        fill
                         alt={event.name}
-                        className="w-full h-full object-cover"
-                        height={256}
+                        className="object-cover"
+                        sizes="384px"
                         src={event.image}
-                        width={384}
+                        title={event.name}
                       />
                     </div>
 

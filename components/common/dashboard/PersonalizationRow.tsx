@@ -1,17 +1,20 @@
 'use client';
 
 import { memo } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { usePersonalizationRow } from '@/hooks/usePersonalizationRow';
+import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { usePlayback } from '@/context/PlaybackContext';
+import { usePersonalizationRow } from '@/hooks/usePersonalizationRow';
 import type { Track } from '@/context/PlaybackContext';
 
 const PersonalizationRow = memo(function PersonalizationRow() {
   const personalizationData = usePersonalizationRow();
-  const { setPlaylist, setCurrentIndex } = usePlayback();
+  const { addToQueue, setPlaylist, setCurrentIndex } = usePlayback();
 
-  if (!personalizationData || !personalizationData.songs || personalizationData.songs.length === 0) {
+  if (
+    !personalizationData ||
+    !personalizationData.songs ||
+    personalizationData.songs.length === 0
+  ) {
     return null;
   }
 
@@ -34,28 +37,35 @@ const PersonalizationRow = memo(function PersonalizationRow() {
         {personalizationData.songs.map((song, index) => (
           <div
             key={`${song.id}-${index}`}
-            className="group relative bg-surface-input rounded-lg p-4 hover:bg-surface-input/80 transition cursor-pointer"
-            onClick={() => handlePlaySong(song, index)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handlePlaySong(song, index);
-              }
-            }}
+            className="group relative bg-surface-input rounded-lg p-4 hover:bg-surface-input/80 transition"
           >
-            <div className="relative mb-4 overflow-hidden rounded-md">
-              <Image
-                alt={`${song.title} cover`}
-                className="w-full aspect-square object-cover group-hover:scale-105 transition"
-                height={200}
-                src={song.cover || '/placeholder.png'}
-                width={200}
-              />
-            </div>
-            <h3 className="font-medium text-sm text-white truncate">{song.title}</h3>
-            <p className="text-xs text-on-muted truncate">{song.artist}</p>
+            <button
+              aria-label={`Play ${song.title}`}
+              className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              type="button"
+              onClick={() => handlePlaySong(song, index)}
+            >
+              <div className="relative mb-4 aspect-square overflow-hidden rounded-md">
+                <ArtworkImage
+                  fill
+                  alt={`${song.title} cover`}
+                  className="object-cover group-hover:scale-105 transition"
+                  sizes="200px"
+                  src={song.cover || '/placeholder.png'}
+                  title={song.title}
+                />
+              </div>
+              <h3 className="font-medium text-sm text-white truncate">{song.title}</h3>
+              <p className="text-xs text-on-muted truncate">{song.artist}</p>
+            </button>
+            <button
+              aria-label={`Queue ${song.title}`}
+              className="mt-3 rounded px-3 py-1.5 text-xs font-medium text-white bg-brand hover:bg-brand/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              type="button"
+              onClick={() => addToQueue(song)}
+            >
+              Add to queue
+            </button>
           </div>
         ))}
       </div>

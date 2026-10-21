@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, ListPlus, Heart, Share2, User } from 'lucide-react';
+import { Play, ListPlus, Heart, Share2, User, Flag } from 'lucide-react';
 
 export interface Track {
   id: string | number;
@@ -22,6 +22,8 @@ export interface TrackContextMenuProps {
   onShare?: (track: Track) => void;
   onViewArtist?: (track: Track) => void;
   onAddToPlaylist?: (track: Track) => void;
+  /** Adds a "Report" item. Only shown when provided; the caller renders the report dialog. */
+  onReport?: (track: Track) => void;
   className?: string;
   disabled?: boolean;
 }
@@ -35,6 +37,7 @@ export function TrackContextMenu({
   onShare,
   onViewArtist,
   onAddToPlaylist,
+  onReport,
   className = '',
   disabled = false,
 }: TrackContextMenuProps) {
@@ -85,6 +88,16 @@ export function TrackContextMenu({
       icon: <User size={16} />,
       action: () => onViewArtist?.(track),
     },
+    ...(onReport
+      ? [
+          {
+            id: 'report',
+            label: 'Report',
+            icon: <Flag size={16} />,
+            action: () => onReport(track),
+          },
+        ]
+      : []),
   ];
 
   const closeMenu = useCallback(() => {
