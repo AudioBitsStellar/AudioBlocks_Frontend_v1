@@ -40,8 +40,10 @@ API.
 - A built-in NFT marketplace for collecting tokenized music
 - A community space with artist voting and listening-time leaderboards
 - A personal collection view of owned music NFTs
+- Global search (Cmd/Ctrl+K) across tracks, artists, and collections, with
+  keyboard navigation and recent-search history
 - Persistent play-queue with shuffle, repeat, seek-with-preview, crossfade,
-  gapless playback, and loudness-normalization controls .
+  gapless playback, and loudness-normalization controls
 
 **For Artists** (via the companion `AudioBlocks_For_Artist` app)
 
@@ -565,6 +567,10 @@ Open a GitHub issue with:
 - Several frontend API calls don't match a mounted backend route. See the
   [API contract map](docs/api-contract.md) for each call's status (ok, path
   mismatch, missing on backend, or mocked) and the backend issue tracking it.
+- Search (`searchContent` in `lib/exploreService.ts`) filters a hard-coded
+  mock list. It already accepts an `AbortSignal`, which `useSearch` uses to
+  cancel superseded queries; pass that signal through to `apiClient.get` when
+  it is wired to the backend.
 
 ## Testing
 
@@ -574,8 +580,14 @@ AudioBlocks Frontend includes an automated test suite powered by **Vitest** for 
 
 ```
 tests/
-├── components/          # Component unit tests (Player, Controls, Dashboard)
-├── context/             # React context & hook tests (PlaybackContext)
+├── app/                 # Page-level tests for routes under app/
+├── components/          # Component unit tests (Player, Controls, SearchOverlay, ...)
+├── context/             # React context tests (PlaybackContext)
+├── hooks/               # Custom hook tests (useSearch, useSearchHistory, ...)
+├── lib/                 # Service and utility tests
+├── fixtures/            # Shared test data
+├── e2e/                 # Playwright end-to-end tests
+├── playback-harness/    # Playwright playback test harness
 └── visual/              # Visual regression and UI layout tests (PlayerBar)
 ```
 
@@ -646,7 +658,7 @@ npx lint-staged  # Run linting and formatting on staged files
 npx tsc --noEmit # Run TypeScript type checking
 ```
 
-### Skipping Hooks (Not Recommended) .
+### Skipping Hooks (Not Recommended)
 
 If you absolutely need to skip the hooks (not recommended):
 
@@ -655,11 +667,6 @@ git commit --no-verify -m "your message"
 ```
 
 **Note:** Commits that bypass hooks may fail CI checks and be rejected during code review.
-
-Fixing issue 72
-
-Fixing issue 72
-.
 
 ## Privy Integration
 

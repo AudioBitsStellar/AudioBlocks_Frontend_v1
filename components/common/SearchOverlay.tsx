@@ -48,7 +48,7 @@ export function SearchOverlay() {
   const inputRef = useRef<HTMLInputElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  const { results, loading } = useSearch(query, 200);
+  const { results, loading, error } = useSearch(query, 200);
   const { suggestions, addSearch, removeSearch, clearHistory } = useSearchHistory(user?.userId);
 
   const trimmedQuery = query.trim();
@@ -220,11 +220,18 @@ export function SearchOverlay() {
                 })}
               </div>
             ))}
-            {ordered.length === 0 && (loading || trimmedQuery.length >= MIN_QUERY_LENGTH) && (
-              <div className="px-4 py-8 text-center text-gray-500 text-sm">
-                {loading ? 'Searching...' : `No results found for "${trimmedQuery}"`}
+            {ordered.length === 0 && error && !loading && (
+              <div className="px-4 py-8 text-center text-red-400 text-sm" role="alert">
+                Search is unavailable right now. Please try again.
               </div>
             )}
+            {ordered.length === 0 &&
+              !error &&
+              (loading || trimmedQuery.length >= MIN_QUERY_LENGTH) && (
+                <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                  {loading ? 'Searching...' : `No results found for "${trimmedQuery}"`}
+                </div>
+              )}
           </div>
         )}
 
