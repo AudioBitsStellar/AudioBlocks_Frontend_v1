@@ -1,8 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
+import { unwrapPaginated } from '@/lib/api/unwrap';
 import apiClient, { NotFoundError } from '@/lib/apiClient';
+import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
+import {
+  isCollectionRelease,
+  releaseToCollection,
+  type Collection,
+} from '@/lib/mappers/collection';
 import { isPublishedRelease, type Release } from '@/lib/releases';
-import { isCollectionRelease, releaseToCollection, type Collection } from '@/lib/mappers/collection';
 
 export type { Collection } from '@/lib/mappers/collection';
 
@@ -10,6 +15,7 @@ export type { Collection } from '@/lib/mappers/collection';
 export const collectionKeys = {
   all: ['collections'] as const,
   explore: () => ['collections', 'explore'] as const,
+  page: (page: number, limit: number) => ['collections', 'page', page, limit] as const,
   user: (userId: string) => ['collections', 'user', userId] as const,
   detail: (id: string) => ['collections', 'detail', id] as const,
 };
@@ -52,6 +58,23 @@ export async function fetchExploreCollections(): Promise<Collection[]> {
   return toCollections(body?.data ?? []);
 }
 
+export interface PaginatedCollections {
+  items: Collection[];
+  total: number;
+}
+
+export async function fetchCollections(page: number, limit: number): Promise<PaginatedCollections> {
+  const response = await apiClient.get(`/api/releases?type=ep,album&page=${page}&limit=${limit}`);
+  const { items, pagination } = unwrapPaginated<Release>(response);
+  const total = Number(pagination.total);
+
+  if (!Number.isFinite(total) || total < 0) {
+    throw new Error('The collections response did not include a valid total count.');
+  }
+
+  return { items: toCollections(items), total };
+}
+
 /** All EP/album releases for one artist, following pagination. */
 export async function fetchUserCollections(userId: string): Promise<Collection[]> {
   const releases: Release[] = [];
@@ -89,6 +112,15 @@ export function useExploreCollections() {
   });
 }
 
+export function useCollections(page: number, limit = 12) {
+  return useQuery({
+    queryKey: collectionKeys.page(page, limit),
+    queryFn: () => fetchCollections(page, limit),
+    staleTime: CACHE_DURATIONS.MEDIUM,
+    retry: RETRY_CONFIG.DEFAULT,
+  });
+}
+
 export function useUserCollections(userId: string) {
   return useQuery({
     queryKey: collectionKeys.user(userId),
@@ -105,7 +137,8 @@ export function useCollectionDetail(id: string) {
     queryFn: () => fetchCollectionDetail(id),
     staleTime: CACHE_DURATIONS.LONG,
     // A missing collection won't appear on retry.
-    retry: (failureCount, error) => !(error instanceof NotFoundError) && failureCount < RETRY_CONFIG.IMPORTANT,
+    retry: (failureCount, error) =>
+      !(error instanceof NotFoundError) && failureCount < RETRY_CONFIG.IMPORTANT,
     enabled: !!id,
   });
 }
