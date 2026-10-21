@@ -129,7 +129,10 @@ export default function ArtistCard({
                 {followers !== undefined ? formatCount(followers) : '—'}
               </span>
             </div>
-            <ShareModal link={`https://audioblocks.com/vote/${slugify(artist.name)}`} />
+            <ShareModal
+              artistName={artist.name}
+              link={`https://audioblocks.com/vote/${slugify(artist.name)}`}
+            />
           </div>
           {onVote && (
             <button
