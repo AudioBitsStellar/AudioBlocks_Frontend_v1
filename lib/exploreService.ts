@@ -74,7 +74,16 @@ export interface SearchResult {
   image: string;
 }
 
-export async function searchContent(query: string): Promise<SearchResult[]> {
+export interface SearchOptions {
+  /** Aborts the search; forward it to `apiClient.get` once this hits the backend. */
+  signal?: AbortSignal;
+}
+
+export async function searchContent(
+  query: string,
+  { signal }: SearchOptions = {}
+): Promise<SearchResult[]> {
+  signal?.throwIfAborted();
   if (!query || query.length < 3) return [];
 
   // Mock data for search

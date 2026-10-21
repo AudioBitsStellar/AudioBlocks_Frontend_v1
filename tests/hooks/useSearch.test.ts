@@ -13,6 +13,8 @@ const RESULTS = [{ id: '1', title: 'Jazz Night' }] as unknown as Awaited<
   ReturnType<typeof searchContent>
 >;
 
+const SIGNAL = { signal: expect.any(AbortSignal) };
+
 describe('useSearch', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -58,7 +60,7 @@ describe('useSearch', () => {
     act(() => {
       vi.advanceTimersByTime(1);
     });
-    expect(mockedSearch).toHaveBeenCalledWith('jazz');
+    expect(mockedSearch).toHaveBeenCalledWith('jazz', SIGNAL);
   });
 
   it('trims the query before searching', () => {
@@ -68,7 +70,7 @@ describe('useSearch', () => {
       vi.advanceTimersByTime(200);
     });
 
-    expect(mockedSearch).toHaveBeenCalledWith('jazz');
+    expect(mockedSearch).toHaveBeenCalledWith('jazz', SIGNAL);
   });
 
   it('only searches for the last query when the input changes quickly', () => {
@@ -86,7 +88,7 @@ describe('useSearch', () => {
     });
 
     expect(mockedSearch).toHaveBeenCalledTimes(1);
-    expect(mockedSearch).toHaveBeenCalledWith('jazz');
+    expect(mockedSearch).toHaveBeenCalledWith('jazz', SIGNAL);
   });
 
   it('returns results and clears loading once the search resolves', async () => {
@@ -105,12 +107,13 @@ describe('useSearch', () => {
     expect(result.current.loading).toBe(false);
   });
 
-  it('logs the error and clears loading when the search fails', async () => {
+  it('exposes the error and clears loading when the search fails', async () => {
     const error = new Error('network down');
     mockedSearch.mockRejectedValueOnce(error);
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const { result } = renderHook(() => useSearch('jazz'));
+    expect(result.current.error).toBeNull();
 
     act(() => {
       vi.advanceTimersByTime(200);
@@ -121,8 +124,87 @@ describe('useSearch', () => {
     });
 
     expect(consoleSpy).toHaveBeenCalledWith(error);
+    expect(result.current.error).toBe(error);
     expect(result.current.loading).toBe(false);
     expect(result.current.results).toEqual([]);
+  });
+
+  it('clears the error on the next successful search', async () => {
+    mockedSearch.mockRejectedValueOnce(new Error('network down'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { result, rerender } = renderHook(({ q }) => useSearch(q), {
+      initialProps: { q: 'jazz' },
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.error).not.toBeNull();
+
+    rerender({ q: 'jazzy' });
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.results).toEqual(RESULTS);
+  });
+
+  it('ignores a stale response that resolves after a newer one', async () => {
+    const STALE = [{ id: 'old', title: 'Jaz' }] as unknown as typeof RESULTS;
+    let resolveStale!: (value: typeof RESULTS) => void;
+    mockedSearch
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveStale = resolve)))
+      .mockResolvedValueOnce(RESULTS);
+
+    const { result, rerender } = renderHook(({ q }) => useSearch(q), {
+      initialProps: { q: 'jaz' },
+    });
+
+    // First request starts, then the user keeps typing.
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    const firstSignal = mockedSearch.mock.calls[0][1]?.signal;
+    rerender({ q: 'jazz' });
+    expect(firstSignal?.aborted).toBe(true);
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.results).toEqual(RESULTS);
+
+    // The older request finally comes back; it must not overwrite the newer results.
+    await act(async () => {
+      resolveStale(STALE);
+      await Promise.resolve();
+    });
+
+    expect(result.current.results).toEqual(RESULTS);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('aborts the in-flight request on unmount', () => {
+    mockedSearch.mockImplementationOnce(() => new Promise(() => {}));
+    const { unmount } = renderHook(() => useSearch('jazz'));
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    const signal = mockedSearch.mock.calls[0][1]?.signal;
+    unmount();
+
+    expect(signal?.aborted).toBe(true);
   });
 
   it('clears results when the query becomes too short', async () => {
@@ -154,6 +236,6 @@ describe('useSearch', () => {
     act(() => {
       vi.advanceTimersByTime(1);
     });
-    expect(mockedSearch).toHaveBeenCalledWith('rock');
+    expect(mockedSearch).toHaveBeenCalledWith('rock', SIGNAL);
   });
 });
