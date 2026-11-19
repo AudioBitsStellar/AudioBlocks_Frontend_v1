@@ -44,7 +44,7 @@ export function ExplorerLink({
       url = getStellarAccountUrl(value);
       break;
     case 'contract':
-      url = getStellarContractUrl(value);
+      url = getStellarContractUrl(value) ?? '#';
       break;
     default:
       url = '#';
