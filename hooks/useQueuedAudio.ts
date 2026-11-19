@@ -4,7 +4,9 @@ import { toast } from 'sonner';
 import { usePlayback, type PlaybackContextValue } from '@/context/PlaybackContext';
 import { useOptionalUserPreferences } from '@/context/UserPreferencesContext';
 import { useDataSaver } from '@/hooks/useDataSaver';
+import { trackEvent } from '@/lib/analytics';
 import { getStreamUrl } from '@/lib/apiUrl';
+import { hasRecordedFirstPlay, markFirstPlayRecorded } from '@/lib/firstPlay';
 import { attachAudioSource, type AudioSource } from '@/lib/hlsPlayer';
 import {
   clearResumePosition,
@@ -339,6 +341,11 @@ export function useQueuedAudio() {
         if (element !== audioRef.current && fade.current === null) return;
         if (element === audioRef.current) {
           setIsBuffering(false);
+          if (!hasRecordedFirstPlay()) {
+            markFirstPlayRecorded();
+            const firstTrack = live.current.currentTrack;
+            if (firstTrack) trackEvent('first_play', { trackId: firstTrack.id });
+          }
           if (transitionStart.current !== null) {
             const gapMs = performance.now() - transitionStart.current;
             transitionStart.current = null;
