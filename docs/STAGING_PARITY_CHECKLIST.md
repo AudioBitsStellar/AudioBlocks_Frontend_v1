@@ -62,12 +62,33 @@ production, and after any change to `Dockerfile`, `.env.example`, or
 
 ## Current status
 
-Run against the `ops/launch-readiness-842-845` branch's image build
-(2026-11-20): the image builds with the runtime-config mechanism from #843,
-`/api/health` returns `200`, and no `@@RUNTIME:...@@` placeholders remain in
-the rendered output when `NEXT_PUBLIC_STELLAR_NETWORK=testnet` and the other
-`.env.staging.example` values are supplied at `docker run` time. The
-`docker-publish.yml` / `promote.yml` pipeline itself has not yet made a real
-deployment, since this repo has no staging host configured yet — provisioning
-one (e.g. Fly.io, Render, or a VM behind the existing reverse proxy) is
-tracked as follow-up infrastructure work, not a frontend-repo change.
+Verified directly against the `ops/launch-readiness-842-845` branch
+(2026-11-20): `scripts/docker-entrypoint.js`'s substitution runs correctly
+against a representative `.next`-shaped build output — every
+`@@RUNTIME:...@@` placeholder resolves to the right value (an explicit
+override, the one documented default, or empty when unset and no default
+applies), non-substitutable files (images, fonts) are left untouched, and
+it correctly hands off to `server.js` afterward. The Dockerfile's
+`HEALTHCHECK` command was verified against a real HTTP server returning
+both 200 and non-200 responses. See `docs/ROLLBACK_DRILL_LOG.md` for the
+same verification extended through a full promote/rollback cycle.
+
+What's **not** yet verified is a real `docker build` of this application
+producing a running container: `npm run build` currently fails on `main`
+and on this branch for reasons unrelated to #842-#845 —
+`app/dashboard/transactions/page.tsx` imports a `TransactionTable`
+component that was never implemented, and `wagmi`, `@privy-io/react-auth`,
+and `@radix-ui/react-dropdown-menu` are imported by live code (the navbar,
+`/login`, several wallet hooks) but missing from `package.json`. These
+look like further casualties of the same "stellar-wallet-integration"
+merge that corrupted `package-lock.json` (fixed in this PR) — see that
+commit's history for `package.json` — but fixing them is a larger,
+separate change than Docker/CI infrastructure and is left for follow-up.
+Once the app builds again, re-run this checklist against a real deployed
+container before the first real promotion.
+
+The `docker-publish.yml` / `promote.yml` pipeline itself has not yet made a
+real deployment, since this repo has no staging host configured yet —
+provisioning one (e.g. Fly.io, Render, or a VM behind the existing reverse
+proxy) is tracked as follow-up infrastructure work, not a frontend-repo
+change.
