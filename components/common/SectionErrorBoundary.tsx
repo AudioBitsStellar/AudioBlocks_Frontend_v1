@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ReactNode, ErrorInfo } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import {
   AlertTriangle,
   RefreshCw,
@@ -99,6 +100,14 @@ export default class SectionErrorBoundary extends Component<
         errorInfo.componentStack
       );
     }
+    // #837 — tag the Sentry event with the request id so it can be matched
+    // against the backend's logs for the same request.
+    const requestId = (normalizedError as Error & { requestId?: string }).requestId;
+    Sentry.captureException(normalizedError, (scope) => {
+      if (requestId) scope.setTag('request_id', requestId);
+      if (this.props.sectionName) scope.setTag('section', this.props.sectionName);
+      return scope;
+    });
   }
 
   handleRetry = () => {
@@ -209,6 +218,12 @@ export default class SectionErrorBoundary extends Component<
                   {this.state.error?.name || 'Error'}:{' '}
                   {this.state.error?.message || 'Unknown error'}
                 </p>
+                {(this.state.error as (Error & { requestId?: string }) | null)?.requestId && (
+                  <p className="text-gray-400 mb-1">
+                    Reference:{' '}
+                    {(this.state.error as Error & { requestId?: string }).requestId}
+                  </p>
+                )}
                 {this.state.errorInfo?.componentStack && (
                   <pre className="whitespace-pre-wrap text-[11px] text-gray-400 leading-relaxed">
                     {this.state.errorInfo.componentStack}
