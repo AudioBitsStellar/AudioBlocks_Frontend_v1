@@ -77,7 +77,14 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
     authToken: process.env.SENTRY_AUTH_TOKEN,
-  });
+    // #834 — must match NEXT_PUBLIC_SENTRY_RELEASE (sentry.client.config.ts,
+    // instrumentation.ts) so uploaded source maps are associated with the
+    // same release captured errors are tagged with.
+    release: process.env.NEXT_PUBLIC_SENTRY_RELEASE,
+    // @sentry/nextjs 7's bundled types predate Next 15's NextConfig shape
+    // (see the `--legacy-peer-deps` note in .github/workflows/test.yml); cast
+    // like the bundle-analyzer wrapper above instead of fighting the mismatch.
+  }) as NextConfig;
 }
 
 export default config;
