@@ -409,18 +409,22 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Run with Docker
 
-Build the standalone production image and run it on port 3000. Set the public
-API URL to the backend endpoint the app should use:
+Build the standalone production image, then supply config at `docker run`
+time rather than at build time (see [`docs/RUNTIME_CONFIG.md`](docs/RUNTIME_CONFIG.md)
+— the same built image is meant to run unchanged across environments):
 
 ```bash
-docker build --build-arg NEXT_PUBLIC_API_URL=https://api.example.com -t audioblocks-web .
-docker run --rm -p 3000:3000 audioblocks-web
+docker build -t audioblocks-web .
+docker run --rm -p 3000:3000 \
+  -e NEXT_PUBLIC_API_URL=https://api.example.com \
+  audioblocks-web
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The runtime image contains
-the standalone Next.js server and static assets, runs as a non-root user, and
-does not include `.env*` files. Only `NEXT_PUBLIC_*` build arguments are
-embedded in the client build; never pass secrets as build arguments.
+the standalone Next.js server and static assets, runs as a non-root user,
+reports health at `GET /api/health` (the Dockerfile `HEALTHCHECK` target),
+and does not include `.env*` files. Only `NEXT_PUBLIC_*` variables are ever
+embedded in the client build; never pass secrets this way.
 
 ### 6. Connect a wallet
 
