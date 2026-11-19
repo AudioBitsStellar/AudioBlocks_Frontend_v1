@@ -28,6 +28,7 @@ These map to jobs defined under [`.github/workflows`](../.github/workflows):
 | `test / coverage` | `test.yml` | `coverage` | Test failures, or coverage dropping below the thresholds in `vitest.config.ts` |
 | `security / dependency-audit` | `security.yml` | `dependency-audit` | `npm audit --audit-level=high` findings |
 | `security / codeql` | `security.yml` | `codeql` | CodeQL static-analysis alerts |
+| `security / trivy-image-scan` | `security.yml` | `trivy-image-scan` | CRITICAL/HIGH vulnerabilities in the built Docker image (#845) |
 
 As CI gains new required jobs (see #290 Storybook build, #288 TypeScript
 type checking, #297 coverage reporting), add their check names to this table

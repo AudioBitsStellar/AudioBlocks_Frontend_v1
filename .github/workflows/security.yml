@@ -1,12 +1,15 @@
-# Security scanning (#300).
+# Security scanning (#300, #845).
 #
-# Two layers of scanning:
+# Three layers of scanning:
 #   1. Dependency vulnerabilities — `npm audit` fails the check on any high or
 #      critical vulnerability in the production dependency tree (warnings only
 #      for moderate/low). Raise fixes with `npm audit` / Dependabot.
 #   2. Source code scanning — GitHub CodeQL analyzes the JavaScript/TypeScript
 #      codebase and reports security defects as code-scanning alerts (does not
 #      gate the build).
+#   3. Container image scanning — Trivy builds the production Dockerfile and
+#      fails on any CRITICAL/HIGH vulnerability in the OS packages or app
+#      dependencies baked into the final image.
 name: security
 
 on:
@@ -15,6 +18,9 @@ on:
     paths:
       - 'package.json'
       - 'package-lock.json'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'scripts/docker-entrypoint.js'
   push:
     branches: [main]
   schedule:
@@ -63,3 +69,35 @@ jobs:
       - uses: github/codeql-action/analyze@v3
         with:
           category: '/language:${{matrix.language}}'
+
+  trivy-image-scan:
+    name: Trivy (container image)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: audioblocks-frontend:scan
+
+      - name: Scan image for CRITICAL/HIGH vulnerabilities
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: audioblocks-frontend:scan
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Upload Trivy results to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
