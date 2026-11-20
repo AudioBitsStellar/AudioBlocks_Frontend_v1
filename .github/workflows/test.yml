@@ -14,8 +14,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      # Sentry 7's peer range excludes Next 15; use the committed lockfile's legacy peer resolution.
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
       - run: npm run lint
 
   type-check:
@@ -26,7 +25,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
       - run: npm run type-check
 
   coverage:
@@ -37,7 +36,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
       # vitest exits non-zero (failing this step, and the check) when
       # coverage drops below the thresholds configured in vitest.config.ts.
       - run: npm run test:coverage
@@ -60,7 +59,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - run: npm run test:e2e

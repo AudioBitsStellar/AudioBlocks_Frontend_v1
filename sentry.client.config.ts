@@ -8,7 +8,10 @@ if (SENTRY_DSN) {
     environment: process.env.NODE_ENV,
     tracesSampleRate: parseFloat(process.env.NEXT_PUBLIC_SENTRY_TRACE_SAMPLE_RATE || '0.1'),
     integrations: [
-      new Sentry.Replay({
+      // #848 — `Sentry.Replay` (the v7 class integration) was removed when
+      // `@sentry/nextjs` was bumped to v11 to resolve its Next 15 peer
+      // conflict; `replayIntegration()` is its v8+ replacement, same options.
+      Sentry.replayIntegration({
         maskAllText: true,
         blockAllMedia: true,
       }),
