@@ -147,6 +147,8 @@ export const API_ENDPOINTS = {
   SONG_REPORT: (songId: string | number) => `/api/song/${songId}/report`,
   SONG_SEARCH: '/api/song/search',
   COMMENT_REPORT: (commentId: string | number) => `/api/comments/${commentId}/report`,
+  // Support contact / in-app feedback (#857). Not mounted on the backend yet.
+  SUPPORT_FEEDBACK: '/api/support/feedback',
   // #577 — GET lists grouped reactions (public); POST toggles one (auth).
   COMMENT_REACTIONS: (commentId: string | number) => `/api/comments/${commentId}/reactions`,
 

@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import apiClient from '@/lib/apiClient';
+import { hasAuthSession } from '@/lib/session';
 import { normalizeAudioQuality, type AudioQuality } from '@/lib/streamQuality';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -74,6 +75,11 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     [storedPreferences]
   );
 
+  // Always readable from the hydration effect below without retriggering it
+  // on every preference change (it only runs once, on mount).
+  const latestPreferencesRef = useRef(preferences);
+  latestPreferencesRef.current = preferences;
+
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
 
@@ -81,6 +87,36 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
   const mounted = useRef(false);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Pull the signed-in listener's saved preferences from the server once per
+  // session, so they follow the account across devices/browsers instead of
+  // only ever being read from this browser's localStorage (#856). Local
+  // values win for any key the server doesn't know about yet.
+  useEffect(() => {
+    if (!hasAuthSession()) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiClient.get(SYNC_ENDPOINT);
+        const serverPreferences = res?.data;
+        if (
+          !cancelled &&
+          serverPreferences &&
+          typeof serverPreferences === 'object' &&
+          !Array.isArray(serverPreferences)
+        ) {
+          setPreferences({ ...latestPreferencesRef.current, ...serverPreferences });
+        }
+      } catch {
+        // No server record yet (new account) or the request failed — keep the local copy.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setPreferences]);
 
   useEffect(() => {
     if (!mounted.current) {
