@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -194,7 +195,12 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
 
           <p className="text-xs text-gray-400 bg-gray-800/50 p-3 rounded-lg">
             You are buying an NFT on the Stellar{' '}
-            {process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet' ? 'mainnet' : 'testnet'}.
+            {process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet' ? 'mainnet' : 'testnet'}. This
+            transaction is final once confirmed on-chain and cannot be refunded. See our{' '}
+            <Link className="underline hover:text-white" href="/legal/terms">
+              Terms of Service
+            </Link>
+            .
           </p>
 
           {error && (
