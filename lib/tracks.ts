@@ -1,3 +1,4 @@
+import { isExplicitTrack, type ExplicitAdvisory } from '@/lib/explicitContentDetection';
 import type { Track } from '@/context/PlaybackContext';
 
 export interface SongResponse {
@@ -17,6 +18,22 @@ export interface SongResponse {
   hlsMasterUrl?: string | null;
   streamUrl?: string | null;
   url?: string | null;
+  /** Backend explicit-content advisory, when the catalog has already classified this song. */
+  explicit?: boolean;
+  advisory?: ExplicitAdvisory;
+  lyrics?: string;
+}
+
+/**
+ * Resolves the explicit-content flag for a song: the backend's advisory wins when present,
+ * otherwise this falls back to the client-side heuristic (#855) so legacy/unclassified
+ * catalog entries still get gated.
+ */
+function resolveExplicit(song: SongResponse | null | undefined): boolean {
+  if (!song) return false;
+  if (typeof song.explicit === 'boolean') return song.explicit;
+  if (song.advisory) return song.advisory === 'explicit';
+  return isExplicitTrack({ title: song.title, lyrics: song.lyrics });
 }
 
 /** Matches SongController.streamSong; missing stream metadata fails closed at the API boundary. */
@@ -43,6 +60,7 @@ export function songToTrack(song: SongResponse | null | undefined, fallbackId = 
       !!stream,
     // Backend songs must use the signed streaming endpoint, never an S3 master URL.
     url: song?.url || undefined,
+    explicit: resolveExplicit(song),
   };
 }
 
@@ -57,6 +75,17 @@ export function isTrackAvailable(track: Track | null | undefined): boolean {
 }
 export const UNAVAILABLE_REASON =
   'This song was removed, is under review, or is no longer available to stream.';
+
+/** Whether a track is hidden from playback given the listener's explicit-content preference (#855). */
+export function isTrackHiddenByExplicitFilter(
+  track: Track | null | undefined,
+  allowExplicit: boolean
+): boolean {
+  return !!track && track.explicit === true && !allowExplicit;
+}
+
+export const EXPLICIT_HIDDEN_REASON =
+  'This track is marked explicit. Turn on explicit content in Settings to play it.';
 
 export function shuffleTracks<T>(tracks: readonly T[]): T[] {
   const result = [...tracks];

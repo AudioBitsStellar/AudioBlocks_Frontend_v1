@@ -30,6 +30,8 @@ export type Track = {
   available?: boolean;
   flagged?: boolean;
   status?: string;
+  /** Explicit-content advisory (#855), resolved by `songToTrack`. */
+  explicit?: boolean;
 };
 
 // ── Queue types (#116) ────────────────────────────────────────────────────
