@@ -15,6 +15,7 @@ need to get set up and submit a change.
 - [Mocks and fixtures](#mocks-and-fixtures)
 - [Commit Messages](#commit-messages)
 - [Pull Request Process](#pull-request-process)
+- [Release Process & Changelog](#release-process--changelog)
 - [Reporting Issues](#reporting-issues)
 
 ## Prerequisites
@@ -119,6 +120,13 @@ npm run test:e2e:ui   # Playwright in UI mode
 Add or update tests for any behavior you change. UI changes touching
 interactive components should also be checked against the accessibility
 guidelines above.
+
+### Env var sync check
+
+If you add, rename or remove a `NEXT_PUBLIC_*` variable, keep `.env.example`,
+the `Dockerfile` build `ARG`s and `docs/ENVIRONMENT_VARIABLES.md` in sync —
+`npm run check-env-sync` (`scripts/check-env-sync.mjs`) verifies this and
+runs as the `env-sync` job in `.github/workflows/test.yml` on every PR.
 
 ### Dependency security audit
 
@@ -250,6 +258,68 @@ Open a pull request against `main` with a clear description that includes:
 
 Keep PRs focused on a single concern where possible — it makes review faster
 and safer to merge.
+
+## Release Process & Changelog
+
+Launch-readiness item `DOC-05` (#869). Releases are fully automated — there
+is no manual version bump or changelog edit for contributors to do beyond
+writing a correct [Conventional Commit](#commit-messages) message.
+
+**Pipeline.** `.github/workflows/release.yml` runs
+[`semantic-release`](https://semantic-release.gitbook.io/) (via `npx`, not a
+pinned `devDependency`) on every push to `main` — in practice, every merged
+PR. It inspects the commit messages since the last release and decides
+whether to cut a new version, with no project-specific config file
+(`.releaserc`/`release.config.*`) in the repo, so it runs on
+`semantic-release`'s defaults:
+
+- `fix`, `perf` → patch release
+- `feat` → minor release
+- A `BREAKING CHANGE:` footer (or `!` after the type, e.g. `feat!:`) → major
+  release
+- Every other allowed type (`docs`, `chore`, `ci`, `build`, `style`, `test`,
+  `refactor`, `revert`, and this repo's two custom types `a11y` and
+  `security` — see [Commit Messages](#commit-messages)) does **not** trigger
+  a release on its own under semantic-release's default
+  `conventional-commits` preset, because they aren't mapped to a release
+  type there. **(verify with maintainers)**: if an accessibility fix or
+  security fix landing as `a11y:`/`security:` should always ship a release,
+  those two types need an explicit `releaseRules` entry in a `.releaserc`
+  that this repo does not currently have.
+
+**Where the changelog lives.** With no `@semantic-release/changelog` /
+`@semantic-release/git` plugin configured, release notes are published as
+**GitHub Releases** (generated from the same commit messages), not as a
+`CHANGELOG.md` file committed to the repo — this repo does not have one, and
+that's expected given the current plugin set rather than a missing file to
+add.
+
+**Changelog hygiene for contributors.** Because the release notes are
+generated straight from commit messages:
+
+- Prefer **one Conventional Commit-formatted squash-merge message per PR**
+  that accurately summarizes the user-visible change — that single line is
+  what shows up in the release notes, not every intermediate commit on the
+  branch.
+- Pick the type that reflects real impact, not just "what file changed." A
+  behavior fix is `fix:` even if it's a one-line change; a brand new
+  capability is `feat:` even if it's small.
+- Breaking API/behavior changes must say so explicitly (`!` or a `BREAKING
+  CHANGE:` footer) so they bump a major version and are called out in the
+  release notes — don't rely on reviewers catching it in the diff.
+
+**Current state (verify before relying on this).** As of this writing there
+are no git tags and no GitHub Releases on this repository yet, so the
+pipeline has not produced a release so far. That's consistent with a repo
+that hasn't had a releasable (`feat`/`fix`/breaking) commit reach `main`
+since the workflow was added, but hasn't been confirmed against an actual
+successful workflow run — a maintainer with Actions access should check the
+`release` workflow's run history before treating this pipeline as proven
+end-to-end. Also note `package.json` sets `"private": true`; semantic-release's
+default `npm` plugin skips the `npm publish` step for a private package but
+still needs `NPM_TOKEN` configured for its registry-auth check, which is why
+that secret exists in `release.yml` despite this package never being
+published to npm.
 
 ## Reporting Issues
 

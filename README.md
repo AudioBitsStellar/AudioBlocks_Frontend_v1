@@ -85,6 +85,11 @@ Optional but recommended:
 
 ## Architecture Overview
 
+> For the media-delivery path (backend CDN vs. IPFS) and full request
+> lifecycles (auth, streaming, collection, marketplace), see
+> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). This section covers the
+> system/component diagrams only.
+
 The system is composed of three main services:
 
 ```mermaid
