@@ -14,8 +14,10 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useOwnedCollection } from '@/hooks/useOwnedCollection';
 import { filterOwnedSongs, songCoverSrc, toOwnedNFT, type OwnedNFT } from '@/lib/collectionSongs';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 
 const ITEMS_PER_PAGE = 10;
+const marketplaceTradingEnabled = isFeatureEnabled('marketplaceTrading');
 
 const CollectionsPage = () => {
   const { address, isConnected } = useAccount();
@@ -212,8 +214,9 @@ const CollectionsPage = () => {
                         {song.totalStreams.toString()} streams
                       </span>
                       <button
-                        className="p-1.5 text-xs bg-brand/20 border border-brand/40 rounded-full hover:bg-brand/30 transition-colors"
-                        title="List for sale"
+                        className="p-1.5 text-xs bg-brand/20 border border-brand/40 rounded-full hover:bg-brand/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-surface-input disabled:border-border-dark"
+                        disabled={!marketplaceTradingEnabled}
+                        title={marketplaceTradingEnabled ? 'List for sale' : 'Listing is not available yet'}
                         type="button"
                         onClick={() => setListingNFT(song)}
                       >

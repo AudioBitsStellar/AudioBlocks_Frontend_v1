@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Clock, Gavel } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
@@ -45,10 +45,42 @@ export function AuctionBidDialog({
   refetchInterval = 5000,
 }: AuctionBidDialogProps) {
   const [bidAmount, setBidAmount] = useState(minimumBid.toString());
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(endTime));
   const [hasEnded, setHasEnded] = useState(Date.now() >= endTime);
-  const { relay, isPending } = useSorobanRelay();
+  const { run, status, error, reset } = useSorobanRelay({
+    prepare: async () => {
+      const response = await fetch('/api/marketplace/bid/prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auctionId, bidAmount: parseFloat(bidAmount) }),
+      });
+      if (!response.ok) throw new Error('Failed to prepare bid transaction');
+      return response.json();
+    },
+    submit: async (signedXdr: string) => {
+      const response = await fetch('/api/marketplace/bid/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signedXdr }),
+      });
+      if (!response.ok) throw new Error('Failed to submit bid');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success(`Bid of ${bidAmount} XLM placed successfully`);
+      onSuccess();
+    },
+    onError: (err) => {
+      const message = err.message;
+      // Handle outbid race condition
+      if (message.includes('bid too low') || message.includes('outbid')) {
+        toast.error('Someone placed a higher bid. Please refresh and try again.');
+      } else {
+        toast.error(message);
+      }
+    },
+  });
+  const isSubmitting = status === 'preparing' || status === 'awaiting-signature' || status === 'submitting';
 
   // Update countdown every second
   useEffect(() => {
@@ -92,56 +124,16 @@ export function AuctionBidDialog({
       return;
     }
 
-    setIsSubmitting(true);
+    await run();
+  };
 
-    try {
-      // Step 1: Prepare the bid transaction
-      const prepareResponse = await relay({
-        operation: 'prepare-bid',
-        params: {
-          auctionId,
-          bidAmount: parseFloat(bidAmount),
-        },
-      });
-
-      if (!prepareResponse || !prepareResponse.xdr) {
-        throw new Error('Failed to prepare bid transaction');
-      }
-
-      // Step 2: Sign the transaction with the wallet
-      // TODO: Integrate with Stellar wallet (Freighter/Albedo) for signing
-      const signedXdr = prepareResponse.xdr;
-
-      // Step 3: Submit the signed bid
-      const submitResponse = await relay({
-        operation: 'submit-bid',
-        params: {
-          signedXdr,
-        },
-      });
-
-      if (submitResponse && submitResponse.txHash) {
-        toast.success(`Bid of ${bidAmount} XLM placed successfully`);
-        onSuccess();
-      } else {
-        throw new Error('Failed to submit bid');
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to place bid';
-      
-      // Handle outbid race condition
-      if (message.includes('bid too low') || message.includes('outbid')) {
-        toast.error('Someone placed a higher bid. Please refresh and try again.');
-      } else {
-        toast.error(message);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleClose = () => {
+    reset();
+    onClose();
   };
 
   return (
-    <Modal open size="sm" title="Place a Bid" onClose={onClose}>
+    <Modal open size="sm" title="Place a Bid" onClose={handleClose}>
       <div className="space-y-4">
         <div>
           <p className="text-sm text-on-muted mb-2">Item</p>
@@ -190,22 +182,28 @@ export function AuctionBidDialog({
               </p>
             </div>
 
+            {error && (
+              <p className="text-xs text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-800" role="alert">
+                {error}
+              </p>
+            )}
+
             <div className="flex gap-3 pt-2">
               <button
                 className="flex-1 px-4 py-2 bg-surface-input border border-border-dark rounded-lg text-white hover:bg-surface-hover transition-colors disabled:opacity-50"
-                disabled={isSubmitting || isPending}
-                onClick={onClose}
+                disabled={isSubmitting}
+                onClick={handleClose}
                 type="button"
               >
                 Cancel
               </button>
               <button
                 className="flex-1 px-4 py-2 bg-brand hover:bg-brand-hover rounded-lg text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!validateBid(bidAmount) || isSubmitting || isPending || hasEnded}
+                disabled={!validateBid(bidAmount) || isSubmitting || hasEnded}
                 onClick={handleSubmit}
                 type="button"
               >
-                {isSubmitting || isPending ? 'Placing Bid...' : 'Place Bid'}
+                {isSubmitting ? 'Placing Bid...' : 'Place Bid'}
               </button>
             </div>
           </>
