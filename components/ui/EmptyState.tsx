@@ -104,7 +104,7 @@ export function EmptyState({
   headingLevel = 2,
   className = "",
 }: EmptyStateProps) {
-  const Heading = `h${headingLevel}` as keyof JSX.IntrinsicElements;
+  const Heading = `h${headingLevel}` as keyof React.JSX.IntrinsicElements;
 
   return (
     <div
@@ -114,14 +114,10 @@ export function EmptyState({
         {illustration ?? <EmptyStateIllustrations.NoResults />}
       </div>
 
-      <Heading className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-        {title}
-      </Heading>
+      <Heading className="text-lg font-semibold text-foreground">{title}</Heading>
 
       {description && (
-        <p className="mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">
-          {description}
-        </p>
+        <p className="mt-2 max-w-md text-sm text-on-muted">{description}</p>
       )}
 
       {(primaryAction || secondaryAction) && (
@@ -129,7 +125,7 @@ export function EmptyState({
           {primaryAction && (
             <button
               onClick={primaryAction.onClick}
-              className="rounded-lg bg-teal-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+              className="rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2"
             >
               {primaryAction.label}
             </button>
@@ -137,7 +133,7 @@ export function EmptyState({
           {secondaryAction && (
             <button
               onClick={secondaryAction.onClick}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+              className="rounded-lg border border-border-dark bg-surface px-5 py-2.5 text-sm font-medium text-on-muted transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2"
             >
               {secondaryAction.label}
             </button>
