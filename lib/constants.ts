@@ -98,6 +98,12 @@ export const SESSION = {
   CHECK_INTERVAL_MS: 1000,
 } as const;
 
+// ===== TELEMETRY / REQUEST TRACING (#837) =====
+export const TELEMETRY = {
+  /** Header carrying the per-request correlation id sent to the backend. */
+  REQUEST_ID_HEADER: 'X-Request-Id',
+} as const;
+
 // ===== ERROR MESSAGES =====
 export const ERROR_MESSAGES = {
   NETWORK: 'Network Error',

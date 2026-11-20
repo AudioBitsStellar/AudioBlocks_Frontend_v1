@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
-import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS } from './constants';
+import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS, TELEMETRY } from './constants';
 import { getValidatedEnv } from './env';
+import { generateRequestId } from './requestId';
 
 const { NEXT_PUBLIC_API_URL } = getValidatedEnv();
 
@@ -9,14 +10,19 @@ const { NEXT_PUBLIC_API_URL } = getValidatedEnv();
  * complete because of a network failure.
  */
 export class NetworkError extends Error {
+  /** Correlation id sent to the backend with the failed request (#837). */
+  requestId?: string;
+
   /**
    * Creates a network error.
    *
    * @param message - Human-readable explanation of the network failure.
+   * @param requestId - Correlation id of the request that failed.
    */
-  constructor(message: string = ERROR_MESSAGES.NETWORK) {
+  constructor(message: string = ERROR_MESSAGES.NETWORK, requestId?: string) {
     super(message);
     this.name = 'NetworkError';
+    this.requestId = requestId;
   }
 }
 
@@ -25,14 +31,19 @@ export class NetworkError extends Error {
  * missing or invalid.
  */
 export class AuthError extends Error {
+  /** Correlation id sent to the backend with the failed request (#837). */
+  requestId?: string;
+
   /**
    * Creates an authentication error.
    *
    * @param message - Human-readable explanation of the authentication failure.
+   * @param requestId - Correlation id of the request that failed.
    */
-  constructor(message: string = ERROR_MESSAGES.UNAUTHORIZED) {
+  constructor(message: string = ERROR_MESSAGES.UNAUTHORIZED, requestId?: string) {
     super(message);
     this.name = 'AuthError';
+    this.requestId = requestId;
   }
 }
 
@@ -40,14 +51,19 @@ export class AuthError extends Error {
  * Error thrown when the requested API resource does not exist.
  */
 export class NotFoundError extends Error {
+  /** Correlation id sent to the backend with the failed request (#837). */
+  requestId?: string;
+
   /**
    * Creates a not-found error.
    *
    * @param message - Human-readable explanation of the missing resource.
+   * @param requestId - Correlation id of the request that failed.
    */
-  constructor(message: string = ERROR_MESSAGES.NOT_FOUND) {
+  constructor(message: string = ERROR_MESSAGES.NOT_FOUND, requestId?: string) {
     super(message);
     this.name = 'NotFoundError';
+    this.requestId = requestId;
   }
 }
 
@@ -58,17 +74,21 @@ export class NotFoundError extends Error {
 export class ApiError extends Error {
   /** HTTP status code returned by the API. */
   status: number;
+  /** Correlation id sent to the backend with the failed request (#837). */
+  requestId?: string;
 
   /**
    * Creates an API response error.
    *
    * @param message - Human-readable explanation of the API failure.
    * @param status - HTTP status code returned by the API.
+   * @param requestId - Correlation id of the request that failed.
    */
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, requestId?: string) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.requestId = requestId;
   }
 }
 
@@ -135,6 +155,9 @@ async function fetchWithRetry(
   attempt = 1
 ): Promise<Response> {
   const { timeout = API_CONFIG.DEFAULT_TIMEOUT, ...fetchOptions } = options;
+  // #837 — read back the id `request()` already put on the headers, so every
+  // error thrown below (including on retries) can carry it for display.
+  const requestId = new Headers(options.headers).get(TELEMETRY.REQUEST_ID_HEADER) ?? undefined;
 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
@@ -156,10 +179,10 @@ async function fetchWithRetry(
 
     if (!response.ok) {
       if (response.status === HTTP_STATUS.UNAUTHORIZED) {
-        throw new AuthError();
+        throw new AuthError(undefined, requestId);
       }
       if (response.status === HTTP_STATUS.NOT_FOUND) {
-        throw new NotFoundError();
+        throw new NotFoundError(undefined, requestId);
       }
       if (response.status === HTTP_STATUS.RATE_LIMIT && attempt <= retries) {
         const retryAfter = response.headers.get('Retry-After');
@@ -175,7 +198,7 @@ async function fetchWithRetry(
         return fetchWithRetry(url, options, retries, attempt + 1);
       }
 
-      throw new ApiError(`HTTP error! status: ${response.status}`, response.status);
+      throw new ApiError(`HTTP error! status: ${response.status}`, response.status, requestId);
     }
 
     return response;
@@ -185,7 +208,7 @@ async function fetchWithRetry(
       if (options.signal?.aborted) {
         throw error;
       }
-      throw new Error(ERROR_MESSAGES.TIMEOUT);
+      throw Object.assign(new Error(ERROR_MESSAGES.TIMEOUT), { requestId });
     }
 
     if (error instanceof TypeError && attempt <= retries) {
@@ -195,7 +218,7 @@ async function fetchWithRetry(
     }
 
     if (error instanceof TypeError) {
-      throw new NetworkError(error.message);
+      throw new NetworkError(error.message, requestId);
     }
 
     throw error;
@@ -216,6 +239,10 @@ async function request(endpoint: string, options: FetchOptions = {}, hasRetriedA
   if (token) {
     headers.set(AUTH.TOKEN_HEADER, `${AUTH.TOKEN_PREFIX} ${token}`);
   }
+  // #837 — every request gets its own correlation id, sent to the backend and
+  // echoed back on thrown errors so it can be shown in error states.
+  const requestId = generateRequestId();
+  headers.set(TELEMETRY.REQUEST_ID_HEADER, requestId);
 
   let response: Response;
   try {
@@ -228,14 +255,14 @@ async function request(endpoint: string, options: FetchOptions = {}, hasRetriedA
         return request(endpoint, { ...options, headers }, true);
       } catch {
         clearSession();
-        throw new AuthError('Session expired');
+        throw new AuthError('Session expired', error.requestId);
       }
     }
     throw error;
   }
 
   const data = await response.json().catch(() => null);
-  return { data, status: response.status, headers: response.headers };
+  return { data, status: response.status, headers: response.headers, requestId };
 }
 
 /**

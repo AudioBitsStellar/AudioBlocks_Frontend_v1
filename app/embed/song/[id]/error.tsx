@@ -17,10 +17,15 @@ export default function EmbedError({
           <div>
             <h1 className="text-lg font-bold text-white">Failed to Load Song</h1>
             <p className="text-sm text-gray-400 mt-2">Could not load the embedded player.</p>
+            {error.digest && (
+              <p className="text-xs text-gray-500 mt-2 font-mono select-all">
+                Reference: {error.digest}
+              </p>
+            )}
           </div>
           <button
-            onClick={reset}
             className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+            onClick={reset}
           >
             Try Again
           </button>
