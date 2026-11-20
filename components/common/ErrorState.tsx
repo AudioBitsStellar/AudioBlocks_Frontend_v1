@@ -13,6 +13,8 @@ interface ErrorStateProps {
   onRetry?: () => void;
   isRetrying?: boolean;
   className?: string;
+  /** Correlation id of the failed request, shown so support can look it up (#837). */
+  requestId?: string;
 }
 
 const variantIllustrations: Record<ErrorVariant, React.ReactNode> = {
@@ -41,6 +43,7 @@ export default function ErrorState({
   onRetry,
   isRetrying = false,
   className,
+  requestId,
 }: ErrorStateProps) {
   const displayTitle = title ?? variantTitles[variant];
   const displayMessage = message ?? variantMessages[variant];
@@ -64,6 +67,9 @@ export default function ErrorState({
           {isRetrying ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
           {isRetrying ? 'Retrying...' : 'Retry'}
         </button>
+      )}
+      {requestId && (
+        <p className="text-xs text-on-muted/70 font-mono select-all">Reference: {requestId}</p>
       )}
     </div>
   );

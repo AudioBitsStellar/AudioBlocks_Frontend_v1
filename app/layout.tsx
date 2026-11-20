@@ -10,12 +10,13 @@ import AnalyticsConsentBanner from '@/components/AnalyticsConsentBanner';
 import AnalyticsScript from '@/components/AnalyticsScript';
 import MswProvider from '@/components/common/MswProvider';
 import EnvCheck from '@/components/EnvCheck';
+import SentryErrorBoundary from '@/components/SentryErrorBoundary';
 import SWRegister from '@/components/SWRegister';
 import { ThemeScript } from '@/components/ThemeScript';
 import RouteProgress from '@/components/ui/RouteProgress';
+import WebVitalsReporter from '@/components/WebVitalsReporter';
 import PrivyAuthProvider from '@/context/PrivyAuthProvider';
 import Provider from '@/context/provider';
-import SentryErrorBoundary from '@/components/SentryErrorBoundary';
 import type { Metadata } from 'next';
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -72,6 +73,7 @@ export default function RootLayout({
                   <Suspense fallback={null}>
                     <RouteProgress />
                   </Suspense>
+                  <WebVitalsReporter />
                   <SWRegister />
                   <EnvCheck />
                   <AccessibilityAnnouncer />

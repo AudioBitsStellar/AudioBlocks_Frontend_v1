@@ -1,61 +1,7 @@
 /**
- * Stellar block explorer URL builders for stellar.expert
- * Issue #547: Point explorer links to stellar.expert instead of Etherscan
- */
-
-interface StellarNetworkConfig {
-  isTestnet: boolean;
-}
-
-// Get Stellar network configuration from environment
-function getStellarNetwork(): StellarNetworkConfig {
-  const network = process.env.NEXT_PUBLIC_STELLAR_NETWORK || 'testnet';
-  return {
-    isTestnet: network === 'testnet',
-  };
-}
-
-/**
- * Get base URL for stellar.expert based on network configuration
- * @returns Base URL for stellar.expert
- */
-function getStellarExplorerBase(): string {
-  const config = getStellarNetwork();
-  return config.isTestnet
-    ? 'https://stellar.expert/explorer/testnet'
-    : 'https://stellar.expert/explorer/public';
-}
-
-/**
- * Build stellar.expert URL for a transaction hash
- * @param hash - Transaction hash
- * @returns Full URL to stellar.expert transaction page
- */
-export function getStellarTxUrl(hash: string): string {
-  const baseUrl = getStellarExplorerBase();
-  return `${baseUrl}/tx/${hash}`;
-}
-
-/**
- * Build stellar.expert URL for a Stellar account (G... address)
- * @param accountId - Stellar account public key (G...)
- * @returns Full URL to stellar.expert account page
- */
-export function getStellarAccountUrl(accountId: string): string {
-  const baseUrl = getStellarExplorerBase();
-  return `${baseUrl}/account/${accountId}`;
-}
-
-/**
- * Build stellar.expert URL for a Soroban contract (C... address)
- * @param contractId - Soroban contract ID (C...)
- * @returns Full URL to stellar.expert contract page
- */
-export function getStellarContractUrl(contractId: string): string {
-  const baseUrl = getStellarExplorerBase();
-  return `${baseUrl}/contract/${contractId}`;
- * Stellar explorer and IPFS link helpers for on-chain song provenance.
+ * Stellar explorer and IPFS link helpers.
  *
+ * Issue #547 — point explorer links to stellar.expert instead of Etherscan.
  * Soroban contract IDs are StrKey-encoded: a `C` prefix followed by 55
  * base32 characters. IPFS CIDs are base32/base58 alphanumerics. Both are
  * validated before they are placed in a URL so a malformed value from the
@@ -70,6 +16,24 @@ const IPFS_GATEWAY_BASE = 'https://ipfs.io/ipfs';
 const CONTRACT_ID_PATTERN = /^C[A-Z2-7]{55}$/;
 const CID_PATTERN = /^[A-Za-z0-9]{10,}$/;
 
+/** Network used when a helper below isn't given one explicitly. */
+function defaultNetwork(): StellarNetwork {
+  return process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet';
+}
+
+/** Explorer URL for a transaction hash. */
+export function getStellarTxUrl(hash: string, network: StellarNetwork = defaultNetwork()): string {
+  return `${STELLAR_EXPERT_BASE}/${network}/tx/${hash}`;
+}
+
+/** Explorer URL for a Stellar account (G... address). */
+export function getStellarAccountUrl(
+  accountId: string,
+  network: StellarNetwork = defaultNetwork()
+): string {
+  return `${STELLAR_EXPERT_BASE}/${network}/account/${accountId}`;
+}
+
 export function isValidContractId(value: string): boolean {
   return CONTRACT_ID_PATTERN.test(value);
 }
@@ -77,7 +41,7 @@ export function isValidContractId(value: string): boolean {
 /** Explorer URL for a Soroban contract, or `null` if the ID is malformed. */
 export function getStellarContractUrl(
   contractId: string,
-  network: StellarNetwork = 'testnet'
+  network: StellarNetwork = defaultNetwork()
 ): string | null {
   if (!isValidContractId(contractId)) return null;
   return `${STELLAR_EXPERT_BASE}/${network}/contract/${contractId}`;
