@@ -55,6 +55,25 @@ describe('release page', () => {
       type: 'music.album',
       url: '/release/release',
     });
+    const og = metadata.openGraph as Record<string, unknown>;
+    expect(og.images).toEqual([
+      { url: '/logo.png', width: 1200, height: 630, alt: 'New EP' },
+    ]);
+  });
+
+  it('renders MusicAlbum structured data with its tracklist (#860)', async () => {
+    const { container } = render(<PlaybackProvider>{await Page({ params })}</PlaybackProvider>);
+    const script = container.querySelector('#release-jsonld');
+    expect(script).not.toBeNull();
+    const data = JSON.parse(script!.textContent ?? '{}');
+    expect(data).toMatchObject({
+      '@context': 'https://schema.org',
+      '@type': 'MusicAlbum',
+      name: 'New EP',
+      byArtist: { '@type': 'MusicGroup', name: 'The artist', url: '/artist/artist' },
+      numTracks: 1,
+      track: [{ '@type': 'MusicRecording', name: 'First track', position: 1 }],
+    });
   });
   it('returns notFound for unavailable releases including metadata', async () => {
     vi.mocked(getRelease).mockResolvedValue(null);

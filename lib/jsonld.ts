@@ -72,6 +72,54 @@ export function generateArtistJsonLd(artist: ArtistMetadata): string {
   return JSON.stringify(jsonLd);
 }
 
+export interface ReleaseMetadata {
+  id: string;
+  title: string;
+  /** Human label such as "Single", "EP" or "Album" (see `RELEASE_TYPES`). */
+  releaseType: string;
+  artist: string;
+  artistId?: string;
+  coverImage?: string;
+  url?: string;
+  releaseDate?: string;
+  tracks?: Array<{ title: string; trackNumber: number }>;
+}
+
+/**
+ * Generate JSON-LD for a release — a single, EP or album (MusicAlbum schema).
+ * Used on `/release/[id]` (#860); singles use the same type as schema.org
+ * does not define a separate one.
+ */
+export function generateReleaseJsonLd(release: ReleaseMetadata): string {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'MusicAlbum',
+    name: release.title,
+    ...(release.releaseType === 'Single' && {
+      albumProductionType: 'https://schema.org/SingleReleaseType',
+    }),
+    byArtist: {
+      '@type': 'MusicGroup',
+      name: release.artist,
+      ...(release.artistId && { url: `/artist/${release.artistId}` }),
+    },
+    ...(release.coverImage && { image: release.coverImage }),
+    ...(release.url && { url: release.url }),
+    ...(release.releaseDate && { datePublished: release.releaseDate }),
+    ...(release.tracks &&
+      release.tracks.length > 0 && {
+        numTracks: release.tracks.length,
+        track: release.tracks.map((track) => ({
+          '@type': 'MusicRecording',
+          name: track.title,
+          position: track.trackNumber,
+        })),
+      }),
+  };
+
+  return JSON.stringify(jsonLd);
+}
+
 /**
  * Generate JSON-LD for an organization (for site footer/header)
  */
