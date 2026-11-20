@@ -94,7 +94,7 @@ const CollectionsPage = () => {
         {statCards.map(({ label, value, accent, bg }) => (
           <div
             key={label}
-            className="bg-surface rounded-xl hover:border hover:border-border-muted p-5 flex items-center"
+            className="bg-surface rounded-xl hover:border hover:border-border-dark p-5 flex items-center"
           >
             <div className={`rounded-full p-3 mr-5 ${bg}`}>
               <UsersRound aria-hidden="true" className={accent} size={15} />
