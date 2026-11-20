@@ -4,7 +4,9 @@ import { toast } from 'sonner';
 import { usePlayback, type PlaybackContextValue } from '@/context/PlaybackContext';
 import { useOptionalUserPreferences } from '@/context/UserPreferencesContext';
 import { useDataSaver } from '@/hooks/useDataSaver';
+import { trackEvent } from '@/lib/analytics';
 import { getStreamUrl } from '@/lib/apiUrl';
+import { hasRecordedFirstPlay, markFirstPlayRecorded } from '@/lib/firstPlay';
 import { attachAudioSource, type AudioSource } from '@/lib/hlsPlayer';
 import {
   recordPlaybackAttempt,
@@ -357,24 +359,10 @@ export function useQueuedAudio() {
         if (element !== audioRef.current && fade.current === null) return;
         if (element === audioRef.current) {
           setIsBuffering(false);
-          // #835 — first `playing` for a track reports startup latency and
-          // opens its watch session; a later one (after a `waiting` stall)
-          // closes out the rebuffer duration instead.
-          const metricTrackId = trackIdFor(loaded.current.get(element));
-          if (metricTrackId && trackFirstPlayingReported.current !== metricTrackId) {
-            trackFirstPlayingReported.current = metricTrackId;
-            trackPlaybackStartedAt.current = performance.now();
-            trackRebufferedMs.current = 0;
-            rebufferWaitingAt.current = null;
-            if (trackStartupAt.current !== null) {
-              recordPlaybackStartup(metricTrackId, performance.now() - trackStartupAt.current);
-              trackStartupAt.current = null;
-            }
-          } else if (metricTrackId && rebufferWaitingAt.current !== null) {
-            const bufferedMs = performance.now() - rebufferWaitingAt.current;
-            rebufferWaitingAt.current = null;
-            trackRebufferedMs.current += bufferedMs;
-            recordPlaybackRebuffer(metricTrackId, bufferedMs);
+          if (!hasRecordedFirstPlay()) {
+            markFirstPlayRecorded();
+            const firstTrack = live.current.currentTrack;
+            if (firstTrack) trackEvent('first_play', { trackId: firstTrack.id });
           }
           if (transitionStart.current !== null) {
             const gapMs = performance.now() - transitionStart.current;

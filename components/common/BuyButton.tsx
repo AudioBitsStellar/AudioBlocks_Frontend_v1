@@ -5,14 +5,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ExplorerLink } from '@/components/ExplorerLink';
+import WalletHelpLink from '@/components/help/WalletHelpLink';
 import { NetworkFeeDisplay } from '@/components/NetworkFeeDisplay';
 import { Modal } from '@/components/ui/Modal';
+import { useStellarWallet } from '@/context/StellarWalletContext';
 import { useSorobanRelay } from '@/hooks/useSorobanRelay';
+import { useStellarBalance } from '@/hooks/useStellarBalance';
+import { trackEvent } from '@/lib/analytics';
 import { extractFeeFromPrepareResponse } from '@/lib/sorobanFee';
 import { getSorobanErrorMessage, extractErrorCode } from '@/lib/walletErrors';
-import WalletHelpLink from '@/components/help/WalletHelpLink';
-import { useStellarBalance } from '@/hooks/useStellarBalance';
-import { useStellarWallet } from '@/context/StellarWalletContext';
 
 interface BuyButtonProps {
   tokenId: string;
@@ -87,6 +88,12 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
           )}
         </div>
       );
+
+      trackEvent('purchase', {
+        tokenId,
+        price,
+        network: process.env.NEXT_PUBLIC_STELLAR_NETWORK,
+      });
 
       queryClient.invalidateQueries({ queryKey: ['marketplace'] });
       queryClient.invalidateQueries({ queryKey: ['nft'] });
