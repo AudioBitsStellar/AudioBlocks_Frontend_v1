@@ -204,6 +204,13 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
           )}
 
           <WalletHelpLink />
+          <p className="text-xs text-on-muted">
+            Purchases settle on-chain and are final in most cases. See our{' '}
+            <a className="underline" href="/refund-policy">
+              refund policy
+            </a>{' '}
+            for the exceptions.
+          </p>
           <div className="flex justify-end gap-3">
             <button
               className="px-4 py-2 rounded-2xl text-sm text-on-muted hover:text-white transition-colors"
