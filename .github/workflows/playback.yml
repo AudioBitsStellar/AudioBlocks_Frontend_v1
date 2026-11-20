@@ -17,8 +17,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # Existing Sentry 7 / Next 15 peer mismatch also affects local setup.
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:playback
       - uses: actions/upload-artifact@v4

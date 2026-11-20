@@ -35,7 +35,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci --ignore-scripts --legacy-peer-deps
+      - run: npm ci --ignore-scripts
 
       # The single dependency policy blocks high and critical vulnerabilities.
       - name: Audit production vulnerabilities
