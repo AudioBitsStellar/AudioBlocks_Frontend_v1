@@ -63,6 +63,11 @@ const Footer = () => {
                   Refund Policy
                 </Link>
               </li>
+              <li>
+                <Link className="hover:text-white" href="/accessibility">
+                  Accessibility
+                </Link>
+              </li>
             </ul>
           </div>
 
