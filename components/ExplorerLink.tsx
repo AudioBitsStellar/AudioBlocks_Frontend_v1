@@ -35,7 +35,7 @@ export function ExplorerLink({
     return null;
   }
 
-  let url: string;
+  let url: string | null;
   switch (type) {
     case 'tx':
       url = getStellarTxUrl(value);
@@ -48,6 +48,10 @@ export function ExplorerLink({
       break;
     default:
       url = '#';
+  }
+
+  if (!url) {
+    return null;
   }
 
   const displayText = children || value;

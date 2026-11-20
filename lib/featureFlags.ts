@@ -14,7 +14,12 @@
  */
 
 /** Names of the flags understood by the app. */
-export type FeatureFlagName = 'merch' | 'events' | 'communityVoting' | 'artistPerks';
+export type FeatureFlagName =
+  | 'merch'
+  | 'events'
+  | 'communityVoting'
+  | 'artistPerks'
+  | 'marketplaceTrading';
 
 /** Static metadata for a single feature flag. */
 export interface FeatureFlagDefinition {
@@ -52,6 +57,22 @@ export const FEATURE_FLAGS: Record<FeatureFlagName, FeatureFlagDefinition> = {
     description: 'Fan perks section on the public artist page (#586)',
     pendingEndpoints: ['/api/artists/:artistId/perks'],
   },
+  marketplaceTrading: {
+    envVar: 'NEXT_PUBLIC_FEATURE_MARKETPLACE_TRADING',
+    description:
+      'Buying, bidding on, and listing NFTs (BuyButton, AuctionBidDialog, ListNFTDialog). ' +
+      'useSorobanRelay has no wallet-signing implementation yet, and the relay path it calls ' +
+      "doesn't match any mounted backend route, so every submission fails the same way " +
+      'regardless of which of the three flows triggers it.',
+    pendingEndpoints: [
+      'POST /api/marketplace/prepare-listing',
+      'POST /api/marketplace/submit-listing',
+      'POST /api/marketplace/prepare-buy',
+      'POST /api/marketplace/submit-buy',
+      'POST /api/marketplace/prepare-bid',
+      'POST /api/marketplace/submit-bid',
+    ],
+  },
 };
 
 const TRUTHY_VALUES = new Set(['true', '1', 'on', 'yes']);
@@ -73,6 +94,8 @@ function readFlagValue(flag: FeatureFlagName): string | undefined {
       return process.env.NEXT_PUBLIC_FEATURE_COMMUNITY_VOTING;
     case 'artistPerks':
       return process.env.NEXT_PUBLIC_FEATURE_ARTIST_PERKS;
+    case 'marketplaceTrading':
+      return process.env.NEXT_PUBLIC_FEATURE_MARKETPLACE_TRADING;
   }
 }
 

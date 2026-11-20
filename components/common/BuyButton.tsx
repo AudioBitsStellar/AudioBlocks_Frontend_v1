@@ -8,6 +8,7 @@ import { ExplorerLink } from '@/components/ExplorerLink';
 import { NetworkFeeDisplay } from '@/components/NetworkFeeDisplay';
 import { Modal } from '@/components/ui/Modal';
 import { useSorobanRelay } from '@/hooks/useSorobanRelay';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import { extractFeeFromPrepareResponse } from '@/lib/sorobanFee';
 import { getSorobanErrorMessage, extractErrorCode } from '@/lib/walletErrors';
 import WalletHelpLink from '@/components/help/WalletHelpLink';
@@ -30,6 +31,7 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
   const { publicKey } = useStellarWallet();
 
   const isWalletConnected = !!publicKey;
+  const tradingEnabled = isFeatureEnabled('marketplaceTrading');
 
   const { run, status, txHash, error, reset } = useSorobanRelay({
     prepare: async () => {
@@ -129,6 +131,18 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
   const hasInsufficientFunds =
     stellarBalance?.isFunded && stellarBalance.spendableXlm < totalRequired;
 
+  if (!tradingEnabled) {
+    return (
+      <button
+        className="border-gray-600 border text-white px-4 py-2 rounded-2xl text-sm mb-2 opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
+        disabled
+        title="Buying is not available yet"
+      >
+        Coming soon
+      </button>
+    );
+  }
+
   return (
     <>
       <button
@@ -191,7 +205,10 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
           </p>
 
           {error && (
-            <p className="text-xs text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-800">
+            <p
+              className="text-xs text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-800"
+              role="alert"
+            >
               {error}
             </p>
           )}

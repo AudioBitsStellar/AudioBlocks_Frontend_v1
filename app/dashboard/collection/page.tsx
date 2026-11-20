@@ -14,8 +14,10 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useOwnedCollection } from '@/hooks/useOwnedCollection';
 import { filterOwnedSongs, songCoverSrc, toOwnedNFT, type OwnedNFT } from '@/lib/collectionSongs';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 
 const ITEMS_PER_PAGE = 10;
+const marketplaceTradingEnabled = isFeatureEnabled('marketplaceTrading');
 
 const CollectionsPage = () => {
   const { address, isConnected } = useAccount();
@@ -94,7 +96,7 @@ const CollectionsPage = () => {
         {statCards.map(({ label, value, accent, bg }) => (
           <div
             key={label}
-            className="bg-surface rounded-xl hover:border hover:border-border-muted p-5 flex items-center"
+            className="bg-surface rounded-xl hover:border hover:border-border-dark p-5 flex items-center"
           >
             <div className={`rounded-full p-3 mr-5 ${bg}`}>
               <UsersRound aria-hidden="true" className={accent} size={15} />
@@ -212,8 +214,9 @@ const CollectionsPage = () => {
                         {song.totalStreams.toString()} streams
                       </span>
                       <button
-                        className="p-1.5 text-xs bg-brand/20 border border-brand/40 rounded-full hover:bg-brand/30 transition-colors"
-                        title="List for sale"
+                        className="p-1.5 text-xs bg-brand/20 border border-brand/40 rounded-full hover:bg-brand/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-surface-input disabled:border-border-dark"
+                        disabled={!marketplaceTradingEnabled}
+                        title={marketplaceTradingEnabled ? 'List for sale' : 'Listing is not available yet'}
                         type="button"
                         onClick={() => setListingNFT(song)}
                       >

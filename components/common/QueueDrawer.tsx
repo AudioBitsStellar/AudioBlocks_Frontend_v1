@@ -141,7 +141,7 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                   key={`${track.id}-${index}`}
                   data-queue-index={index}
                   draggable
-                  className="flex items-center gap-2 rounded-md bg-white/5 px-2 py-2 hover:bg-white/10 transition cursor-default"
+                  className="group flex items-center gap-2 rounded-md bg-white/5 px-2 py-2 hover:bg-white/10 transition cursor-default"
                   onDragEnd={handleDragEnd}
                   onDragEnter={() => handleDragEnter(index)}
                   onDragOver={(e) => e.preventDefault()}
@@ -214,7 +214,7 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
                   ) : (
                     <button
                       aria-label={`Remove ${track.title} from queue`}
-                      className="shrink-0 text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition"
+                      className="shrink-0 text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition"
                       onClick={() => setRemoveIndex(index)}
                     >
                       <Trash2 size={14} />

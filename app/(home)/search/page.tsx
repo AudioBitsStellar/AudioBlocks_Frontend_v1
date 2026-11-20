@@ -6,7 +6,7 @@ export const metadata = { title: 'Search' };
 // useSearchParams needs a Suspense boundary so the page can still prerender.
 export default function SearchPage() {
   return (
-    <Suspense fallback={<p className="px-4 py-8 text-gray-400">Loading search…</p>}>
+    <Suspense fallback={<p className="px-4 py-8 text-on-muted">Loading search…</p>}>
       <SearchResults />
     </Suspense>
   );

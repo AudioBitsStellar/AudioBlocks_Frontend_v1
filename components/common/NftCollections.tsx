@@ -7,6 +7,7 @@ import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Pagination } from '@/components/ui/pagination';
 import { AuctionBidDialog } from '@/components/marketplace/AuctionBidDialog';
 import { demoOr } from '@/lib/fixtures';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import {
   eventData as demoEvents,
   merchData as demoMerch,
@@ -27,6 +28,7 @@ const ITEMS_PER_PAGE = 8;
 const musicData = demoOr<CollectionItem[]>(demoMusic, []);
 const eventData = demoOr<CollectionItem[]>(demoEvents, []);
 const merchData = demoOr<CollectionItem[]>(demoMerch, []);
+const marketplaceTradingEnabled = isFeatureEnabled('marketplaceTrading');
 
 // Extended type to support auction listings
 interface ExtendedCollectionItem extends CollectionItem {
@@ -122,14 +124,15 @@ function Card({ item, onBidClick }: CardProps) {
             )}
             <button
               className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
-                isAuctionEnded
+                isAuctionEnded || !marketplaceTradingEnabled
                   ? 'bg-surface-input text-on-muted cursor-not-allowed'
                   : 'bg-brand hover:bg-brand-hover text-white'
               }`}
-              disabled={isAuctionEnded}
+              disabled={isAuctionEnded || !marketplaceTradingEnabled}
+              title={!marketplaceTradingEnabled ? 'Bidding is not available yet' : undefined}
               onClick={() => onBidClick?.(item)}
             >
-              {isAuctionEnded ? 'Auction Ended' : 'Place Bid'}
+              {!marketplaceTradingEnabled ? 'Coming Soon' : isAuctionEnded ? 'Auction Ended' : 'Place Bid'}
             </button>
           </div>
         ) : (
