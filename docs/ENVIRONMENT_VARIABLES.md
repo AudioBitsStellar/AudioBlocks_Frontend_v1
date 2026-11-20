@@ -72,6 +72,8 @@ See `docs/PRIVY_SETUP.md` for the full setup guide.
 | `NEXT_PUBLIC_CACHE_TTL` | number | `300000` | Cache time-to-live in milliseconds | `600000` |
 | `NEXT_PUBLIC_ANALYTICS_ENABLED` | boolean | `"true"` | Enable analytics tracking. Even when enabled, analytics load only after the visitor accepts the consent banner (#597) | `"false"` |
 | `NEXT_PUBLIC_ARTIST_DASHBOARD_URL` | string | unset | Link to the artist dashboard app, shown to artists after onboarding (#596). The CTA is hidden when unset | `https://artists.audioblocks.dev` |
+| `MAINTENANCE_MODE` | boolean | unset (off) | Planned maintenance (#858). When on, `middleware.ts` rewrites every route (except `/maintenance`, `/api`, and static assets) to a static maintenance page. Server-only — not prefixed with `NEXT_PUBLIC_` | `"true"` |
+| `NEXT_PUBLIC_MAINTENANCE_BANNER_MESSAGE` | string | unset | Shows a dismissible banner announcing a maintenance window, without blocking access the way `MAINTENANCE_MODE` does. Independent of it — set one, both, or neither | `Planned maintenance Sat 10pm-11pm UTC.` |
 
 ## Setup Instructions
 

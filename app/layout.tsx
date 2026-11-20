@@ -10,6 +10,7 @@ import AnalyticsConsentBanner from '@/components/AnalyticsConsentBanner';
 import AnalyticsScript from '@/components/AnalyticsScript';
 import MswProvider from '@/components/common/MswProvider';
 import EnvCheck from '@/components/EnvCheck';
+import MaintenanceBanner from '@/components/MaintenanceBanner';
 import SentryErrorBoundary from '@/components/SentryErrorBoundary';
 import SWRegister from '@/components/SWRegister';
 import { ThemeScript } from '@/components/ThemeScript';
@@ -74,6 +75,7 @@ export default function RootLayout({
                     <RouteProgress />
                   </Suspense>
                   <WebVitalsReporter />
+                  <MaintenanceBanner />
                   <SWRegister />
                   <EnvCheck />
                   <AccessibilityAnnouncer />
