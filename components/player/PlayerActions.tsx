@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, type RefObject } from 'react';
+import { memo, useEffect, useRef, useState, type RefObject } from 'react';
 import { AudioWaveform, Ellipsis, Heart, ListPlus, MessageSquare, Zap } from 'lucide-react';
 import type { SleepTimer, SleepTimerOption } from '@/lib/sleepTimer';
 import { SleepTimerMenu } from './SleepTimerMenu';
@@ -60,6 +60,26 @@ export const PlayerActions = memo(function PlayerActions({
 }: PlayerActionsProps) {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const speedTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  // Close whichever popup menu is open on Escape and hand focus back to its trigger.
+  useEffect(() => {
+    if (!showMoreMenu && !showSpeedMenu) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showMoreMenu) {
+        setShowMoreMenu(false);
+        moreTriggerRef.current?.focus();
+      }
+      if (showSpeedMenu) {
+        setShowSpeedMenu(false);
+        speedTriggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showMoreMenu, showSpeedMenu]);
 
   return (
     <div className="flex items-center border-l-2 pl-4 gap-4 relative">
@@ -102,6 +122,7 @@ export const PlayerActions = memo(function PlayerActions({
         <Zap size={16} />
       </button>
       <button
+        ref={moreTriggerRef}
         aria-expanded={showMoreMenu}
         aria-haspopup="true"
         aria-label="More options"
@@ -134,6 +155,9 @@ export const PlayerActions = memo(function PlayerActions({
       )}
       <div className="relative">
         <button
+          ref={speedTriggerRef}
+          aria-expanded={showSpeedMenu}
+          aria-haspopup="true"
           aria-label={`Playback speed: ${playbackSpeed}x`}
           className="hover:text-gray-300 cursor-pointer text-white text-xs font-mono min-w-[2rem]"
           onClick={() => setShowSpeedMenu(!showSpeedMenu)}

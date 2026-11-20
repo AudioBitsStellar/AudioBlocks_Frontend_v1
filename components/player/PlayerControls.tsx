@@ -30,6 +30,7 @@ export const PlayerControls = memo(function PlayerControls({
     <div className="flex items-center gap-3">
       <button
         aria-label="Toggle shuffle"
+        aria-pressed={shuffle}
         className={`hover:text-gray-300 cursor-pointer text-white ${shuffle ? 'text-pink-500' : ''}`}
         onClick={onToggleShuffle}
       >
@@ -65,6 +66,7 @@ export const PlayerControls = memo(function PlayerControls({
 
       <button
         aria-label="Toggle repeat"
+        aria-pressed={repeat}
         className={`hover:text-gray-300 text-white ${repeat ? 'text-pink-500' : ''}`}
         onClick={onToggleRepeat}
       >

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { X } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
 import { useSorobanRelay } from '@/hooks/useSorobanRelay';
 
 interface ListNFTDialogProps {
@@ -78,72 +78,57 @@ export function ListNFTDialog({ songId, songTitle, onSuccess, onClose }: ListNFT
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-surface border border-border-dark rounded-xl p-6 w-full max-w-md mx-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white">List NFT for Sale</h2>
+    <Modal open size="sm" title="List NFT for Sale" onClose={onClose}>
+      <div className="space-y-4">
+        <div>
+          <p className="text-sm text-on-muted mb-2">Song</p>
+          <p className="text-white font-medium truncate">{songTitle}</p>
+        </div>
+
+        <div>
+          <label className="block text-sm text-on-muted mb-2" htmlFor="price">
+            Price (XLM)
+          </label>
+          <input
+            className="w-full px-4 py-2 bg-surface-input border border-border-dark rounded-lg text-white placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
+            id="price"
+            max="9999999"
+            min="0"
+            placeholder="0.00"
+            step="0.0000001"
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+          <p className="text-xs text-on-muted mt-1">Maximum {MAX_DECIMAL_PLACES} decimal places</p>
+        </div>
+
+        <div className="bg-surface-hover border border-border-dark rounded-lg p-3">
+          <p className="text-xs text-on-muted">
+            Note: Listing fees and royalty information will be displayed here once available from
+            the backend.
+          </p>
+        </div>
+
+        <div className="flex gap-3 pt-2">
           <button
-            className="p-1 hover:bg-surface-hover rounded-full transition-colors"
+            className="flex-1 px-4 py-2 bg-surface-input border border-border-dark rounded-lg text-white hover:bg-surface-hover transition-colors disabled:opacity-50"
+            disabled={isSubmitting || isPending}
             onClick={onClose}
             type="button"
           >
-            <X className="text-on-muted" size={20} />
+            Cancel
+          </button>
+          <button
+            className="flex-1 px-4 py-2 bg-brand hover:bg-brand-hover rounded-lg text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!validatePrice(price) || isSubmitting || isPending}
+            onClick={handleSubmit}
+            type="button"
+          >
+            {isSubmitting || isPending ? 'Listing...' : 'List for Sale'}
           </button>
         </div>
-
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-on-muted mb-2">Song</p>
-            <p className="text-white font-medium truncate">{songTitle}</p>
-          </div>
-
-          <div>
-            <label className="block text-sm text-on-muted mb-2" htmlFor="price">
-              Price (XLM)
-            </label>
-            <input
-              className="w-full px-4 py-2 bg-surface-input border border-border-dark rounded-lg text-white placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
-              id="price"
-              max="9999999"
-              min="0"
-              placeholder="0.00"
-              step="0.0000001"
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-            <p className="text-xs text-on-muted mt-1">
-              Maximum {MAX_DECIMAL_PLACES} decimal places
-            </p>
-          </div>
-
-          <div className="bg-surface-hover border border-border-dark rounded-lg p-3">
-            <p className="text-xs text-on-muted">
-              Note: Listing fees and royalty information will be displayed here once available from
-              the backend.
-            </p>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              className="flex-1 px-4 py-2 bg-surface-input border border-border-dark rounded-lg text-white hover:bg-surface-hover transition-colors disabled:opacity-50"
-              disabled={isSubmitting || isPending}
-              onClick={onClose}
-              type="button"
-            >
-              Cancel
-            </button>
-            <button
-              className="flex-1 px-4 py-2 bg-brand hover:bg-brand-hover rounded-lg text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!validatePrice(price) || isSubmitting || isPending}
-              onClick={handleSubmit}
-              type="button"
-            >
-              {isSubmitting || isPending ? 'Listing...' : 'List for Sale'}
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -191,7 +191,10 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
           </p>
 
           {error && (
-            <p className="text-xs text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-800">
+            <p
+              className="text-xs text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-800"
+              role="alert"
+            >
               {error}
             </p>
           )}
