@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { formatDuration } from '@/lib/utils';
 
 export interface WaveformDisplayProps {
   /** Array of normalized amplitude values between 0 and 1 */
@@ -260,16 +261,14 @@ export function WaveformDisplay({
 
   const formattedTime =
     typeof currentTime === 'number'
-      ? `${Math.floor(currentTime / 60)}:${Math.floor(currentTime % 60)
-          .toString()
-          .padStart(2, '0')}`
+      ? formatDuration(currentTime)
       : `${Math.round(currentProgress * 100)}%`;
 
   return (
     <div
       ref={containerRef}
       aria-label="Audio waveform playback position"
-      aria-valuemax={duration ?? 100}
+      aria-valuemax={Number.isFinite(duration) ? duration : 100}
       aria-valuemin={0}
       aria-valuenow={
         typeof currentTime === 'number'

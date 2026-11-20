@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn, formatCount } from './utils';
+import { cn, formatCount, formatDuration } from './utils';
 
 describe('cn', () => {
   it('merges class names', () => {
@@ -41,5 +41,30 @@ describe('formatCount', () => {
   it('strips trailing .0 from formatted values', () => {
     expect(formatCount(2000)).toBe('2k');
     expect(formatCount(3000000)).toBe('3M');
+  });
+});
+
+describe('formatDuration', () => {
+  it('returns --:-- for non-finite or negative values', () => {
+    expect(formatDuration(NaN)).toBe('--:--');
+    expect(formatDuration(Infinity)).toBe('--:--');
+    expect(formatDuration(-Infinity)).toBe('--:--');
+    expect(formatDuration(-1)).toBe('--:--');
+    expect(formatDuration(undefined)).toBe('--:--');
+    expect(formatDuration(null)).toBe('--:--');
+  });
+
+  it('formats durations under an hour as m:ss', () => {
+    expect(formatDuration(0)).toBe('0:00');
+    expect(formatDuration(59)).toBe('0:59');
+    expect(formatDuration(65)).toBe('1:05');
+    expect(formatDuration(599)).toBe('9:59');
+    expect(formatDuration(3599)).toBe('59:59');
+  });
+
+  it('formats durations of an hour or longer as h:mm:ss', () => {
+    expect(formatDuration(3600)).toBe('1:00:00');
+    expect(formatDuration(4500)).toBe('1:15:00');
+    expect(formatDuration(3665)).toBe('1:01:05');
   });
 });

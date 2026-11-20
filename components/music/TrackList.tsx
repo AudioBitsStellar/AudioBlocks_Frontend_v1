@@ -2,11 +2,9 @@
 import { Play, Plus } from 'lucide-react';
 import { usePlayback, type Track } from '@/context/PlaybackContext';
 import { isTrackAvailable, UNAVAILABLE_REASON } from '@/lib/tracks';
+import { formatDuration } from '@/lib/utils';
 
-export function formatDuration(seconds?: number): string {
-  if (seconds === undefined || !Number.isFinite(seconds) || seconds < 0) return '—';
-  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
-}
+export { formatDuration };
 export default function TrackList({ tracks }: { tracks: Track[] }) {
   const { playTrack, addToQueue } = usePlayback();
   return (
