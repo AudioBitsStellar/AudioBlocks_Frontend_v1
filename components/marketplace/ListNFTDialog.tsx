@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { useSorobanRelay } from '@/hooks/useSorobanRelay';
@@ -120,7 +121,12 @@ export function ListNFTDialog({ songId, songTitle, onSuccess, onClose }: ListNFT
           <div className="bg-surface-hover border border-border-dark rounded-lg p-3">
             <p className="text-xs text-on-muted">
               Note: Listing fees and royalty information will be displayed here once available from
-              the backend.
+              the backend. A resale royalty may be paid on-chain to the original artist &mdash; see
+              our{' '}
+              <Link className="underline hover:text-white" href="/legal/terms">
+                Terms of Service
+              </Link>
+              . Listings submit an on-chain transaction and cannot be cancelled once confirmed.
             </p>
           </div>
 
