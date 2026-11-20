@@ -6,6 +6,18 @@ on:
     branches: [main]
 
 jobs:
+  env-sync:
+    name: Env var sync (.env.example / Dockerfile / docs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # No dependencies: scripts/check-env-sync.mjs only needs Node's
+      # built-in modules, so there's no npm ci to run here (#867).
+      - run: npm run check-env-sync
+
   lint:
     runs-on: ubuntu-latest
     steps:

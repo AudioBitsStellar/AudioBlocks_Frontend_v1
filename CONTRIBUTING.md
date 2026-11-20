@@ -120,6 +120,13 @@ Add or update tests for any behavior you change. UI changes touching
 interactive components should also be checked against the accessibility
 guidelines above.
 
+### Env var sync check
+
+If you add, rename or remove a `NEXT_PUBLIC_*` variable, keep `.env.example`,
+the `Dockerfile` build `ARG`s and `docs/ENVIRONMENT_VARIABLES.md` in sync —
+`npm run check-env-sync` (`scripts/check-env-sync.mjs`) verifies this and
+runs as the `env-sync` job in `.github/workflows/test.yml` on every PR.
+
 ### Dependency security audit
 
 The required dependency check is `security / dependency-audit` from
