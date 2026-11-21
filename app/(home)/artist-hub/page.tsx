@@ -3,6 +3,11 @@ import ArtistHubHero from '@/components/common/artist-hub/ArtistHubHero';
 import ArtistUpgrade from '@/components/common/artist-hub/ArtistUpgrade';
 import type { Metadata } from 'next';
 
+/**
+ * #830 (PERF-05): Static informational page cached with ISR (revalidates every hour).
+ */
+export const revalidate = 3600;
+
 const TITLE = 'Artist Hub — Upload, Earn & Sell Music NFTs | AudioBlocks';
 const DESCRIPTION =
   'Join AudioBlocks as an artist: upload your music, mint it as NFTs, earn fair royalties, and connect directly with fans who stream and collect your tracks.';

@@ -6,6 +6,11 @@ import { generateReleaseJsonLd } from '@/lib/jsonld';
 import { getRelease, RELEASE_TYPES } from '@/lib/releases';
 import type { Metadata } from 'next';
 
+/**
+ * #830 (PERF-05): Cache public release/song detail pages with ISR (5-minute revalidation).
+ */
+export const revalidate = 300;
+
 type Props = { params: Promise<{ id: string }> };
 
 const DEFAULT_OG_IMAGE = '/logo.png';
