@@ -1,18 +1,24 @@
 /**
- * Stellar block explorer URL builders for stellar.expert
- * Issue #547: Point explorer links to stellar.expert instead of Etherscan
+ * Stellar explorer and IPFS link helpers for on-chain song provenance.
+ *
+ * Soroban contract IDs are StrKey-encoded: a `C` prefix followed by 55
+ * base32 characters. IPFS CIDs are base32/base58 alphanumerics. Both are
+ * validated before they are placed in a URL so a malformed value from the
+ * backend cannot change the link's host or path.
  */
 
-interface StellarNetworkConfig {
-  isTestnet: boolean;
-}
+export type StellarNetwork = 'public' | 'testnet';
+
+const STELLAR_EXPERT_BASE = 'https://stellar.expert/explorer';
+const IPFS_GATEWAY_BASE = 'https://ipfs.io/ipfs';
+
+const CONTRACT_ID_PATTERN = /^C[A-Z2-7]{55}$/;
+const CID_PATTERN = /^[A-Za-z0-9]{10,}$/;
 
 // Get Stellar network configuration from environment
-function getStellarNetwork(): StellarNetworkConfig {
+function getStellarNetwork(): StellarNetwork {
   const network = process.env.NEXT_PUBLIC_STELLAR_NETWORK || 'testnet';
-  return {
-    isTestnet: network === 'testnet',
-  };
+  return network === 'testnet' ? 'testnet' : 'public';
 }
 
 /**
@@ -20,10 +26,12 @@ function getStellarNetwork(): StellarNetworkConfig {
  * @returns Base URL for stellar.expert
  */
 function getStellarExplorerBase(): string {
-  const config = getStellarNetwork();
-  return config.isTestnet
-    ? 'https://stellar.expert/explorer/testnet'
-    : 'https://stellar.expert/explorer/public';
+  const network = getStellarNetwork();
+  return `${STELLAR_EXPERT_BASE}/${network}`;
+}
+
+export function isValidContractId(value: string): boolean {
+  return CONTRACT_ID_PATTERN.test(value);
 }
 
 /**
@@ -46,41 +54,15 @@ export function getStellarAccountUrl(accountId: string): string {
   return `${baseUrl}/account/${accountId}`;
 }
 
-/**
- * Build stellar.expert URL for a Soroban contract (C... address)
- * @param contractId - Soroban contract ID (C...)
- * @returns Full URL to stellar.expert contract page
- */
-export function getStellarContractUrl(contractId: string): string {
-  const baseUrl = getStellarExplorerBase();
-  return `${baseUrl}/contract/${contractId}`;
- * Stellar explorer and IPFS link helpers for on-chain song provenance.
- *
- * Soroban contract IDs are StrKey-encoded: a `C` prefix followed by 55
- * base32 characters. IPFS CIDs are base32/base58 alphanumerics. Both are
- * validated before they are placed in a URL so a malformed value from the
- * backend cannot change the link's host or path.
- */
-
-export type StellarNetwork = 'public' | 'testnet';
-
-const STELLAR_EXPERT_BASE = 'https://stellar.expert/explorer';
-const IPFS_GATEWAY_BASE = 'https://ipfs.io/ipfs';
-
-const CONTRACT_ID_PATTERN = /^C[A-Z2-7]{55}$/;
-const CID_PATTERN = /^[A-Za-z0-9]{10,}$/;
-
-export function isValidContractId(value: string): boolean {
-  return CONTRACT_ID_PATTERN.test(value);
-}
-
 /** Explorer URL for a Soroban contract, or `null` if the ID is malformed. */
 export function getStellarContractUrl(
   contractId: string,
-  network: StellarNetwork = 'testnet'
-): string | null {
-  if (!isValidContractId(contractId)) return null;
-  return `${STELLAR_EXPERT_BASE}/${network}/contract/${contractId}`;
+  network?: StellarNetwork
+): string {
+  const baseUrl = network 
+    ? `${STELLAR_EXPERT_BASE}/${network}` 
+    : getStellarExplorerBase();
+  return `${baseUrl}/contract/${contractId}`;
 }
 
 /** IPFS gateway URL for a metadata CID, or `null` if the CID is malformed. */
