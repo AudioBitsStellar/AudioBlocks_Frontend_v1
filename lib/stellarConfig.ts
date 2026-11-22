@@ -38,7 +38,7 @@ export const STELLAR_NETWORKS = {
  * In production, this would be determined by an environment variable.
  */
 export const ACTIVE_STELLAR_NETWORK: StellarNetwork =
-  process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet'
+  process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'public'
     ? STELLAR_NETWORKS.MAINNET
     : STELLAR_NETWORKS.TESTNET;
 

@@ -8,6 +8,7 @@
 import { useState, useCallback } from 'react';
 import { useTransaction } from '@/context/TransactionContext';
 import { getWalletConnectionErrorMessage, isUserCancellationError } from '@/lib/walletErrors';
+import { checkChainSafety } from '@/lib/chainSafety';
 
 export type SorobanRelayStatus =
   | 'idle'
@@ -70,6 +71,7 @@ export function useSorobanRelay({
       setStatus('preparing');
 
       // Step 1: Prepare transaction (backend assembles unsigned XDR)
+      await checkChainSafety();
       const prepareResult = await prepare();
       const { xdr, networkPassphrase } = prepareResult;
 
@@ -80,7 +82,7 @@ export function useSorobanRelay({
       // Verify network matches configured network
       const configuredNetwork = process.env.NEXT_PUBLIC_STELLAR_NETWORK || 'testnet';
       const expectedPassphrase =
-        configuredNetwork === 'mainnet'
+        configuredNetwork === 'public'
           ? 'Public Global Stellar Network ; September 2015'
           : 'Test SDF Network ; September 2015';
 
