@@ -60,6 +60,7 @@ describe('TransactionContext', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Indexer unavailable')));
 
     mockGetTransaction = vi.fn();
     (StellarSDK.SorobanRpc.Server as any).mockImplementation(() => ({
@@ -70,6 +71,27 @@ describe('TransactionContext', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('reconciles persisted pending state from the backend after reload', async () => {
+    localStorage.setItem('pending_transactions', JSON.stringify([{
+      id: 'restored', hash: 'indexed-hash', type: 'buy', status: 'pending', timestamp: 1,
+    }]));
+    vi.mocked(fetch).mockResolvedValue({ ok: true, json: async () => ({ status: 'confirmed' }) } as Response);
+    render(<TransactionProvider><TestComponent /></TransactionProvider>);
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+    expect(screen.getByTestId('status-restored')).toHaveTextContent('confirmed');
+    expect(mockGetTransaction).not.toHaveBeenCalled();
+  });
+
+  it('keeps unknown transactions pending beyond the old timeout', async () => {
+    mockGetTransaction.mockResolvedValue({ status: 'NOT_FOUND' });
+    render(<TransactionProvider><TestComponent /></TransactionProvider>);
+    await act(async () => { screen.getByText('Add Transaction').click(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(125000); });
+    expect(screen.getAllByTestId(/^status-/)[0]).toHaveTextContent('pending');
+    expect(JSON.parse(localStorage.getItem('pending_transactions')!)).toHaveLength(1);
   });
 
   it('should add a pending transaction', async () => {
@@ -139,7 +161,7 @@ describe('TransactionContext', () => {
 
     // Advance timer to trigger polling
     await act(async () => {
-      vi.advanceTimersByTime(3000);
+      await vi.advanceTimersByTimeAsync(6000);
     });
 
     await waitFor(() => {
@@ -252,7 +274,7 @@ describe('TransactionContext', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('transaction-count')).toHaveTextContent('2');
+      expect(screen.getByTestId('transaction-count')).toHaveTextContent('1');
     });
 
     const clearAllButton = screen.getByText('Clear All');

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { StellarWalletsKit, NETWORK_PASSPHRASE, ISupportedWallet, allowAllModules } from '@creit.tech/stellar-wallets-kit';
 import { Networks } from '@stellar/stellar-sdk';
 import { toast } from 'sonner';
+import { getWalletConnectionErrorMessage, getWalletSigningErrorMessage } from '@/lib/walletErrors';
 
 type WalletNetwork = 'testnet' | 'public';
 
@@ -27,7 +28,7 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
   const [walletId, setWalletId] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  const stellarNetwork = (process.env.NEXT_PUBLIC_STELLAR_NETWORK || 'testnet') as WalletNetwork;
+  const stellarNetwork: WalletNetwork = ['public', 'mainnet'].includes(process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? '') ? 'public' : 'testnet';
   const network: WalletNetwork = stellarNetwork;
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
 
       try {
         setIsConnecting(true);
+        kit.setWallet(lastWallet);
         const { address } = await kit.getAddress();
         setPublicKey(address);
         setWalletId(lastWallet);
@@ -79,13 +81,7 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
             
             toast.success(`Connected to ${option.name}`);
           } catch (error: any) {
-            if (error?.message?.includes('User declined')) {
-              toast.error('Connection rejected');
-            } else if (error?.message?.includes('not installed')) {
-              toast.error(`${option.name} wallet is not installed`);
-            } else {
-              toast.error('Failed to connect wallet');
-            }
+            toast.error(getWalletConnectionErrorMessage(error));
             throw error;
           }
         },
@@ -112,18 +108,18 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
 
       const networkPassphrase = opts?.networkPassphrase || 
         (network === 'public' ? Networks.PUBLIC : Networks.TESTNET);
+      if (networkPassphrase !== (network === 'public' ? Networks.PUBLIC : Networks.TESTNET)) {
+        throw new Error('Wrong network. Switch your wallet to the network shown in AudioBlocks.');
+      }
 
       try {
         const { signedTxXdr } = await kit.signTransaction(xdr, {
           networkPassphrase,
         });
+        if (!signedTxXdr) throw new Error('No signed transaction returned by wallet.');
         return signedTxXdr;
       } catch (error: any) {
-        if (error?.message?.includes('User declined')) {
-          toast.error('Transaction rejected');
-        } else {
-          toast.error('Failed to sign transaction');
-        }
+        toast.error(getWalletSigningErrorMessage(error));
         throw error;
       }
     },
@@ -154,3 +150,4 @@ export function useStellarWallet() {
   }
   return context;
 }
+

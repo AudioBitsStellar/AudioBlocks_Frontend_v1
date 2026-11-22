@@ -9,8 +9,9 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { SorobanRpc, Networks } from '@stellar/stellar-sdk';
+import { SorobanRpc } from '@stellar/stellar-sdk';
 import { useToast } from './ToastContext';
+import { getApiUrl } from '@/lib/apiUrl';
 
 export type TransactionType = 'buy' | 'sell' | 'list' | 'cancel_listing' | 'bid' | 'transfer' | 'mint';
 export type TransactionStatus = 'pending' | 'confirmed' | 'failed';
@@ -34,7 +35,7 @@ export interface Transaction {
 
 interface TransactionContextValue {
   transactions: Transaction[];
-  addTransaction: (hash: string, type: TransactionType) => string;
+  addTransaction: (hash: string, type: TransactionType, finalStatus?: boolean) => string;
   updateTransactionStatus: (id: string, status: TransactionStatus) => void;
   clearTransaction: (id: string) => void;
   clearAllTransactions: () => void;
@@ -44,15 +45,12 @@ const TransactionContext = createContext<TransactionContextValue | null>(null);
 
 const STORAGE_KEY = 'pending_transactions';
 const MAX_TRANSACTIONS = 20;
-const POLL_INTERVAL_MS = 3000;
 const AUTO_CLEAR_MS = 60_000;
-const MAX_POLL_DURATION_MS = 120_000; // 2 minutes
 const INITIAL_BACKOFF_MS = 2000;
 const MAX_BACKOFF_MS = 10000;
 
 // Use testnet RPC by default, can be overridden via env
-const RPC_URL = process.env.NEXT_PUBLIC_STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org';
-const NETWORK_PASSPHRASE = process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE || Networks.TESTNET;
+const RPC_URL = process.env.NEXT_PUBLIC_STELLAR_RPC_URL || (['public', 'mainnet'].includes(process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? '') ? 'https://soroban-rpc.stellar.org' : 'https://soroban-testnet.stellar.org');
 
 function generateId(): string {
   return `tx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -62,7 +60,12 @@ function loadPersistedTransactions(): Transaction[] {
   if (typeof window === 'undefined') return [];
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    const parsed: unknown = stored ? JSON.parse(stored) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((tx): tx is Transaction =>
+      !!tx && typeof tx.id === 'string' && typeof tx.hash === 'string' &&
+      tx.status === 'pending' && typeof tx.type === 'string' && typeof tx.timestamp === 'number'
+    );
   } catch {
     return [];
   }
@@ -81,6 +84,7 @@ function persistTransactions(transactions: Transaction[]) {
 export function TransactionProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const pollingRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
   const pollStartTimesRef = useRef<Map<string, number>>(new Map());
   const backoffRef = useRef<Map<string, number>>(new Map());
@@ -88,6 +92,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   // Load persisted transactions on mount
   useEffect(() => {
     const persisted = loadPersistedTransactions();
+    setHydrated(true);
     if (persisted.length > 0) {
       setTransactions(persisted);
       // Resume polling for pending transactions
@@ -102,44 +107,39 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
 
   // Persist transactions when they change
   useEffect(() => {
-    persistTransactions(transactions);
-  }, [transactions]);
+    if (hydrated) persistTransactions(transactions);
+  }, [transactions, hydrated]);
 
   const pollTransaction = useCallback(
     (id: string, hash: string) => {
+      if (pollingRef.current.has(id)) return;
       const server = new SorobanRpc.Server(RPC_URL);
       const startTime = pollStartTimesRef.current.get(id) || Date.now();
       pollStartTimesRef.current.set(id, startTime);
 
       const currentBackoff = backoffRef.current.get(id) || INITIAL_BACKOFF_MS;
 
+      let inFlight = false;
+      let nextPollAt = 0;
       const interval = setInterval(async () => {
-        const elapsed = Date.now() - startTime;
-        
-        // Stop polling after max duration
-        if (elapsed > MAX_POLL_DURATION_MS) {
-          clearInterval(interval);
-          pollingRef.current.delete(id);
-          pollStartTimesRef.current.delete(id);
-          backoffRef.current.delete(id);
-          
-          setTransactions((prev) => 
-            prev.map((tx) => 
-              tx.id === id ? { ...tx, status: 'failed' } : tx
-            )
-          );
-
-          toast({
-            type: 'error',
-            title: 'Transaction timeout',
-            message: `Transaction ${hash.slice(0, 10)}... timed out`,
-          });
-          return;
-        }
-
+        if (inFlight || Date.now() < nextPollAt) return;
+        inFlight = true;
         try {
-          const response = await server.getTransaction(hash);
+          // Prefer indexer truth after reload, including transactions outside RPC retention.
+          let response: { status: string };
+          try {
+            const indexed = await fetch(getApiUrl(`transactions/${encodeURIComponent(hash)}/status`), {
+              credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(10000),
+            });
+            if (!indexed.ok) throw new Error('Indexer unavailable');
+            const data = await indexed.json();
+            if (!['confirmed', 'failed', 'pending'].includes(data.status)) throw new Error('Unknown indexer status');
+            response = { status: data.status === 'confirmed' ? 'SUCCESS' : data.status === 'failed' ? 'FAILED' : 'NOT_FOUND' };
+          } catch {
+            response = await server.getTransaction(hash);
+          }
 
+          if (!pollingRef.current.has(id)) return;
           if (response.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
             clearInterval(interval);
             pollingRef.current.delete(id);
@@ -188,6 +188,10 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
           const newBackoff = Math.min(currentBackoff * 1.5, MAX_BACKOFF_MS);
           backoffRef.current.set(id, newBackoff);
         }
+        finally {
+          inFlight = false;
+          nextPollAt = Date.now() + (backoffRef.current.get(id) ?? currentBackoff);
+        }
       }, currentBackoff);
 
       pollingRef.current.set(id, interval);
@@ -208,7 +212,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       };
 
       setTransactions((prev) => {
-        const updated = [newTransaction, ...prev].slice(0, MAX_TRANSACTIONS);
+        const updated = [newTransaction, ...prev.filter(tx => tx.hash !== hash)].slice(0, MAX_TRANSACTIONS);
         return updated;
       });
 
@@ -286,3 +290,5 @@ export function useTransaction(): TransactionContextValue {
   }
   return ctx;
 }
+
+
