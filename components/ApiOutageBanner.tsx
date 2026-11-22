@@ -53,18 +53,18 @@ export default function ApiOutageBanner() {
 
   return (
     <div
-      role="status"
       aria-live="polite"
       className="relative z-50 flex flex-wrap items-center justify-center gap-3 bg-amber-500 px-4 py-2 text-center text-xs font-medium text-black md:text-sm"
+      role="status"
     >
       <span>
         AudioBlocks cannot reach its servers right now. Saved content is shown where available,
         and we keep retrying.
       </span>
       <button
+        className="rounded-full px-3 py-0.5 font-semibold underline hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/40"
         type="button"
         onClick={retryNow}
-        className="rounded-full px-3 py-0.5 font-semibold underline hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/40"
       >
         Retry now
       </button>

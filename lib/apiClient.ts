@@ -1,8 +1,8 @@
 import Cookies from 'js-cookie';
+import { recordApiFailure, recordApiSuccess } from './apiOutage';
 import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS, TELEMETRY } from './constants';
 import { getValidatedEnv } from './env';
 import { generateRequestId } from './requestId';
-import { recordApiFailure, recordApiSuccess } from './apiOutage';
 
 const { NEXT_PUBLIC_API_URL } = getValidatedEnv();
 
