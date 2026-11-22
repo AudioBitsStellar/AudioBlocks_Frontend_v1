@@ -51,7 +51,11 @@ Flags gate sections whose backend endpoints are not live yet. They live in `lib/
 | `communityVoting` | `NEXT_PUBLIC_FEATURE_COMMUNITY_VOTING` | on | off | Community voting and leaderboard page (the route 404s when off) | `/api/community/leaderboard`, `/api/community/vote`, `/api/community/votes/me` |
 | `artistPerks` | `NEXT_PUBLIC_FEATURE_ARTIST_PERKS` | on | off | Fan perks section on the public artist page (#586) | `/api/artists/:artistId/perks` |
 
-`.env.example` keeps these four lines commented out so a copy to `.env.local` gets the environment default. Setting a variable to `false` in `.env.local` hides that section locally, so uncomment a line only when you want to override the default. Restart the dev server after changing it. See "Feature flags" in `CONTRIBUTING.md` for how to add a flag.
+`.env.example` keeps these four lines commented out so a copy to `.env.local` gets the environment default. Setting a variable to `false` in `.env.local` hides that section locally, so uncomment a line only when you want to override the default. Restart the dev server after changing it.
+
+**Runtime overrides (#815).** Each flag also has a server-only variable that overrides the build-time value without a rebuild: `RUNTIME_FEATURE_MERCH`, `RUNTIME_FEATURE_EVENTS`, `RUNTIME_FEATURE_COMMUNITY_VOTING` and `RUNTIME_FEATURE_ARTIST_PERKS`. The server reads them on every request and serves them from `/api/runtime-config`, which loads before the app renders. To turn a feature off in production, set its `RUNTIME_FEATURE_*` variable to `false` and restart the server. An unset or unrecognized value keeps the `NEXT_PUBLIC_FEATURE_*` value. Limits: the change needs a server restart, since the value comes from the process environment, and the server-rendered HTML still uses the build-time value, so a section whose flag changed at runtime may re-render after hydration.
+
+See "Feature flags" in `CONTRIBUTING.md` for how to add a flag.
 
 ### Privy Authentication
 

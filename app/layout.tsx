@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
 import { MotionConfig } from 'framer-motion';
 import { Toaster } from 'sonner';
 import './globals.css';
@@ -18,6 +19,7 @@ import RouteProgress from '@/components/ui/RouteProgress';
 import WebVitalsReporter from '@/components/WebVitalsReporter';
 import PrivyAuthProvider from '@/context/PrivyAuthProvider';
 import Provider from '@/context/provider';
+import { RUNTIME_CONFIG_SCRIPT_PATH } from '@/lib/runtimeConfig';
 import type { Metadata } from 'next';
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -58,6 +60,9 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <ThemeScript />
+        {/* #815 — runtime feature-flag overrides. `beforeInteractive` loads this
+            before any app code runs, so flags resolve on the first render. */}
+        <Script id="runtime-config" src={RUNTIME_CONFIG_SCRIPT_PATH} strategy="beforeInteractive" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
