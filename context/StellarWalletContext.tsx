@@ -1,6 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { checkChainSafety, getTransactionReview, validateTransaction, type TransactionSummary as Summary } from '@/lib/chainSafety';
+import { TransactionSummary } from '@/components/TransactionSummary';
+import { Modal } from '@/components/ui/Modal';
+import ChainSafetyBanner from '@/components/ChainSafetyBanner';
 import { StellarWalletsKit, NETWORK_PASSPHRASE, ISupportedWallet, allowAllModules } from '@creit.tech/stellar-wallets-kit';
 import { Networks } from '@stellar/stellar-sdk';
 import { toast } from 'sonner';
@@ -15,7 +19,7 @@ interface StellarWalletContextType {
   isConnecting: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
-  signTransaction: (xdr: string, opts?: { networkPassphrase?: string }) => Promise<string>;
+  signTransaction: (xdr: string, opts?: { networkPassphrase?: string; summary?: Summary }) => Promise<string>;
 }
 
 const StellarWalletContext = createContext<StellarWalletContextType | undefined>(undefined);
@@ -27,9 +31,25 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [walletId, setWalletId] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [review, setReview] = useState<Summary | null>(null);
+  const signing = useRef(false);
+  const resolveReview = useRef<((approved: boolean) => void) | null>(null);
+  const finishReview = (approved: boolean) => {
+    resolveReview.current?.(approved);
+    resolveReview.current = null;
+    setReview(null);
+  };
+  useEffect(() => () => { resolveReview.current?.(false); }, []);
 
   const stellarNetwork: WalletNetwork = ['public', 'mainnet'].includes(process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? '') ? 'public' : 'testnet';
   const network: WalletNetwork = stellarNetwork;
+  const currentAccount = useRef(publicKey);
+  currentAccount.current = publicKey;
+  useEffect(() => {
+    resolveReview.current?.(false);
+    resolveReview.current = null;
+    setReview(null);
+  }, [publicKey, network]);
 
   useEffect(() => {
     const walletsKit = new StellarWalletsKit({
@@ -101,7 +121,7 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signTransaction = useCallback(
-    async (xdr: string, opts?: { networkPassphrase?: string }) => {
+    async (xdr: string, opts?: { networkPassphrase?: string; summary?: Summary }) => {
       if (!kit || !publicKey) {
         throw new Error('Wallet not connected');
       }
@@ -112,7 +132,21 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
         throw new Error('Wrong network. Switch your wallet to the network shown in AudioBlocks.');
       }
 
+      if (signing.current) throw new Error('A transaction is already awaiting approval.');
+      signing.current = true;
       try {
+        const policy = await checkChainSafety();
+        if (networkPassphrase !== policy.networkPassphrase) throw new Error('Network mismatch: signing blocked.');
+        validateTransaction(xdr, policy, publicKey);
+        const summary = await getTransactionReview(xdr, publicKey, policy);
+        const approved = await new Promise<boolean>(resolve => {
+          resolveReview.current = resolve;
+          setReview(summary);
+        });
+        if (!approved) throw new Error('Transaction review cancelled.');
+        // Policy can change while the user reviews the transaction.
+        validateTransaction(xdr, await checkChainSafety(), publicKey);
+        if (currentAccount.current !== publicKey) throw new Error('Wallet account changed. Review the transaction again.');
         const { signedTxXdr } = await kit.signTransaction(xdr, {
           networkPassphrase,
         });
@@ -121,6 +155,8 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
       } catch (error: any) {
         toast.error(getWalletSigningErrorMessage(error));
         throw error;
+      } finally {
+        signing.current = false;
       }
     },
     [kit, publicKey, network]
@@ -139,6 +175,13 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      <ChainSafetyBanner />
+      <Modal open={review !== null} title="Review transaction before signing" onClose={() => finishReview(false)}>
+        {review && <TransactionSummary summary={review} />}
+        <p className="my-3 text-sm">Check every detail. Confirmed transactions are irreversible.</p>
+        <button type="button" onClick={() => finishReview(false)}>Cancel</button>
+        <button className="ml-4" type="button" onClick={() => finishReview(true)}>Approve and open wallet</button>
+      </Modal>
     </StellarWalletContext.Provider>
   );
 }
