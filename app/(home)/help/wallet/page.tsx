@@ -111,6 +111,24 @@ export default function WalletHelpPage() {
           </li>
         ))}
       </ol>
+      <section className="space-y-3" id="balance-and-trustlines">
+        <h2 className="text-xl font-semibold">Balance and trustline problems</h2>
+        <p>
+          Your spendable XLM excludes account reserves and funds committed to offers.
+          Keep enough spendable XLM for network fees as well as the purchase price.
+          Add funds on the same network, then choose Refresh balance in the purchase dialog.
+        </p>
+        <p>
+          If an issued asset requires a trustline, open your wallet’s add asset option.
+          Verify both the asset code and issuer against the listing before approving.
+          A new trustline can require additional XLM reserve. If the seller is missing a
+          trustline, ask the seller to fix it; adding it to your wallet will not fix theirs.
+        </p>
+        <p>
+          If a purchase is pending, wait for its server status or check its transaction
+          link. Reloading or a network timeout does not prove that a purchase failed.
+        </p>
+      </section>
       <p className="text-sm text-on-muted">
         More information:{' '}
         <a
