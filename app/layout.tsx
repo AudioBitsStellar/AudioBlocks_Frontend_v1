@@ -9,6 +9,7 @@ import 'slick-carousel/slick/slick-theme.css';
 import AccessibilityAnnouncer from '@/components/AccessibilityAnnouncer';
 import AnalyticsConsentBanner from '@/components/AnalyticsConsentBanner';
 import AnalyticsScript from '@/components/AnalyticsScript';
+import ApiOutageBanner from '@/components/ApiOutageBanner';
 import MswProvider from '@/components/common/MswProvider';
 import EnvCheck from '@/components/EnvCheck';
 import MaintenanceBanner from '@/components/MaintenanceBanner';
@@ -81,6 +82,7 @@ export default function RootLayout({
                   </Suspense>
                   <WebVitalsReporter />
                   <MaintenanceBanner />
+                  <ApiOutageBanner />
                   <SWRegister />
                   <EnvCheck />
                   <AccessibilityAnnouncer />
