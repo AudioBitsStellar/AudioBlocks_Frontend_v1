@@ -7,10 +7,11 @@ are two layers:
 
 Runs every 10 minutes and on-demand (`workflow_dispatch`):
 
-- **Home**: `GET` the production URL, fail if the status isn't 2xx/3xx or the
+- **Home**: `GET` the production URL, follow HTTPS redirects, fail unless the final status is 2xx or the
   response takes over 5s.
-- **Playback**: `GET` a real playback page, and (if configured) a `Range`
-  request against a real stream URL, with the same status/latency budget.
+- **Playback**: `GET` a real playback page and a `Range` request against a
+  required real stream URL. Require final 2xx for the page, 200/206 and a
+  nonempty media content type for the stream, each within five seconds.
 
 On failure it opens a single `incident` + `synthetic-monitor` labeled issue
 (or comments on the existing one if it's already open), so a broken deploy
@@ -25,7 +26,7 @@ variables → Actions → Variables) — not secrets, they aren't sensitive:
 |---|---|---|
 | `PRODUCTION_URL` | `https://audioblocks.app` | Yes |
 | `PRODUCTION_PLAYBACK_URL` | `https://audioblocks.app/track/<id>` — a real, stable track page | Yes |
-| `PRODUCTION_STREAM_URL` | the backend's direct stream URL for that track | No — skipped if unset |
+| `PRODUCTION_STREAM_URL` | the backend's direct stream URL for that track | Yes |
 
 Until these are set, the workflow fails fast with a clear error instead of
 silently checking nothing. Point them at the production Fly.io app from

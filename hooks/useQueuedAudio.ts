@@ -7,6 +7,7 @@ import { useDataSaver } from '@/hooks/useDataSaver';
 import { trackEvent } from '@/lib/analytics';
 import { getStreamUrl } from '@/lib/apiUrl';
 import { hasRecordedFirstPlay, markFirstPlayRecorded } from '@/lib/firstPlay';
+import { initializePlaybackEvents, reportPlaybackEvent } from '@/lib/playbackEvents';
 import { attachAudioSource, type AudioSource } from '@/lib/hlsPlayer';
 import {
   recordPlaybackAttempt,
@@ -36,6 +37,9 @@ export function canPrefetchStreams(): boolean {
 }
 
 export function useQueuedAudio() {
+  useEffect(() => {
+    if (canPrefetchStreams()) initializePlaybackEvents();
+  }, []);
   const playback = usePlayback();
   const dataSaver = useDataSaver();
   // Streaming quality ceiling (#590). `undefined` means no cap.
@@ -376,13 +380,7 @@ export function useQueuedAudio() {
           const track =
             element === audioRef.current ? live.current.currentTrack : live.current.nextTrack;
           // No reporting from manifest/segment callbacks; only audible playback reaches here.
-          if (track)
-            void fetch(endpoint.replace(':id', encodeURIComponent(track.id)), {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ songId: track.id }),
-            }).catch(() => {});
+          if (track) reportPlaybackEvent(track.id);
         }
       };
       const waiting = () => {
