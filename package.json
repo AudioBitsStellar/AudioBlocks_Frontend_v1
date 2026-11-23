@@ -15,7 +15,8 @@
     "test:playback": "playwright test --config playwright.playback.config.ts",
     "format": "prettier --write .",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "prebuild": "node scripts/check-production-flags.cjs"
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "^2.7.1",
