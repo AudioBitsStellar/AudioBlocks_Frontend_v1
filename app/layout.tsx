@@ -13,6 +13,7 @@ import ApiOutageBanner from '@/components/ApiOutageBanner';
 import MswProvider from '@/components/common/MswProvider';
 import EnvCheck from '@/components/EnvCheck';
 import MaintenanceBanner from '@/components/MaintenanceBanner';
+import RuntimeConfigLoader from '@/components/RuntimeConfigLoader';
 import SentryErrorBoundary from '@/components/SentryErrorBoundary';
 import SWRegister from '@/components/SWRegister';
 import { ThemeScript } from '@/components/ThemeScript';
@@ -77,6 +78,8 @@ export default function RootLayout({
             <PrivyAuthProvider>
               <Provider>
                 <SentryErrorBoundary>
+                  <RuntimeConfigLoader />
+                  <ApiOutageBanner />
                   <Suspense fallback={null}>
                     <RouteProgress />
                   </Suspense>
