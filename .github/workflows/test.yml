@@ -48,9 +48,13 @@ jobs:
           path: coverage/
 
   e2e:
-    name: Playwright E2E
+    name: Playwright E2E (${{ matrix.project }})
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit, mobile-chrome, mobile-safari]
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     env:
       CI: true
       NEXT_PUBLIC_API_URL: http://localhost:4000/api
@@ -61,13 +65,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci --legacy-peer-deps
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run build
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --project=${{ matrix.project }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report-and-traces
+          name: playwright-report-and-traces-${{ matrix.project }}
           path: |
             playwright-report/
             test-results/

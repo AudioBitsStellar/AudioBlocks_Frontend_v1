@@ -11,7 +11,12 @@
  * `readFlagValue`) rather than `process.env[someVariable]`, because Next.js
  * only inlines statically-referenced `NEXT_PUBLIC_*` variables into the client
  * bundle.
+ *
+ * Values can also come from runtime config (#815), which is loaded from the
+ * server and allows feature flags to be toggled without rebuild.
  */
+
+import { getRuntimeFeatureFlag } from '@/lib/runtimeConfig';
 
 /** Names of the flags understood by the app. */
 export type FeatureFlagName = 'merch' | 'events' | 'communityVoting' | 'artistPerks';
@@ -111,12 +116,30 @@ export interface FeatureFlagOptions {
 /**
  * Returns whether a feature flag is enabled.
  *
+ * Checks in order:
+ * 1. options.value (test override)
+ * 2. Runtime config from server (can be changed without rebuild)
+ * 3. Build-time environment variable
+ * 4. Default based on NODE_ENV
+ *
  * @example
  * if (isFeatureEnabled('merch')) { ... }
  */
 export function isFeatureEnabled(flag: FeatureFlagName, options: FeatureFlagOptions = {}): boolean {
-  const rawValue = options.value ?? readFlagValue(flag);
-  return parseFlagValue(rawValue, defaultFlagValue(options.nodeEnv));
+  // Test override takes precedence
+  if (options.value !== undefined) {
+    return parseFlagValue(options.value, defaultFlagValue(options.nodeEnv));
+  }
+
+  // Check runtime config (synchronously if already cached)
+  const runtimeValue = getRuntimeFeatureFlag(flag);
+  if (runtimeValue !== undefined) {
+    return parseFlagValue(String(runtimeValue), defaultFlagValue(options.nodeEnv));
+  }
+
+  // Fall back to build-time environment variable
+  const envValue = readFlagValue(flag);
+  return parseFlagValue(envValue, defaultFlagValue(options.nodeEnv));
 }
 
 /**

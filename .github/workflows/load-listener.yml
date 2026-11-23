@@ -1,0 +1,32 @@
+name: Staging listener load baseline
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: staging-listener-load
+  cancel-in-progress: false
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: staging
+    env:
+      ALLOW_STAGING_LOAD: 'true'
+      STAGING_URL: ${{ vars.STAGING_URL }}
+      STAGING_PLAYBACK_URL: ${{ vars.STAGING_PLAYBACK_URL }}
+      STAGING_STREAM_URL: ${{ vars.STAGING_STREAM_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: '1.0.0'
+      - name: Run bounded staging baseline
+        run: k6 run tests/load/listener.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: listener-load-baseline-${{ github.run_id }}
+          path: load-summary.json
+          if-no-files-found: warn
+          retention-days: 30

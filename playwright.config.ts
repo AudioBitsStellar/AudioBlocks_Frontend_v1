@@ -6,13 +6,14 @@ const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL;
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: 'queued-hls.spec.ts', // Uses the separate Vite playback harness.
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   snapshotDir: './tests/snapshots',
-  snapshotPathTemplate: '{snapshotDir}/{testFilePath}/{arg}{ext}',
+  snapshotPathTemplate: '{snapshotDir}/{projectName}/{testFilePath}/{arg}{ext}',
   expect: {
     toHaveScreenshot: {
       maxDiffPixelRatio: 0.001,
