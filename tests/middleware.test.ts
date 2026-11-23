@@ -60,21 +60,21 @@ describe('middleware redirect-to-login (#470)', () => {
     expect(res.status).toBe(200);
   });
 
-  it('allows access to protected routes when valid client JWT cookie is present', () => {
+  it('does not trust a client-readable JWT cookie for route authorization', () => {
     const validToken = createFakeJwt(3600);
     const req = createMockRequest('http://localhost:3000/dashboard', {
       [AUTH.COOKIE_NAME]: validToken,
     });
     const res = middleware(req);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(307);
   });
 
-  it('allows access when Privy token cookie is present', () => {
+  it('does not trust an unverified Privy cookie for route authorization', () => {
     const req = createMockRequest('http://localhost:3000/dashboard', {
       'privy-token': 'privy_session_token_example',
     });
     const res = middleware(req);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(307);
   });
 
   it('redirects when session token is expired', () => {
