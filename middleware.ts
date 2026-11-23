@@ -10,12 +10,28 @@
 //    so stale tokens don't grant access to protected pages
 //  • #478 — /onboarding is also gated so only authenticated users reach it;
 //    guests are sent to the landing page with a returnTo back to onboarding.
+//  • #858 — when `MAINTENANCE_MODE` is on, every route (besides the
+//    maintenance page itself, `/api`, and static assets) rewrites to
+//    `/maintenance` before the auth check below ever runs.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { AUTH } from '@/lib/constants';
+import { isMaintenanceModeEnabled } from '@/lib/maintenance';
 
 const PROTECTED_PREFIXES = ['/dashboard', '/profile', '/onboarding'];
 const LOGIN_PATH = '/';
+const MAINTENANCE_PATH = '/maintenance';
+const STATIC_ASSET_PATTERN =
+  /\.(?:ico|png|jpg|jpeg|gif|svg|webp|avif|css|js|map|json|txt|xml|webmanifest|woff2?)$/i;
+
+function bypassesMaintenance(pathname: string): boolean {
+  return (
+    pathname === MAINTENANCE_PATH ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    STATIC_ASSET_PATTERN.test(pathname)
+  );
+}
 
 function isExpiredJwt(tokenValue: string): boolean {
   try {
@@ -31,6 +47,10 @@ function isExpiredJwt(tokenValue: string): boolean {
 
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (isMaintenanceModeEnabled() && !bypassesMaintenance(pathname)) {
+    return NextResponse.rewrite(new URL(MAINTENANCE_PATH, req.url));
+  }
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
   if (!isProtected) return NextResponse.next();
@@ -63,5 +83,9 @@ export default function middleware(req: NextRequest) {
 
 export const config = {
   // Literal array required — Next.js extracts this at build time (#138).
-  matcher: ['/dashboard/:path*', '/profile/:path*', '/onboarding'],
+  // #858 — broadened from the dashboard/profile/onboarding prefixes to every
+  // route (static assets and `_next` excluded) so maintenance mode can gate
+  // the whole site; `bypassesMaintenance` + `PROTECTED_PREFIXES` still decide
+  // what each request actually does once it reaches the function.
+  matcher: ['/((?!_next/static|_next/image|favicon\\.ico).*)'],
 };

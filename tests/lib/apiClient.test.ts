@@ -224,6 +224,51 @@ describe('apiClient', () => {
     await expect(promise).rejects.toThrow();
   });
 
+  it('sends a unique X-Request-Id header and carries it on success', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => ({ ok: true }),
+    } as unknown as Response);
+
+    const response = await apiClient.get('/test');
+
+    const sentHeaders = vi.mocked(fetch).mock.calls[0][1]?.headers as Headers;
+    expect(sentHeaders.get('X-Request-Id')).toBeTruthy();
+    expect(response.requestId).toBe(sentHeaders.get('X-Request-Id'));
+  });
+
+  it('attaches the request id to a thrown ApiError', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 403,
+      headers: new Headers(),
+    } as unknown as Response);
+
+    const error = await apiClient.get('/test').catch((e) => e as ApiError);
+
+    expect(error).toBeInstanceOf(ApiError);
+    const sentHeaders = vi.mocked(fetch).mock.calls[0][1]?.headers as Headers;
+    expect(error.requestId).toBe(sentHeaders.get('X-Request-Id'));
+  });
+
+  it('attaches the request id to a thrown AuthError', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 401,
+      headers: new Headers(),
+    } as unknown as Response);
+
+    // '/api/auth/refresh' is exempt from the auth-retry branch in request(),
+    // so this exercises the plain AuthError path deterministically instead
+    // of depending on refreshAccessToken()'s own (separately-tested) behavior.
+    const error = await apiClient.get('/api/auth/refresh').catch((e) => e as AuthError);
+
+    expect(error).toBeInstanceOf(AuthError);
+    expect(error.requestId).toBeTruthy();
+  });
+
   it('timeouts after 15 seconds', async () => {
     vi.mocked(fetch).mockImplementation(
       (url, options?: RequestInit) =>

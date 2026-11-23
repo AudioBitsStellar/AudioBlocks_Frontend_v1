@@ -3,6 +3,7 @@
 import {
   createContext,
   use,
+  useCallback,
   useContext,
   useReducer,
   useEffect,
@@ -12,6 +13,8 @@ import {
   useSyncExternalStore,
   ReactNode,
 } from 'react';
+import { demoOr } from '@/lib/fixtures';
+import { demoPlaylist } from '@/lib/fixtures/playback';
 import {
   createSleepTimer,
   sleepFadeFactor,
@@ -579,19 +582,6 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const historyRef = useRef(state.history);
   historyRef.current = state.history;
 
-  // Crossfade (#115)
-  const setCrossfadeDuration = useCallback((duration: number) => {
-    dispatch({ type: 'SET_CROSSFADE_DURATION', duration });
-  }, []);
-  const setCrossfading = useCallback((isCrossfading: boolean) => {
-    dispatch({ type: 'SET_CROSSFADING', isCrossfading });
-  }, []);
-
-  // Audio normalization (#328)
-  const setNormalizeAudio = useCallback((enabled: boolean) => {
-    dispatch({ type: 'SET_NORMALIZE_AUDIO', enabled });
-  }, []);
-
   // Gapless playback (#329)
   const setGapless = useCallback((enabled: boolean) => {
     dispatch({ type: 'SET_GAPPLESS', enabled });
@@ -604,7 +594,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const cancelSleepTimer = useCallback(() => dispatch({ type: 'CLEAR_SLEEP_TIMER' }), []);
   const expireSleepTimer = useCallback(() => dispatch({ type: 'SLEEP_EXPIRED' }), []);
 
-  const value = useMemo<PlaybackContextValue>(
+  const actions = useMemo<PlaybackActions>(
     () => ({
       play: () => dispatch({ type: 'PLAY' }),
       pause: () => dispatch({ type: 'PAUSE' }),
@@ -660,27 +650,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       cancelSleepTimer,
       expireSleepTimer,
     }),
-    [
-      state,
-      addToRecentlyPlayed,
-      setAutoplayBlocked,
-      resumeAudio,
-      addToQueue,
-      removeFromQueue,
-      reorderQueue,
-      clearQueue,
-      advanceQueue,
-      recordPlay,
-      clearHistory,
-      getRecentlyPlayed,
-      setCrossfadeDuration,
-      setCrossfading,
-      setNormalizeAudio,
-      setGapless,
-      setSleepTimer,
-      cancelSleepTimer,
-      expireSleepTimer,
-    ]
+    [setGapless, setSleepTimer, cancelSleepTimer, expireSleepTimer]
   );
 
   // External store behind `usePlaybackSelector`. Subscribers re-render only when

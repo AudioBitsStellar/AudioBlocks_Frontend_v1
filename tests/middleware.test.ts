@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import middleware from '@/middleware';
 import { AUTH } from '@/lib/constants';
@@ -83,6 +83,43 @@ describe('middleware redirect-to-login (#470)', () => {
       [AUTH.SESSION_COOKIE_NAME]: expiredToken,
     });
     const res = middleware(req);
+    expect(res.status).toBe(307);
+  });
+});
+
+describe('middleware maintenance mode (#858)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('leaves every route alone when MAINTENANCE_MODE is off', () => {
+    vi.stubEnv('MAINTENANCE_MODE', 'false');
+    const res = middleware(createMockRequest('http://localhost:3000/'));
+    expect(res.status).toBe(200);
+  });
+
+  it('rewrites an ordinary page to /maintenance when MAINTENANCE_MODE is on', () => {
+    vi.stubEnv('MAINTENANCE_MODE', 'true');
+    const res = middleware(createMockRequest('http://localhost:3000/marketPlace'));
+    expect(res.headers.get('x-middleware-rewrite')).toBe('http://localhost:3000/maintenance');
+  });
+
+  it('does not rewrite the maintenance page itself, avoiding a redirect loop', () => {
+    vi.stubEnv('MAINTENANCE_MODE', 'true');
+    const res = middleware(createMockRequest('http://localhost:3000/maintenance'));
+    expect(res.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+
+  it('does not rewrite API routes', () => {
+    vi.stubEnv('MAINTENANCE_MODE', 'true');
+    const res = middleware(createMockRequest('http://localhost:3000/api/session'));
+    expect(res.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+
+  it('still applies the auth check once maintenance mode is off again', () => {
+    vi.stubEnv('MAINTENANCE_MODE', 'true');
+    vi.stubEnv('MAINTENANCE_MODE', 'false');
+    const res = middleware(createMockRequest('http://localhost:3000/dashboard'));
     expect(res.status).toBe(307);
   });
 });

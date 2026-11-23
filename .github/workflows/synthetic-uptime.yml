@@ -1,0 +1,139 @@
+# Synthetic uptime checks on home and playback (#838).
+#
+# Hits the deployed home page and a real playback path every 10 minutes and
+# fails the run if either doesn't respond healthily. On failure, opens (or
+# updates) a single tracking issue so a broken deploy doesn't silently stay
+# broken between manual checks.
+#
+# This complements, but doesn't replace, an external monitor (see
+# docs/SYNTHETIC_MONITORING.md) — GitHub Actions cron can be delayed under
+# load and has no SMS/phone alerting, so a dedicated uptime SaaS should watch
+# the same URLs for anything latency-sensitive.
+name: Synthetic uptime checks
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  home:
+    name: Home page
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check home page responds
+        env:
+          URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error::vars.PRODUCTION_URL is not set — see docs/SYNTHETIC_MONITORING.md"
+            exit 1
+          fi
+          start=$(date +%s%N)
+          code=$(curl -sS -L --max-redirs 5 --proto '=https' --proto-redir '=https' -o /dev/null -w '%{http_code}' --max-time 10 "$URL")
+          elapsed_ms=$(( ($(date +%s%N) - start) / 1000000 ))
+          echo "home: $URL -> HTTP $code in ${elapsed_ms}ms"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Home page returned HTTP $code"
+            exit 1
+          fi
+          if [ "$elapsed_ms" -gt 5000 ]; then
+            echo "::error::Home page took ${elapsed_ms}ms (budget: 5000ms)"
+            exit 1
+          fi
+
+  playback:
+    name: Playback
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check playback page and stream responds
+        env:
+          PLAYBACK_URL: ${{ vars.PRODUCTION_PLAYBACK_URL }}
+          STREAM_URL: ${{ vars.PRODUCTION_STREAM_URL }}
+        run: |
+          if [ -z "$PLAYBACK_URL" ] || [ -z "$STREAM_URL" ]; then
+            echo "::error::PRODUCTION_PLAYBACK_URL and PRODUCTION_STREAM_URL are required — see docs/SYNTHETIC_MONITORING.md"
+            exit 1
+          fi
+
+          start=$(date +%s%N)
+          code=$(curl -sS -L --max-redirs 5 --proto '=https' --proto-redir '=https' -o /dev/null -w '%{http_code}' --max-time 10 "$PLAYBACK_URL")
+          elapsed_ms=$(( ($(date +%s%N) - start) / 1000000 ))
+          echo "playback page: $PLAYBACK_URL -> HTTP $code in ${elapsed_ms}ms"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Playback page returned HTTP $code"
+            exit 1
+          fi
+          if [ "$elapsed_ms" -gt 5000 ]; then
+            echo "::error::Playback page took ${elapsed_ms}ms (budget: 5000ms)"
+            exit 1
+          fi
+
+          if [ -n "$STREAM_URL" ]; then
+            start=$(date +%s%N)
+            stream_code=$(curl -sS -L --max-redirs 5 --proto '=https' --proto-redir '=https' -D stream-headers.txt -o stream-body -w '%{http_code}' --max-time 10 -r 0-1023 "$STREAM_URL")
+            elapsed_ms=$(( ($(date +%s%N) - start) / 1000000 ))
+            echo "stream: $STREAM_URL -> HTTP $stream_code"
+            if [ "$stream_code" != 200 ] && [ "$stream_code" != 206 ]; then
+              echo "::error::Stream endpoint returned HTTP $stream_code"
+              exit 1
+            fi
+            if [ ! -s stream-body ] || [ "$elapsed_ms" -gt 5000 ]; then
+              echo "::error::Stream empty or exceeded 5000ms budget (${elapsed_ms}ms)"
+              exit 1
+            fi
+            content_type=$(grep -i '^content-type:' stream-headers.txt | tail -1 | tr -d '\r')
+            if ! echo "$content_type" | grep -Eqi '(audio/|video/|application/(vnd.apple.mpegurl|x-mpegurl|octet-stream))'; then
+              echo "::error::Stream did not return a media content type"
+              exit 1
+            fi
+          fi
+
+  alert-on-failure:
+    name: Open incident issue
+    needs: [home, playback]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Synthetic monitor failure: home/playback unhealthy';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const existing = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'incident,synthetic-monitor',
+            });
+
+            const openIssue = existing.find((issue) => issue.title === title);
+
+            if (openIssue) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: openIssue.number,
+                body: `Still failing as of this run: ${runUrl}`,
+              });
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ['incident', 'synthetic-monitor'],
+              body: [
+                'The scheduled synthetic uptime check (`synthetic-uptime.yml`) failed on the home page and/or playback path.',
+                '',
+                `Failing run: ${runUrl}`,
+                '',
+                'This issue stays open and gets a comment on every further failing run; close it once the underlying outage is resolved.',
+              ].join('\n'),
+            });

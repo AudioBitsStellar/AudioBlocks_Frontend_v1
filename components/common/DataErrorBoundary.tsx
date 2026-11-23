@@ -1,7 +1,11 @@
 'use client';
 
 import { Component, ErrorInfo, Fragment, ReactNode } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import ErrorState from '@/components/common/ErrorState';
+
+/** An error that may carry the correlation id of the request that failed (#837). */
+type RequestTrackedError = Error & { requestId?: string };
 
 /**
  * Lightweight React error boundary for a single dashboard data section (#40).
@@ -27,6 +31,7 @@ interface DataErrorBoundaryProps {
 
 interface DataErrorBoundaryState {
   hasError: boolean;
+  error: RequestTrackedError | null;
   resetKey: number;
 }
 
@@ -34,10 +39,10 @@ export default class DataErrorBoundary extends Component<
   DataErrorBoundaryProps,
   DataErrorBoundaryState
 > {
-  state: DataErrorBoundaryState = { hasError: false, resetKey: 0 };
+  state: DataErrorBoundaryState = { hasError: false, error: null, resetKey: 0 };
 
-  static getDerivedStateFromError(): Partial<DataErrorBoundaryState> {
-    return { hasError: true };
+  static getDerivedStateFromError(error: unknown): Partial<DataErrorBoundaryState> {
+    return { hasError: true, error: error instanceof Error ? error : null };
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
@@ -48,11 +53,17 @@ export default class DataErrorBoundary extends Component<
         info.componentStack
       );
     }
+    const requestId = error instanceof Error ? (error as RequestTrackedError).requestId : undefined;
+    Sentry.captureException(error, (scope) => {
+      if (requestId) scope.setTag('request_id', requestId);
+      if (this.props.name) scope.setTag('section', this.props.name);
+      return scope;
+    });
   }
 
   handleRetry = () => {
     this.props.onRetry?.();
-    this.setState((prev) => ({ hasError: false, resetKey: prev.resetKey + 1 }));
+    this.setState((prev) => ({ hasError: false, error: null, resetKey: prev.resetKey + 1 }));
   };
 
   render() {
@@ -62,9 +73,10 @@ export default class DataErrorBoundary extends Component<
         <ErrorState
           className={className}
           message={name ? `We couldn't load ${name}. Please try again.` : undefined}
-          onRetry={this.handleRetry}
+          requestId={this.state.error?.requestId}
           title={name ? `${name} failed to load` : undefined}
           variant={variant}
+          onRetry={this.handleRetry}
         />
       );
     }
