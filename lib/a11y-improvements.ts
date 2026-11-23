@@ -1,3 +1,5 @@
+import { formatDuration } from './utils';
+
 /**
  * Accessibility audit and improvements for AudioBlocks (#628).
  *
@@ -190,12 +192,7 @@ export const AriaHelper = {
    * Generate aria-label for seeking
    */
   getSeekLabel: (currentTime: number, duration: number): string => {
-    const formatTime = (seconds: number) => {
-      const mins = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60);
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-    return `Seek: ${formatTime(currentTime)} of ${formatTime(duration)}`;
+    return `Seek: ${formatDuration(currentTime)} of ${formatDuration(duration)}`;
   },
 };
 

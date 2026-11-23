@@ -248,6 +248,8 @@ export function useAudioEngine({
     /** Event handlers for the primary <audio> element. */
     primaryHandlers: {
       onCanPlay: () => setIsBuffering(false),
+      onDurationChange: (e: React.SyntheticEvent<HTMLAudioElement>) =>
+        setDuration(e.currentTarget.duration),
       onEnded: handleEnded,
       onError: handleError,
       onLoadedMetadata: (e: React.SyntheticEvent<HTMLAudioElement>) =>

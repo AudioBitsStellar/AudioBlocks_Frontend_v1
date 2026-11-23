@@ -36,3 +36,33 @@ export function formatCount(num: number): string {
   if (num >= 1_000) return `${(num / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
   return num.toString();
 }
+
+/**
+ * Formats a duration in seconds into an audio timestamp.
+ *
+ * @example
+ * ```ts
+ * formatDuration(59); // '0:59'
+ * formatDuration(4500); // '1:15:00'
+ * formatDuration(Infinity); // '--:--'
+ * ```
+ *
+ * @param seconds - Duration in seconds.
+ * @returns `'--:--'` for non-finite or negative values, `'h:mm:ss'` for an
+ *   hour or longer, or `'m:ss'` below that.
+ */
+export function formatDuration(seconds?: number | null): string {
+  if (seconds === undefined || seconds === null || !Number.isFinite(seconds) || seconds < 0) {
+    return '--:--';
+  }
+  const totalSeconds = Math.floor(seconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+

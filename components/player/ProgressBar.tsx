@@ -1,14 +1,7 @@
 'use client';
 
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-
-const formatTime = (time: number) => {
-  const minutes = Math.floor(time / 60);
-  const seconds = Math.floor(time % 60)
-    .toString()
-    .padStart(2, '0');
-  return `${minutes}:${seconds}`;
-};
+import { formatDuration } from '@/lib/utils';
 
 export interface ProgressBarProps {
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -40,22 +33,23 @@ export const ProgressBar = memo(function ProgressBar({
   const savedVolumeRef = useRef(1);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [previewTime, setPreviewTime] = useState<number | null>(null);
+  const isFiniteDuration = Number.isFinite(duration) && duration > 0;
 
   const paint = useCallback(
     (time: number) => {
       const range = rangeRef.current;
       if (range) {
         range.value = String(time);
-        const pct = duration ? (time / duration) * 100 : 0;
+        const pct = isFiniteDuration ? (time / duration) * 100 : 0;
         range.style.background = `linear-gradient(to right, #B6195B 0%, #B6195B ${pct}%, rgb(82,82,82) ${pct}%, rgb(82,82,82) 100%)`;
         range.setAttribute('aria-valuenow', String(Math.floor(time)));
-        range.setAttribute('aria-valuetext', `${formatTime(time)} of ${formatTime(duration)}`);
+        range.setAttribute('aria-valuetext', `${formatDuration(time)} of ${formatDuration(duration)}`);
       }
       if (currentTimeRef.current) {
-        currentTimeRef.current.textContent = formatTime(time);
+        currentTimeRef.current.textContent = formatDuration(time);
       }
     },
-    [duration]
+    [duration, isFiniteDuration]
   );
 
   // Reset the scrubber to 0 whenever the track changes
@@ -84,6 +78,7 @@ export const ProgressBar = memo(function ProgressBar({
 
   const computePreviewTime = useCallback(
     (clientX: number) => {
+      if (!isFiniteDuration) return null;
       const range = rangeRef.current;
       if (!range) return null;
       const rect = range.getBoundingClientRect();
@@ -91,10 +86,11 @@ export const ProgressBar = memo(function ProgressBar({
       const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       return ratio * duration;
     },
-    [duration]
+    [duration, isFiniteDuration]
   );
 
   const startScrub = useCallback(() => {
+    if (!isFiniteDuration) return;
     scrubbingRef.current = true;
     setIsScrubbing(true);
     const audio = audioRef.current;
@@ -102,7 +98,7 @@ export const ProgressBar = memo(function ProgressBar({
       savedVolumeRef.current = audio.volume;
       audio.volume = Math.min(audio.volume, 0.35);
     }
-  }, [audioRef]);
+  }, [audioRef, isFiniteDuration]);
 
   const endScrub = useCallback(() => {
     scrubbingRef.current = false;
@@ -130,6 +126,7 @@ export const ProgressBar = memo(function ProgressBar({
 
   const handleSeek = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!isFiniteDuration) return;
       const newTime = Number(e.target.value);
       setPreviewTime(newTime);
       if (audioRef.current) {
@@ -137,10 +134,10 @@ export const ProgressBar = memo(function ProgressBar({
       }
       paint(newTime);
     },
-    [audioRef, paint]
+    [audioRef, isFiniteDuration, paint]
   );
 
-  const previewPct = previewTime !== null && duration > 0 ? (previewTime / duration) * 100 : 0;
+  const previewPct = previewTime !== null && isFiniteDuration ? (previewTime / duration) * 100 : 0;
 
   return (
     <div className="flex items-center gap-2">
@@ -158,11 +155,12 @@ export const ProgressBar = memo(function ProgressBar({
         <input
           ref={rangeRef}
           aria-label="Track position"
-          aria-valuemax={duration}
+          aria-valuemax={isFiniteDuration ? duration : 0}
           aria-valuemin={0}
-          className="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+          className="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B] disabled:cursor-not-allowed disabled:opacity-50"
           defaultValue={0}
-          max={duration}
+          disabled={!isFiniteDuration}
+          max={isFiniteDuration ? duration : 0}
           min={0}
           role="slider"
           step={1}
@@ -175,11 +173,11 @@ export const ProgressBar = memo(function ProgressBar({
             role="tooltip"
             style={{ left: `${previewPct}%` }}
           >
-            {formatTime(previewTime)}
+            {formatDuration(previewTime)}
           </div>
         )}
       </div>
-      <span className="text-xs text-white w-8 text-right">{formatTime(duration)}</span>
+      <span className="text-xs text-white w-8 text-right">{formatDuration(duration)}</span>
     </div>
   );
 });
