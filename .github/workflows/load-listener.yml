@@ -17,13 +17,13 @@ jobs:
       STAGING_PLAYBACK_URL: ${{ vars.STAGING_PLAYBACK_URL }}
       STAGING_STREAM_URL: ${{ vars.STAGING_STREAM_URL }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: grafana/setup-k6-action@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: grafana/setup-k6-action@c47136d33d365efbeb9ae7266908b5dcf98cdece # v1
         with:
           k6-version: '1.0.0'
       - name: Run bounded staging baseline
         run: k6 run tests/load/listener.js
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: listener-load-baseline-${{ github.run_id }}
