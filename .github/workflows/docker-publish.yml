@@ -1,0 +1,43 @@
+# Builds the production image once per push to main and publishes it to
+# GitHub Container Registry, tagged by commit SHA plus the mutable `staging`
+# tag (#842, #843). Promoting that same image to production is a separate,
+# no-rebuild step — see promote.yml and docs/RUNTIME_CONFIG.md /
+# docs/STAGING_PARITY_CHECKLIST.md.
+name: docker-publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+            ${{ env.IMAGE }}:staging
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
