@@ -55,20 +55,11 @@ export default function middleware(req: NextRequest) {
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
   if (!isProtected) return NextResponse.next();
 
-  // #277, #470 — read HttpOnly session cookie, fallback to client JWT cookie,
-  // or Privy authentication cookies.
+  // #789 — protected routes trust only the HttpOnly AudioBlocks session.
+  // Client-readable JWT/Privy cookies are not authorization evidence here:
+  // /api/session verifies the backend token before this cookie is issued.
   const sessionCookie = req.cookies.get(AUTH.SESSION_COOKIE_NAME);
-  const jwtCookie = req.cookies.get(AUTH.COOKIE_NAME);
-  const privyCookie =
-    req.cookies.get('privy-token') ||
-    req.cookies.get('privy-id-token') ||
-    req.cookies.get('privy-session');
-
-  const hasValidSession = !!(sessionCookie && !isExpiredJwt(sessionCookie.value));
-  const hasValidJwt = !!(jwtCookie && !isExpiredJwt(jwtCookie.value));
-  const hasPrivyAuth = !!privyCookie;
-
-  const isAuthenticated = hasValidSession || hasValidJwt || hasPrivyAuth;
+  const isAuthenticated = !!(sessionCookie && !isExpiredJwt(sessionCookie.value));
 
   if (!isAuthenticated) {
     const loginUrl = new URL(LOGIN_PATH, req.url);

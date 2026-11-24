@@ -1,28 +1,56 @@
-// #277 — HttpOnly session cookie for route protection.
-//
-// The `audioblocks_jwt` cookie (set client-side via js-cookie, see
-// hooks/useAuth.tsx) is deliberately readable by JS: apiClient.ts reads it
-// to attach an `Authorization: Bearer` header on cross-origin requests to
-// NEXT_PUBLIC_API_URL, and a cookie can never be both HttpOnly and
-// JS-readable — that's a browser-enforced boundary, not a config option.
-//
-// middleware.ts's job is different: it only needs to know "is this request
-// authenticated" to gate /dashboard and /profile. That check doesn't need
-// JS-readable access, so it should not run against a cookie an XSS payload
-// could read or forge. This route sets a *second*, HttpOnly-only session
-// cookie via a real `Set-Cookie` response header (only a server response
-// can set HttpOnly — client JS categorically cannot) and middleware.ts
-// checks that one instead.
+// #789 — server-verified HttpOnly session used by middleware route protection.
 import { NextRequest, NextResponse } from 'next/server';
 import { AUTH } from '@/lib/constants';
 
-const MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days — matches typical JWT expiry ceiling
+const MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+const VERIFY_TIMEOUT_MS = 5000;
+
+export type SessionVerification = 'valid' | 'invalid' | 'unavailable';
+
+function profileVerificationUrl(): string | null {
+  const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (!configured) return null;
+  const base = configured.replace(/\/api\/?$/, '');
+  return `${base}/api/users/profile`;
+}
+
+export async function verifyAccessToken(token: string): Promise<SessionVerification> {
+  const url = profileVerificationUrl();
+  if (!url) return 'unavailable';
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        [AUTH.TOKEN_HEADER]: `${AUTH.TOKEN_PREFIX} ${token}`,
+      },
+    });
+    if (response.status === 401 || response.status === 403) return 'invalid';
+    return response.ok ? 'valid' : 'unavailable';
+  } catch {
+    return 'unavailable';
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 export async function POST(req: NextRequest) {
   const { token } = (await req.json().catch(() => ({}))) as { token?: string };
-
   if (!token || typeof token !== 'string') {
     return NextResponse.json({ error: 'token is required' }, { status: 400 });
+  }
+
+  const verification = await verifyAccessToken(token);
+  if (verification === 'invalid') {
+    return NextResponse.json({ error: 'invalid session token' }, { status: 401 });
+  }
+  if (verification === 'unavailable') {
+    return NextResponse.json({ error: 'session verification unavailable' }, { status: 503 });
   }
 
   const res = NextResponse.json({ ok: true });

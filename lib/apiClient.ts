@@ -136,11 +136,14 @@ export async function refreshAccessToken(): Promise<string> {
     Cookies.set(AUTH.COOKIE_NAME, token, AUTH.COOKIE_OPTIONS);
     if (nextRefreshToken)
       Cookies.set(AUTH.REFRESH_COOKIE_NAME, nextRefreshToken, AUTH.COOKIE_OPTIONS);
-    void fetch('/api/session', {
+    const sessionResponse = await fetch('/api/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
+    if (!sessionResponse.ok) {
+      throw new AuthError('Refreshed token could not establish a verified session');
+    }
     return token;
   })().finally(() => {
     refreshPromise = null;
