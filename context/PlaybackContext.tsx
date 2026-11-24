@@ -190,9 +190,11 @@ export type PlaybackContextValue = PlaybackState & {
  * re-render when playback state changes.
  */
 export type PlaybackActions = {
-  [K in keyof PlaybackContextValue as PlaybackContextValue[K] extends (...args: never[]) => unknown
-    ? K
-    : never]: PlaybackContextValue[K];
+  [
+    K in keyof PlaybackContextValue as PlaybackContextValue[K] extends (...args: never[]) => unknown
+      ? K
+      : never
+  ]: PlaybackContextValue[K];
 };
 
 /** The player starts with the demo playlist only when demo data is enabled; otherwise it starts empty. */
@@ -211,6 +213,7 @@ const MUTED_STORAGE_KEY = 'audioblocks_muted';
 const RECENTLY_PLAYED_STORAGE_KEY = 'audioblocks_recently_played';
 const NORMALIZE_AUDIO_STORAGE_KEY = 'audioblocks_normalize_audio';
 const GAPPLESS_STORAGE_KEY = 'audioblocks_gapless';
+const CROSSFADE_STORAGE_KEY = 'audioblocks_crossfade_duration';
 
 /**
  * JSON from localStorage is untrusted: it can be modified by browser tools,
@@ -530,6 +533,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       initialState.normalizeAudio
     ),
     gapless: loadFromStorage<boolean>(GAPPLESS_STORAGE_KEY, initialState.gapless),
+    crossfadeDuration: loadFromStorage<number>(
+      CROSSFADE_STORAGE_KEY,
+      initialState.crossfadeDuration
+    ),
   };
 
   const [state, dispatch] = useReducer(reducer, hydratedState);
@@ -576,6 +583,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveToStorage(GAPPLESS_STORAGE_KEY, state.gapless);
   }, [state.gapless]);
+
+  useEffect(() => {
+    saveToStorage(CROSSFADE_STORAGE_KEY, state.crossfadeDuration);
+  }, [state.crossfadeDuration]);
 
   // Latest history for `getRecentlyPlayed`, so that action stays stable while
   // still reading current data.

@@ -1,7 +1,7 @@
 'use client';
 
-import { useFollowedPlaylists, useToggleFollowPlaylist } from '@/hooks/usePlaylists';
 import { useHasAuthSession } from '@/hooks/useHasAuthSession';
+import { useFollowedPlaylists, useToggleFollowPlaylist } from '@/hooks/usePlaylists';
 import type { PlaylistSummary } from '@/lib/playlistService';
 
 interface FollowPlaylistButtonProps {
@@ -20,6 +20,20 @@ export function FollowPlaylistButton({ playlist, isOwner }: FollowPlaylistButton
   const toggle = useToggleFollowPlaylist();
 
   if (!signedIn || isOwner) return null;
+
+  if (followed.isLoading) {
+    return (
+      <button
+        disabled
+        aria-busy="true"
+        aria-label="Loading follow status"
+        className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors bg-surface-elevated text-on-muted border border-gray-700 opacity-70 cursor-not-allowed"
+        type="button"
+      >
+        Loading...
+      </button>
+    );
+  }
 
   const isFollowing = followed.data?.some((item) => item.id === playlist.id) ?? false;
   const disabled = followed.isLoading || toggle.isPending;
