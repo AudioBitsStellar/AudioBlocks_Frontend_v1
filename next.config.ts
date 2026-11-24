@@ -29,9 +29,44 @@ function originPattern(value: string | undefined, pathname: string): RemotePatte
   }
 }
 
+/**
+ * #786 (SEC-04): static security headers. These apply to every route and are
+ * safe to set globally because they do not depend on per-request state. The
+ * dynamic, nonce-based Content-Security-Policy is set by `middleware.ts`
+ * where the per-request nonce is generated; everything else lives here.
+ *
+ * Launched as report-only via the middleware's `Content-Security-Policy-Report-Only`
+ * header. Once logs show no genuine violations, swap to the enforcing variant.
+ */
+const SECURITY_HEADERS = [
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  {
+    key: 'Permissions-Policy',
+    // Minimal surface: the player needs autoplay + fullscreen; everything
+    // privacy-sensitive is denied. Media-session permission must stay allowed
+    // on self so background playback keeps working on supported browsers.
+    value:
+      'accelerometer=(), ambient-light-sensor=(), autoplay=(self), battery=(), camera=(), ' +
+      'cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(self), ' +
+      'execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(self), ' +
+      'geolocation=(), gyroscope=(), hid=(), identity-credentials-get=(), idle-detection=(), ' +
+      'keyboard-map=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), ' +
+      'payment=(), picture-in-picture=(self), publickey-credentials-get=(), screen-wake-lock=(), ' +
+      'serial=(), storage-access=(), sync-xhr=(self), usb=(), window-management=(), xr-spatial-tracking=()',
+  },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+];
+
 const nextConfig: NextConfig = {
   /* config options here */
   output: 'standalone',
+  async headers() {
+    return [{ source: '/:path*', headers: SECURITY_HEADERS }];
+  },
   images: {
     // NFT artwork is resolved through the application's configured IPFS
     // gateway. Never allow arbitrary remote hosts through the image optimizer.
