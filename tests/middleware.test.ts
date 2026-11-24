@@ -123,3 +123,18 @@ describe('middleware maintenance mode (#858)', () => {
     expect(res.status).toBe(307);
   });
 });
+
+
+describe('middleware frame policy (#788)', () => {
+  it('denies framing on ordinary routes', () => {
+    const res = middleware(createMockRequest('http://localhost:3000/'));
+    expect(res.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
+    expect(res.headers.get('x-frame-options')).toBe('DENY');
+  });
+
+  it('allows framing only for embed routes', () => {
+    const res = middleware(createMockRequest('http://localhost:3000/embed/song/123'));
+    expect(res.headers.get('content-security-policy')).toContain('frame-ancestors *');
+    expect(res.headers.get('x-frame-options')).toBeNull();
+  });
+});
