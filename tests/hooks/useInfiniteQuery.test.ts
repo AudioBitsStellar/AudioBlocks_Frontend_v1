@@ -146,12 +146,10 @@ describe('useInfiniteQuery', () => {
   });
 
   it('accepts initialData without an immediate fetch', async () => {
-    const fetcher = vi.fn(
-      async (): Promise<InfinitePage<Item>> => ({
-        data: [{ id: 'server' }],
-        nextCursor: null,
-      })
-    );
+    const fetcher = vi.fn(async (): Promise<InfinitePage<Item>> => ({
+      data: [{ id: 'server' }],
+      nextCursor: null,
+    }));
 
     const { result } = renderHook(() =>
       useInfiniteQuery<Item>({
