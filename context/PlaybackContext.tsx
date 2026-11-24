@@ -132,7 +132,12 @@ type PlaybackAction =
   | { type: 'SET_SLEEP_TIMER'; timer: SleepTimer }
   | { type: 'CLEAR_SLEEP_TIMER' }
   | { type: 'SET_SLEEP_FADE'; factor: number }
-  | { type: 'SLEEP_EXPIRED' };
+  | { type: 'SLEEP_EXPIRED' }
+  // Hydration (#129): applied once after mount to merge localStorage values into state.
+  // The reducer uses the fallback `initialState` for first render on server AND client, so
+  // SSR HTML and the first client render are byte-identical; the real stored values land
+  // on the next render once the useEffect fires. Prevents React hydration mismatches.
+  | { type: 'HYDRATE_FROM_STORAGE'; partial: Partial<PlaybackState> };
 
 export type PlaybackContextValue = PlaybackState & {
   playTrack: (track: Track) => void;
@@ -472,6 +477,10 @@ function reducer(state: PlaybackState, action: PlaybackAction): PlaybackState {
     case 'SLEEP_EXPIRED':
       return { ...state, isPlaying: false, sleepTimer: null, sleepFade: 1 };
 
+    // #129
+    case 'HYDRATE_FROM_STORAGE':
+      return { ...state, ...action.partial };
+
     default:
       return state;
   }
@@ -515,24 +524,31 @@ function createPlaybackStore(initial: PlaybackState): PlaybackStore {
 const noopSubscribe = () => () => {};
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
-  // Hydrate queue, history, and volume from localStorage on mount (#121).
-  const hydratedState: PlaybackState = {
-    ...initialState,
-    queue: loadFromStorage<Track[]>(QUEUE_STORAGE_KEY, []).filter(isTrackAvailable),
-    history: loadFromStorage<PlaybackEvent[]>(HISTORY_STORAGE_KEY, []),
-    recentlyPlayed: loadFromStorage<Track[]>(RECENTLY_PLAYED_STORAGE_KEY, []),
-    // #121: restore volume and muted state from the device so the user's
-    // preferred level survives page reloads and browser restarts.
-    volume: loadFromStorage<number>(VOLUME_STORAGE_KEY, initialState.volume),
-    isMuted: loadFromStorage<boolean>(MUTED_STORAGE_KEY, initialState.isMuted),
-    normalizeAudio: loadFromStorage<boolean>(
-      NORMALIZE_AUDIO_STORAGE_KEY,
-      initialState.normalizeAudio
-    ),
-    gapless: loadFromStorage<boolean>(GAPPLESS_STORAGE_KEY, initialState.gapless),
-  };
+  // #129: initialise with the pure fallback so server-rendered HTML and the first client
+  // render are byte-identical. Real localStorage values are applied in the effect below,
+  // which only runs on the client after hydration - React never sees a mismatch.
+  const [state, dispatch] = useReducer(reducer, initialState);
 
-  const [state, dispatch] = useReducer(reducer, hydratedState);
+  const didHydrateRef = useRef(false);
+  useEffect(() => {
+    if (didHydrateRef.current) return;
+    didHydrateRef.current = true;
+    const partial: Partial<PlaybackState> = {
+      queue: loadFromStorage<Track[]>(QUEUE_STORAGE_KEY, []).filter(isTrackAvailable),
+      history: loadFromStorage<PlaybackEvent[]>(HISTORY_STORAGE_KEY, []),
+      recentlyPlayed: loadFromStorage<Track[]>(RECENTLY_PLAYED_STORAGE_KEY, []),
+      // #121: restore volume and muted state from the device so the user's
+      // preferred level survives page reloads and browser restarts.
+      volume: loadFromStorage<number>(VOLUME_STORAGE_KEY, initialState.volume),
+      isMuted: loadFromStorage<boolean>(MUTED_STORAGE_KEY, initialState.isMuted),
+      normalizeAudio: loadFromStorage<boolean>(
+        NORMALIZE_AUDIO_STORAGE_KEY,
+        initialState.normalizeAudio
+      ),
+      gapless: loadFromStorage<boolean>(GAPPLESS_STORAGE_KEY, initialState.gapless),
+    };
+    dispatch({ type: 'HYDRATE_FROM_STORAGE', partial });
+  }, []);
 
   // Sleep timer (#589): check the clock while a timed sleep runs, and fade volume near the end.
   const sleepTimer = state.sleepTimer;
