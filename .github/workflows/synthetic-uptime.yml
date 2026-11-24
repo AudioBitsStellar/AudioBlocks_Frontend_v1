@@ -21,9 +21,14 @@ permissions:
   issues: write
 
 jobs:
+  # Both check jobs run in the `production` environment, the same one
+  # deploy.yml reads PRODUCTION_* from. Environment-scoped variables are only
+  # visible to a job that declares the environment, so without this the checks
+  # fail with "not set" even when the variables exist.
   home:
     name: Home page
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Check home page responds
         env:
@@ -49,6 +54,7 @@ jobs:
   playback:
     name: Playback
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Check playback page and stream responds
         env:
