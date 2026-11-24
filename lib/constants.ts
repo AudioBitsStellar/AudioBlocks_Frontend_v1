@@ -203,3 +203,38 @@ export const BLUR = {
   MD: '[150px]',
   LG: '[200px]',
 } as const;
+
+// ===== SOCIAL MEDIA LINKS (#709) =====
+export interface SocialLink {
+  name: 'youtube' | 'instagram' | 'facebook' | 'twitter' | 'mail';
+  label: string;
+  href: string;
+}
+
+export const SOCIAL_LINKS: readonly SocialLink[] = [
+  {
+    name: 'youtube',
+    label: 'AudioBlocks on YouTube',
+    href: 'https://youtube.com/@audioblocks',
+  },
+  {
+    name: 'instagram',
+    label: 'AudioBlocks on Instagram',
+    href: 'https://instagram.com/audioblocks',
+  },
+  {
+    name: 'facebook',
+    label: 'AudioBlocks on Facebook',
+    href: 'https://facebook.com/audioblocks',
+  },
+  {
+    name: 'twitter',
+    label: 'AudioBlocks on Twitter',
+    href: 'https://twitter.com/audioblocks',
+  },
+  {
+    name: 'mail',
+    label: 'AudioBlocks on Mail',
+    href: 'mailto:contact@audioblocks.io',
+  },
+] as const;
