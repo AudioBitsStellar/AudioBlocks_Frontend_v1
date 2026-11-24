@@ -42,6 +42,7 @@ const Collective = () => {
                 className="object-cover w-full h-full rounded-t-2xl"
                 height={900}
                 loading="lazy"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 src={collective.image}
                 width={900}
               />
