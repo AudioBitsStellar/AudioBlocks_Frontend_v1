@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { MoveLeft, MoveRight } from 'lucide-react';
 
 interface ArrowProps {
@@ -7,51 +6,27 @@ interface ArrowProps {
 }
 
 export const NextArrow = ({ onClick, label = 'Next slide' }: ArrowProps) => {
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        onClick?.();
-      }
-    },
-    [onClick]
-  );
-
   return (
-    <div
+    <button
       aria-label={label}
-      className="absolute -right-1 md:-right-2 top-1/2 transform -translate-y-1/2 z-10 bg-[#0C090A99] p-3 md:p-6 rounded-full cursor-pointer"
-      role="button"
-      tabIndex={0}
+      className="absolute right-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#0C090A99] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      type="button"
       onClick={onClick}
-      onKeyDown={handleKeyDown}
     >
-      <MoveRight className="text-white size-4 md:size-5" />
-    </div>
+      <MoveRight aria-hidden="true" className="size-5" />
+    </button>
   );
 };
 
 export const PrevArrow = ({ onClick, label = 'Previous slide' }: ArrowProps) => {
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        onClick?.();
-      }
-    },
-    [onClick]
-  );
-
   return (
-    <div
+    <button
       aria-label={label}
-      className="absolute -left-1 md:-left-2 top-1/2 transform -translate-y-1/2 z-10 bg-[#0C090A99] p-3 md:p-6 rounded-full cursor-pointer"
-      role="button"
-      tabIndex={0}
+      className="absolute left-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#0C090A99] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      type="button"
       onClick={onClick}
-      onKeyDown={handleKeyDown}
     >
-      <MoveLeft className="text-white size-4 md:size-5" />
-    </div>
+      <MoveLeft aria-hidden="true" className="size-5" />
+    </button>
   );
 };
