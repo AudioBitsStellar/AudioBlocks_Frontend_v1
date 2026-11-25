@@ -13,6 +13,7 @@
 //  • #858 — when `MAINTENANCE_MODE` is on, every route (besides the
 //    maintenance page itself, `/api`, and static assets) rewrites to
 //    `/maintenance` before the auth check below ever runs.
+// How does it work
 
 import { NextRequest, NextResponse } from 'next/server';
 import { AUTH } from '@/lib/constants';
