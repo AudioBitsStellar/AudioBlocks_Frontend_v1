@@ -13,6 +13,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useOwnedCollection } from '@/hooks/useOwnedCollection';
 import { filterOwnedSongs, songCoverSrc, toOwnedNFT, type OwnedNFT } from '@/lib/collectionSongs';
+import { IPFS_GATEWAY } from '@/lib/ipfs';
 
 const ITEMS_PER_PAGE = 10;
 

@@ -40,6 +40,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'ipfs.io', pathname: '/ipfs/**' },
       originPattern(process.env.NEXT_PUBLIC_IPFS_GATEWAY, '/ipfs/**'),
+      originPattern(process.env.NEXT_PUBLIC_IPFS_GATEWAY, '/ipfs/**'),
       originPattern(process.env.NEXT_PUBLIC_MEDIA_HOST, '/**'),
     ].filter((pattern): pattern is RemotePattern => pattern !== null),
   },
