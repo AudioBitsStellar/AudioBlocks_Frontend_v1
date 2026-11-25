@@ -232,18 +232,13 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
           )}
 
           <WalletHelpLink />
-          {balanceLoading && <p role="status">Checking your spendable balance...</p>}
-          {balanceError && <p role="alert">Unable to check your balance. Refresh before confirming.</p>}
-          {hasInsufficientFunds && (
-            <p role="alert" className="text-sm text-amber-300">
-              {!stellarBalance?.isFunded ? 'This account is not funded. Add XLM to activate it.' :
-                `Insufficient spendable balance. You have ${stellarBalance.spendableXlm.toFixed(7)} XLM available after reserves. Add funds for ${priceXlm === null ? 'network fees' : 'the price and network fees'}, then refresh.`}
-              {' '}Keep XLM available for reserves. Wallet help explains funding and trustlines.
-            </p>
-          )}
-          <button type="button" className="text-sm underline" onClick={() => void refreshBalance()}>
-            Refresh balance
-          </button>
+          <p className="text-xs text-on-muted">
+            Purchases settle on-chain and are final in most cases. See our{' '}
+            <a className="underline" href="/refund-policy">
+              refund policy
+            </a>{' '}
+            for the exceptions.
+          </p>
           <div className="flex justify-end gap-3">
             <button
               className="px-4 py-2 rounded-2xl text-sm text-on-muted hover:text-white transition-colors"
