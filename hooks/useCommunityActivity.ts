@@ -4,8 +4,8 @@
 // community, pausing when the tab is hidden and caching results per community.
 
 import { useEffect, useRef, useState } from 'react';
-import apiClient from '@/lib/apiClient';
 import { unwrap } from '@/lib/api/unwrap';
+import apiClient from '@/lib/apiClient';
 
 export interface CommunityActivity {
   communityId: string;
@@ -28,14 +28,40 @@ const MAX_EVENTS = 5;
 
 // Module-level cache so multiple hook instances share data.
 const activityCache = new Map<string, CommunityActivity>();
+const etagCache = new Map<string, string>();
+
+export function clearCommunityActivityCache() {
+  activityCache.clear();
+  etagCache.clear();
+}
 
 async function fetchCommunityActivity(communityId: string): Promise<CommunityActivity> {
   const cached = activityCache.get(communityId);
   if (cached && Date.now() - cached.lastUpdated < CACHE_TTL_MS) return cached;
 
   try {
-    const res = await apiClient.get(`/api/community/${communityId}/activity`);
-    const data = unwrap<Partial<CommunityActivity>>(res);
+    const cachedEtag = etagCache.get(communityId);
+    const config = cachedEtag ? { headers: { 'If-None-Match': cachedEtag } } : undefined;
+    const res = config
+      ? await apiClient.get(`/api/community/${communityId}/activity`, config)
+      : await apiClient.get(`/api/community/${communityId}/activity`);
+
+    if (res.status === 304 && cached) {
+      return cached;
+    }
+
+    const etag =
+      typeof res.headers?.get === 'function'
+        ? res.headers.get('etag')
+        : (res.headers as Record<string, string> | undefined)?.etag;
+    if (etag) etagCache.set(communityId, etag);
+
+    let data: Partial<CommunityActivity>;
+    try {
+      data = unwrap<Partial<CommunityActivity>>(res);
+    } catch {
+      data = (res?.data as Partial<CommunityActivity>) ?? {};
+    }
     const activity: CommunityActivity = {
       communityId,
       memberCount: data.memberCount ?? 0,
@@ -60,7 +86,7 @@ async function fetchCommunityActivity(communityId: string): Promise<CommunityAct
 
 export function useCommunityActivity(communityId: string | null | undefined) {
   const [activity, setActivity] = useState<CommunityActivity | null>(
-    communityId ? (activityCache.get(communityId) ?? null) : null,
+    communityId ? (activityCache.get(communityId) ?? null) : null
   );
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 

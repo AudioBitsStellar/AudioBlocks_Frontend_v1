@@ -21,6 +21,7 @@ import { isMaintenanceModeEnabled } from '@/lib/maintenance';
 const PROTECTED_PREFIXES = ['/dashboard', '/profile', '/onboarding'];
 const LOGIN_PATH = '/';
 const MAINTENANCE_PATH = '/maintenance';
+const EMBED_PREFIX = '/embed';
 const STATIC_ASSET_PATTERN =
   /\.(?:ico|png|jpg|jpeg|gif|svg|webp|avif|css|js|map|json|txt|xml|webmanifest|woff2?)$/i;
 
@@ -31,6 +32,17 @@ function bypassesMaintenance(pathname: string): boolean {
     pathname.startsWith('/_next') ||
     STATIC_ASSET_PATTERN.test(pathname)
   );
+}
+
+function applyFramePolicy(response: NextResponse, pathname: string): NextResponse {
+  const isEmbed = pathname === EMBED_PREFIX || pathname.startsWith(`${EMBED_PREFIX}/`);
+  response.headers.set(
+    'Content-Security-Policy',
+    isEmbed ? 'frame-ancestors *' : "frame-ancestors 'none'"
+  );
+  if (!isEmbed) response.headers.set('X-Frame-Options', 'DENY');
+  else response.headers.delete('X-Frame-Options');
+  return response;
 }
 
 function isExpiredJwt(tokenValue: string): boolean {
@@ -49,36 +61,27 @@ export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (isMaintenanceModeEnabled() && !bypassesMaintenance(pathname)) {
-    return NextResponse.rewrite(new URL(MAINTENANCE_PATH, req.url));
+    return applyFramePolicy(NextResponse.rewrite(new URL(MAINTENANCE_PATH, req.url)), pathname);
   }
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-  if (!isProtected) return NextResponse.next();
+  if (!isProtected) return applyFramePolicy(NextResponse.next(), pathname);
 
-  // #277, #470 — read HttpOnly session cookie, fallback to client JWT cookie,
-  // or Privy authentication cookies.
+  // #789 — protected routes trust only the HttpOnly AudioBlocks session.
+  // Client-readable JWT/Privy cookies are not authorization evidence here:
+  // /api/session verifies the backend token before this cookie is issued.
   const sessionCookie = req.cookies.get(AUTH.SESSION_COOKIE_NAME);
-  const jwtCookie = req.cookies.get(AUTH.COOKIE_NAME);
-  const privyCookie =
-    req.cookies.get('privy-token') ||
-    req.cookies.get('privy-id-token') ||
-    req.cookies.get('privy-session');
-
-  const hasValidSession = !!(sessionCookie && !isExpiredJwt(sessionCookie.value));
-  const hasValidJwt = !!(jwtCookie && !isExpiredJwt(jwtCookie.value));
-  const hasPrivyAuth = !!privyCookie;
-
-  const isAuthenticated = hasValidSession || hasValidJwt || hasPrivyAuth;
+  const isAuthenticated = !!(sessionCookie && !isExpiredJwt(sessionCookie.value));
 
   if (!isAuthenticated) {
     const loginUrl = new URL(LOGIN_PATH, req.url);
     const returnTarget = `${pathname}${req.nextUrl.search || ''}`;
     loginUrl.searchParams.set('returnTo', returnTarget);
     loginUrl.searchParams.set('auth', 'login');
-    return NextResponse.redirect(loginUrl);
+    return applyFramePolicy(NextResponse.redirect(loginUrl), pathname);
   }
 
-  return NextResponse.next();
+  return applyFramePolicy(NextResponse.next(), pathname);
 }
 
 export const config = {

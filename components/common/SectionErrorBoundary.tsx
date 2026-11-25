@@ -19,7 +19,7 @@ const UNKNOWN_ERROR_MESSAGE = 'An unknown error occurred';
  * values depending on how the error was thrown, so this guards against
  * crashing the boundary itself while rendering the fallback UI.
  */
-function normalizeError(error: unknown): Error {
+export function normalizeError(error: unknown): Error {
   if (error instanceof Error) {
     return error;
   }
@@ -220,8 +220,7 @@ export default class SectionErrorBoundary extends Component<
                 </p>
                 {(this.state.error as (Error & { requestId?: string }) | null)?.requestId && (
                   <p className="text-gray-400 mb-1">
-                    Reference:{' '}
-                    {(this.state.error as Error & { requestId?: string }).requestId}
+                    Reference: {(this.state.error as Error & { requestId?: string }).requestId}
                   </p>
                 )}
                 {this.state.errorInfo?.componentStack && (
