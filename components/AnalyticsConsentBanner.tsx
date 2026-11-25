@@ -46,6 +46,18 @@ export default function AnalyticsConsentBanner() {
           Reject
         </button>
         <Link
+          className="text-xs text-on-muted underline underline-offset-2 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9]"
+          href="/privacy"
+        >
+          Privacy Policy
+        </Link>
+        <Link
+          className="text-xs text-on-muted underline underline-offset-2 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9]"
+          href="/terms"
+        >
+          Terms of Service
+        </Link>
+        <Link
           className="ml-auto text-xs text-on-muted underline underline-offset-2 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9]"
           href="/dashboard/settings#privacy-data"
         >

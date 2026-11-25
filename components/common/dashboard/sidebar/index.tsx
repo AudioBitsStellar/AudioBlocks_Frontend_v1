@@ -71,7 +71,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
         </Link>
         <Link
           className="hover:bg-gradient-to-r hover:from-[#D2045B] hover:to-[#885FA8] hover:bg-clip-text hover:text-transparent"
-          href="#"
+          href="/privacy"
         >
           Privacy Policy
         </Link>
