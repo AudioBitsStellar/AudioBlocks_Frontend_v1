@@ -5,28 +5,12 @@ import dynamic from 'next/dynamic';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Mail, Wallet, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRecentlyPlayed } from '@/hooks/useRecentlyPlayed';
+import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
+import { AgeGateModal } from '@/components/common/AgeGateModal';
+import DataSaverToggle from '@/components/help/DataSaverToggle';
+import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
 import { useUserPreferences, type AudioQuality } from '@/context/UserPreferencesContext';
-
-/**
- * #156: the three heaviest leaf components on this route pull in their own
- * dependency subgraphs (Dynamic SDK surface for AccountLinkingUI, the data
- * saver store for DataSaverToggle, the privacy consent + export flow for
- * PrivacyDataSection). Dynamic-importing them keeps the settings chunk
- * small and ships only the code the user actually scrolled to.
- */
-const AccountLinkingUI = dynamic(() => import('@/components/auth/AccountLinkingUI'), {
-  ssr: false,
-  loading: () => <div className="h-32 bg-[#1E1E1E] rounded-lg animate-pulse" />,
-});
-const DataSaverToggle = dynamic(() => import('@/components/help/DataSaverToggle'), {
-  ssr: false,
-  loading: () => <div className="h-10 bg-[#1E1E1E] rounded animate-pulse" />,
-});
-const PrivacyDataSection = dynamic(() => import('@/components/settings/PrivacyDataSection'), {
-  ssr: false,
-  loading: () => <div className="h-32 bg-[#1E1E1E] rounded-lg animate-pulse" />,
-});
+import { useRecentlyPlayed } from '@/hooks/useRecentlyPlayed';
 
 function LinkedAccountsList() {
   const { user, handleUnlinkWallet } = useDynamicContext();
@@ -142,6 +126,7 @@ const QUALITY_OPTIONS: { value: AudioQuality; label: string; description: string
 
 export default function SettingsPage() {
   const { preferences, setPreference } = useUserPreferences();
+  const [ageGateOpen, setAgeGateOpen] = useState(false);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -234,7 +219,13 @@ export default function SettingsPage() {
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 preferences.showExplicitContent ? 'bg-[#D2045B]' : 'bg-gray-600'
               }`}
-              onClick={() => setPreference('showExplicitContent', !preferences.showExplicitContent)}
+              onClick={() => {
+                if (preferences.showExplicitContent) {
+                  setPreference('showExplicitContent', false);
+                } else {
+                  setAgeGateOpen(true);
+                }
+              }}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -245,6 +236,15 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
+      <AgeGateModal
+        open={ageGateOpen}
+        onClose={() => setAgeGateOpen(false)}
+        onConfirm={() => {
+          setPreference('showExplicitContent', true);
+          setAgeGateOpen(false);
+        }}
+      />
 
       <ListeningHistorySection />
 

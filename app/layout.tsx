@@ -11,9 +11,8 @@ import AnalyticsConsentBanner from '@/components/AnalyticsConsentBanner';
 import AnalyticsScript from '@/components/AnalyticsScript';
 import ApiOutageBanner from '@/components/ApiOutageBanner';
 import MswProvider from '@/components/common/MswProvider';
+import SupportWidget from '@/components/common/SupportWidget';
 import EnvCheck from '@/components/EnvCheck';
-import MaintenanceBanner from '@/components/MaintenanceBanner';
-import RuntimeConfigLoader from '@/components/RuntimeConfigLoader';
 import SentryErrorBoundary from '@/components/SentryErrorBoundary';
 import SWRegister from '@/components/SWRegister';
 import { ThemeScript } from '@/components/ThemeScript';
@@ -21,7 +20,7 @@ import RouteProgress from '@/components/ui/RouteProgress';
 import WebVitalsReporter from '@/components/WebVitalsReporter';
 import PrivyAuthProvider from '@/context/PrivyAuthProvider';
 import Provider from '@/context/provider';
-import { RUNTIME_CONFIG_SCRIPT_PATH } from '@/lib/runtimeConfig';
+import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
 import type { Metadata } from 'next';
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -77,29 +76,27 @@ export default function RootLayout({
           <MswProvider>
             <PrivyAuthProvider>
               <Provider>
-                <SentryErrorBoundary>
-                  <RuntimeConfigLoader />
-                  <ApiOutageBanner />
-                  <Suspense fallback={null}>
-                    <RouteProgress />
-                  </Suspense>
-                  <WebVitalsReporter />
-                  <MaintenanceBanner />
-                  <ApiOutageBanner />
-                  <SWRegister />
-                  <EnvCheck />
-                  <AccessibilityAnnouncer />
-                  <a
-                    className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:font-semibold"
-                    href="#main-content"
-                  >
-                    Skip to main content
-                  </a>
-                  <Toaster closeButton position="bottom-right" />
-                  {children}
-                  <AnalyticsConsentBanner />
-                  <AnalyticsScript />
-                </SentryErrorBoundary>
+                <UserPreferencesProvider>
+                  <SentryErrorBoundary>
+                    <Suspense fallback={null}>
+                      <RouteProgress />
+                    </Suspense>
+                    <SWRegister />
+                    <EnvCheck />
+                    <AccessibilityAnnouncer />
+                    <a
+                      className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-9999 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:font-semibold"
+                      href="#main-content"
+                    >
+                      Skip to main content
+                    </a>
+                    <Toaster closeButton position="bottom-right" />
+                    {children}
+                    <SupportWidget />
+                    <AnalyticsConsentBanner />
+                    <AnalyticsScript />
+                  </SentryErrorBoundary>
+                </UserPreferencesProvider>
               </Provider>
             </PrivyAuthProvider>
           </MswProvider>
