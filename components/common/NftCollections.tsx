@@ -1,19 +1,22 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Inter } from 'next/font/google';
-import { Search, Clock } from 'lucide-react';
-import { ArtworkImage } from '@/components/ui/ArtworkImage';
-import { Pagination } from '@/components/ui/pagination';
 import { AuctionBidDialog } from '@/components/marketplace/AuctionBidDialog';
+import {
+  NftCollectionCard,
+  type ExtendedCollectionItem,
+} from '@/components/marketplace/NftCollectionCard';
+import { NftCollectionFilters } from '@/components/marketplace/NftCollectionFilters';
+import { Pagination } from '@/components/ui/pagination';
 import { demoOr } from '@/lib/fixtures';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import {
   eventData as demoEvents,
   merchData as demoMerch,
   musicData as demoMusic,
   type CollectionItem,
 } from '@/lib/fixtures/marketplace';
-import BuyButton from './BuyButton';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -22,19 +25,12 @@ const inter = Inter({
 });
 
 const ITEMS_PER_PAGE = 8;
+const TABS = ['All', 'Latest', 'Tickets', 'Merches'];
 
-// Placeholder listings until the marketplace API is wired up; empty unless demo data is on.
 const musicData = demoOr<CollectionItem[]>(demoMusic, []);
 const eventData = demoOr<CollectionItem[]>(demoEvents, []);
 const merchData = demoOr<CollectionItem[]>(demoMerch, []);
-
-// Extended type to support auction listings
-interface ExtendedCollectionItem extends CollectionItem {
-  isAuction?: boolean;
-  currentBid?: number;
-  minimumBid?: number;
-  auctionEndTime?: number;
-}
+const marketplaceTradingEnabled = isFeatureEnabled('marketplaceTrading');
 
 function parsePrice(price: string): number {
   return parseFloat(price.replace(' ETH', '').replace(' XLM', ''));
@@ -122,14 +118,15 @@ function Card({ item, onBidClick }: CardProps) {
             )}
             <button
               className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
-                isAuctionEnded
+                isAuctionEnded || !marketplaceTradingEnabled
                   ? 'bg-surface-input text-on-muted cursor-not-allowed'
                   : 'bg-brand hover:bg-brand-hover text-white'
               }`}
-              disabled={isAuctionEnded}
+              disabled={isAuctionEnded || !marketplaceTradingEnabled}
+              title={!marketplaceTradingEnabled ? 'Bidding is not available yet' : undefined}
               onClick={() => onBidClick?.(item)}
             >
-              {isAuctionEnded ? 'Auction Ended' : 'Place Bid'}
+              {!marketplaceTradingEnabled ? 'Coming Soon' : isAuctionEnded ? 'Auction Ended' : 'Place Bid'}
             </button>
           </div>
         ) : (
@@ -150,8 +147,6 @@ export default function NftCollection() {
   const [priceMax, setPriceMax] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAuction, setSelectedAuction] = useState<ExtendedCollectionItem | null>(null);
-
-  const tabs = ['All', 'Latest', 'Tickets', 'Merches'];
 
   const allItems = useMemo<CollectionItem[]>(() => [...musicData, ...eventData, ...merchData], []);
 
@@ -192,87 +187,37 @@ export default function NftCollection() {
 
   return (
     <div className="min-h-screen max-w-11/12 mx-auto bg-black px-4 sm:px-8 py-8 sm:py-12 overflow-x-hidden">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12">
-        <h1
-          className={`${inter.className} capitalize text-3xl sm:text-4xl md:text-[48px] font-semibold leading-tight tracking-normal`}
-        >
-          Trending <span className="text-gray-400">NFT</span> Collections
-        </h1>
-
-        <div className="relative w-full sm:w-auto">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            aria-label="Search NFT collections"
-            className="w-full sm:w-80 h-11 pl-10 pr-5 py-2 rounded-full bg-surface-input border border-border-dark text-white placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
-            placeholder="Search by artist or title..."
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-7">
-        <div className="flex flex-wrap gap-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              className={`relative text-sm font-medium px-4 py-2 rounded-full transition-all duration-200 ${
-                activeTab === tab
-                  ? 'bg-brand text-white'
-                  : 'bg-surface text-on-muted hover:bg-surface-hover hover:text-white'
-              }`}
-              onClick={() => {
-                setActiveTab(tab);
-                setCurrentPage(1);
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2 ml-auto">
-          <label className="text-xs text-on-muted">Price:</label>
-          <input
-            aria-label="Minimum price in ETH"
-            className="w-20 h-9 px-3 py-1 rounded-full bg-surface-input border border-border-dark text-white text-sm placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
-            min="0"
-            placeholder="Min"
-            step="0.1"
-            type="number"
-            value={priceMin}
-            onChange={(e) => {
-              setPriceMin(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-          <span className="text-on-muted">-</span>
-          <input
-            aria-label="Maximum price in ETH"
-            className="w-20 h-9 px-3 py-1 rounded-full bg-surface-input border border-border-dark text-white text-sm placeholder-on-muted focus:outline-none focus:ring-2 focus:ring-brand"
-            min="0"
-            placeholder="Max"
-            step="0.1"
-            type="number"
-            value={priceMax}
-            onChange={(e) => {
-              setPriceMax(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-          <span className="text-xs text-on-muted">ETH</span>
-        </div>
-      </div>
+      <NftCollectionFilters
+        activeTab={activeTab}
+        fontClass={inter.className}
+        priceMax={priceMax}
+        priceMin={priceMin}
+        search={search}
+        tabs={TABS}
+        onPriceMaxChange={(val) => {
+          setPriceMax(val);
+          setCurrentPage(1);
+        }}
+        onPriceMinChange={(val) => {
+          setPriceMin(val);
+          setCurrentPage(1);
+        }}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setCurrentPage(1);
+        }}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          setCurrentPage(1);
+        }}
+      />
 
       {filtered.length === 0 ? (
         <div className="text-center py-20 text-on-muted">
           <p className="text-lg">No items match your filters.</p>
           <button
             className="mt-4 px-4 py-2 text-sm text-white bg-brand rounded-full hover:bg-brand-hover"
+            type="button"
             onClick={() => {
               setSearch('');
               setPriceMin('');
@@ -290,7 +235,7 @@ export default function NftCollection() {
             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
           >
             {paginatedItems.map((item) => (
-              <Card key={item.id} item={item} onBidClick={setSelectedAuction} />
+              <NftCollectionCard key={item.id} item={item} onBidClick={setSelectedAuction} />
             ))}
           </div>
 
@@ -306,7 +251,7 @@ export default function NftCollection() {
         </>
       )}
 
-      {selectedAuction && selectedAuction.isAuction && (
+      {selectedAuction?.isAuction && (
         <AuctionBidDialog
           auctionId={selectedAuction.id}
           currentBid={selectedAuction.currentBid || 0}
@@ -320,7 +265,6 @@ export default function NftCollection() {
           minimumBid={selectedAuction.minimumBid || 0}
           onClose={() => setSelectedAuction(null)}
           onSuccess={() => {
-            // Refresh auction data
             setSelectedAuction(null);
           }}
         />

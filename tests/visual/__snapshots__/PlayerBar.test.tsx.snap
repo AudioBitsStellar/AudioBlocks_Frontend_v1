@@ -19,8 +19,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         class="flex items-center gap-3"
       >
         <button
-          aria-label="Toggle shuffle"
+          aria-label="Enable shuffle"
+          aria-pressed="false"
           class="hover:text-gray-300 cursor-pointer text-white "
+          title="Shuffle off"
         >
           <svg
             aria-hidden="true"
@@ -82,6 +84,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </button>
         <button
           aria-label="Pause"
+          aria-pressed="true"
           class="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         >
           <svg
@@ -142,8 +145,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <button
-          aria-label="Toggle repeat"
+          aria-label="Enable repeat"
+          aria-pressed="false"
           class="hover:text-gray-300 text-white "
+          title="Repeat off"
         >
           <svg
             aria-hidden="true"
@@ -260,6 +265,9 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         class="flex items-center border-l-2 pl-4 gap-4 relative"
       >
         <button
+          aria-controls="comment-panel"
+          aria-expanded="false"
+          aria-haspopup="dialog"
           aria-label="Comments"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -437,6 +445,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         >
           <button
             aria-label="Mute"
+            aria-pressed="false"
             class="hover:text-gray-300 text-white"
           >
             <svg
@@ -521,8 +530,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         class="flex items-center gap-3"
       >
         <button
-          aria-label="Toggle shuffle"
+          aria-label="Enable shuffle"
+          aria-pressed="false"
           class="hover:text-gray-300 cursor-pointer text-white "
+          title="Shuffle off"
         >
           <svg
             aria-hidden="true"
@@ -584,6 +595,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </button>
         <button
           aria-label="Play"
+          aria-pressed="false"
           class="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         >
           <svg
@@ -633,8 +645,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <button
-          aria-label="Toggle repeat"
+          aria-label="Enable repeat"
+          aria-pressed="false"
           class="hover:text-gray-300 text-white "
+          title="Repeat off"
         >
           <svg
             aria-hidden="true"
@@ -751,6 +765,9 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         class="flex items-center border-l-2 pl-4 gap-4 relative"
       >
         <button
+          aria-controls="comment-panel"
+          aria-expanded="false"
+          aria-haspopup="dialog"
           aria-label="Comments"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -928,6 +945,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         >
           <button
             aria-label="Mute"
+            aria-pressed="false"
             class="hover:text-gray-300 text-white"
           >
             <svg
@@ -1012,8 +1030,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         class="flex items-center gap-3"
       >
         <button
-          aria-label="Toggle shuffle"
+          aria-label="Enable shuffle"
+          aria-pressed="false"
           class="hover:text-gray-300 cursor-pointer text-white "
+          title="Shuffle off"
         >
           <svg
             aria-hidden="true"
@@ -1075,6 +1095,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         </button>
         <button
           aria-label="Pause"
+          aria-pressed="true"
           class="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         >
           <svg
@@ -1135,8 +1156,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
           </svg>
         </button>
         <button
-          aria-label="Toggle repeat"
+          aria-label="Enable repeat"
+          aria-pressed="false"
           class="hover:text-gray-300 text-white "
+          title="Repeat off"
         >
           <svg
             aria-hidden="true"
@@ -1253,6 +1276,9 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         class="flex items-center border-l-2 pl-4 gap-4 relative"
       >
         <button
+          aria-controls="comment-panel"
+          aria-expanded="false"
+          aria-haspopup="dialog"
           aria-label="Comments"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -1430,6 +1456,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Desktop (1440
         >
           <button
             aria-label="Mute"
+            aria-pressed="false"
             class="hover:text-gray-300 text-white"
           >
             <svg
@@ -1514,8 +1541,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         class="flex items-center gap-3"
       >
         <button
-          aria-label="Toggle shuffle"
+          aria-label="Enable shuffle"
+          aria-pressed="false"
           class="hover:text-gray-300 cursor-pointer text-white "
+          title="Shuffle off"
         >
           <svg
             aria-hidden="true"
@@ -1577,6 +1606,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </button>
         <button
           aria-label="Pause"
+          aria-pressed="true"
           class="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         >
           <svg
@@ -1637,8 +1667,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <button
-          aria-label="Toggle repeat"
+          aria-label="Enable repeat"
+          aria-pressed="false"
           class="hover:text-gray-300 text-white "
+          title="Repeat off"
         >
           <svg
             aria-hidden="true"
@@ -1755,6 +1787,9 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         class="flex items-center border-l-2 pl-4 gap-4 relative"
       >
         <button
+          aria-controls="comment-panel"
+          aria-expanded="false"
+          aria-haspopup="dialog"
           aria-label="Comments"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -1932,6 +1967,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         >
           <button
             aria-label="Mute"
+            aria-pressed="false"
             class="hover:text-gray-300 text-white"
           >
             <svg
@@ -2016,8 +2052,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         class="flex items-center gap-3"
       >
         <button
-          aria-label="Toggle shuffle"
+          aria-label="Enable shuffle"
+          aria-pressed="false"
           class="hover:text-gray-300 cursor-pointer text-white "
+          title="Shuffle off"
         >
           <svg
             aria-hidden="true"
@@ -2079,6 +2117,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </button>
         <button
           aria-label="Play"
+          aria-pressed="false"
           class="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         >
           <svg
@@ -2128,8 +2167,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <button
-          aria-label="Toggle repeat"
+          aria-label="Enable repeat"
+          aria-pressed="false"
           class="hover:text-gray-300 text-white "
+          title="Repeat off"
         >
           <svg
             aria-hidden="true"
@@ -2246,6 +2287,9 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         class="flex items-center border-l-2 pl-4 gap-4 relative"
       >
         <button
+          aria-controls="comment-panel"
+          aria-expanded="false"
+          aria-haspopup="dialog"
           aria-label="Comments"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -2423,6 +2467,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         >
           <button
             aria-label="Mute"
+            aria-pressed="false"
             class="hover:text-gray-300 text-white"
           >
             <svg
@@ -2507,8 +2552,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         class="flex items-center gap-3"
       >
         <button
-          aria-label="Toggle shuffle"
+          aria-label="Enable shuffle"
+          aria-pressed="false"
           class="hover:text-gray-300 cursor-pointer text-white "
+          title="Shuffle off"
         >
           <svg
             aria-hidden="true"
@@ -2570,6 +2617,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         </button>
         <button
           aria-label="Pause"
+          aria-pressed="true"
           class="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         >
           <svg
@@ -2630,8 +2678,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
           </svg>
         </button>
         <button
-          aria-label="Toggle repeat"
+          aria-label="Enable repeat"
+          aria-pressed="false"
           class="hover:text-gray-300 text-white "
+          title="Repeat off"
         >
           <svg
             aria-hidden="true"
@@ -2748,6 +2798,9 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         class="flex items-center border-l-2 pl-4 gap-4 relative"
       >
         <button
+          aria-controls="comment-panel"
+          aria-expanded="false"
+          aria-haspopup="dialog"
           aria-label="Comments"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -2925,6 +2978,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Mobile (375px
         >
           <button
             aria-label="Mute"
+            aria-pressed="false"
             class="hover:text-gray-300 text-white"
           >
             <svg
@@ -3009,8 +3063,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         class="flex items-center gap-3"
       >
         <button
-          aria-label="Toggle shuffle"
+          aria-label="Enable shuffle"
+          aria-pressed="false"
           class="hover:text-gray-300 cursor-pointer text-white "
+          title="Shuffle off"
         >
           <svg
             aria-hidden="true"
@@ -3072,6 +3128,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </button>
         <button
           aria-label="Pause"
+          aria-pressed="true"
           class="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         >
           <svg
@@ -3132,8 +3189,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <button
-          aria-label="Toggle repeat"
+          aria-label="Enable repeat"
+          aria-pressed="false"
           class="hover:text-gray-300 text-white "
+          title="Repeat off"
         >
           <svg
             aria-hidden="true"
@@ -3250,6 +3309,9 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         class="flex items-center border-l-2 pl-4 gap-4 relative"
       >
         <button
+          aria-controls="comment-panel"
+          aria-expanded="false"
+          aria-haspopup="dialog"
           aria-label="Comments"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -3427,6 +3489,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         >
           <button
             aria-label="Mute"
+            aria-pressed="false"
             class="hover:text-gray-300 text-white"
           >
             <svg
@@ -3511,8 +3574,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         class="flex items-center gap-3"
       >
         <button
-          aria-label="Toggle shuffle"
+          aria-label="Enable shuffle"
+          aria-pressed="false"
           class="hover:text-gray-300 cursor-pointer text-white "
+          title="Shuffle off"
         >
           <svg
             aria-hidden="true"
@@ -3574,6 +3639,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </button>
         <button
           aria-label="Play"
+          aria-pressed="false"
           class="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         >
           <svg
@@ -3623,8 +3689,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <button
-          aria-label="Toggle repeat"
+          aria-label="Enable repeat"
+          aria-pressed="false"
           class="hover:text-gray-300 text-white "
+          title="Repeat off"
         >
           <svg
             aria-hidden="true"
@@ -3741,6 +3809,9 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         class="flex items-center border-l-2 pl-4 gap-4 relative"
       >
         <button
+          aria-controls="comment-panel"
+          aria-expanded="false"
+          aria-haspopup="dialog"
           aria-label="Comments"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -3918,6 +3989,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         >
           <button
             aria-label="Mute"
+            aria-pressed="false"
             class="hover:text-gray-300 text-white"
           >
             <svg
@@ -4002,8 +4074,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         class="flex items-center gap-3"
       >
         <button
-          aria-label="Toggle shuffle"
+          aria-label="Enable shuffle"
+          aria-pressed="false"
           class="hover:text-gray-300 cursor-pointer text-white "
+          title="Shuffle off"
         >
           <svg
             aria-hidden="true"
@@ -4065,6 +4139,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         </button>
         <button
           aria-label="Pause"
+          aria-pressed="true"
           class="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         >
           <svg
@@ -4125,8 +4200,10 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
           </svg>
         </button>
         <button
-          aria-label="Toggle repeat"
+          aria-label="Enable repeat"
+          aria-pressed="false"
           class="hover:text-gray-300 text-white "
+          title="Repeat off"
         >
           <svg
             aria-hidden="true"
@@ -4243,6 +4320,9 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         class="flex items-center border-l-2 pl-4 gap-4 relative"
       >
         <button
+          aria-controls="comment-panel"
+          aria-expanded="false"
+          aria-haspopup="dialog"
           aria-label="Comments"
           class="hover:text-gray-300 cursor-pointer text-white"
         >
@@ -4420,6 +4500,7 @@ exports[`PlayerBar Visual Regression (DOM Snapshots) > Breakpoint: Tablet (768px
         >
           <button
             aria-label="Mute"
+            aria-pressed="false"
             class="hover:text-gray-300 text-white"
           >
             <svg

@@ -35,7 +35,7 @@ export function ExplorerLink({
     return null;
   }
 
-  let url: string;
+  let url: string | null;
   switch (type) {
     case 'tx':
       url = getStellarTxUrl(value);
@@ -44,10 +44,14 @@ export function ExplorerLink({
       url = getStellarAccountUrl(value);
       break;
     case 'contract':
-      url = getStellarContractUrl(value);
+      url = getStellarContractUrl(value) ?? '#';
       break;
     default:
       url = '#';
+  }
+
+  if (!url) {
+    return null;
   }
 
   const displayText = children || value;

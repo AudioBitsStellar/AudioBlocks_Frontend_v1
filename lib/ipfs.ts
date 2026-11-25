@@ -1,41 +1,10 @@
 /**
- * IPFS → HTTP gateway resolution for cover art (#595).
- *
- * Accepts `ipfs://` URIs, bare CIDs (optionally followed by a sub-path) and full
- * gateway URLs (path style `/ipfs/<cid>` or subdomain style `<cid>.ipfs.<host>`),
- * and rewrites them onto the configured gateway. Every result is built from a
- * validated CID and checked to stay under `/ipfs/<cid>`, so a crafted value
- * cannot change the host or escape the IPFS path. All functions are O(n) in the
- * input length.
+ * Centralized IPFS gateway utilities.
  */
+
 
 /** Public fallback gateway. Its host is always allowed in `next.config.ts`. */
 export const PUBLIC_IPFS_GATEWAY = 'https://ipfs.io';
-
-// CIDv0: base58btc multihash, 46 chars starting with "Qm" (CID spec §6.2).
-// CIDv1: the multibases the spec says implementations SHOULD support (§3):
-// base32 "b" (what Pinata returns), base58btc "z", base16 "f".
-const CID_PATTERN =
-  /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{50,}|z[1-9A-HJ-NP-Za-km-z]{40,}|f[0-9a-f]{60,})$/;
-
-/**
- * Reduces a configured gateway (`https://x.mypinata.cloud/ipfs/` or a bare host)
- * to its origin, matching how `next.config.ts` builds the allowed image pattern.
- */
-export function toGatewayOrigin(value: string | undefined): string | null {
-  const raw = value?.trim();
-  if (!raw) return null;
-  try {
-    const url = new URL(/^[a-z]+:\/\//i.test(raw) ? raw : `https://${raw}`);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.origin : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Primary gateway: `NEXT_PUBLIC_IPFS_GATEWAY` (e.g. a Pinata dedicated gateway) or the public one. */
-export const IPFS_GATEWAY =
-  toGatewayOrigin(process.env.NEXT_PUBLIC_IPFS_GATEWAY) ?? PUBLIC_IPFS_GATEWAY;
 
 /** Splits `<cid>[/sub/path]` into a validated CID and its remaining path. */
 function splitContentPath(contentPath: string): { cid: string; rest: string } | null {
@@ -43,37 +12,6 @@ function splitContentPath(contentPath: string): { cid: string; rest: string } | 
   const cid = slash === -1 ? contentPath : contentPath.slice(0, slash);
   if (!CID_PATTERN.test(cid)) return null;
   return { cid, rest: slash === -1 ? '' : contentPath.slice(slash) };
-}
-
-/** Extracts `<cid>[/sub/path]` from any supported IPFS reference, or `null` if it is not one. */
-function extractContentPath(value: string): { cid: string; rest: string } | null {
-  const input = value.trim();
-
-  if (input.toLowerCase().startsWith('ipfs://')) {
-    // Tolerate the legacy `ipfs://ipfs/<cid>` form.
-    return splitContentPath(input.slice('ipfs://'.length).replace(/^ipfs\//, ''));
-  }
-
-  if (!/^https?:\/\//i.test(input)) return splitContentPath(input);
-
-  let url: URL;
-  try {
-    url = new URL(input);
-  } catch {
-    return null;
-  }
-
-  if (url.pathname.startsWith('/ipfs/')) {
-    return splitContentPath(url.pathname.slice('/ipfs/'.length));
-  }
-
-  // Subdomain gateways: https://<cid>.ipfs.<host>/<path>
-  const [subdomain, namespace] = url.hostname.split('.');
-  if (namespace === 'ipfs' && CID_PATTERN.test(subdomain)) {
-    return { cid: subdomain, rest: url.pathname === '/' ? '' : url.pathname };
-  }
-
-  return null;
 }
 
 /**
@@ -103,4 +41,30 @@ export function ipfsGatewayUrls(cidOrUri: string): string[] {
   if (!primary) return [];
   const secondary = ipfsToHttp(cidOrUri, PUBLIC_IPFS_GATEWAY);
   return secondary && secondary !== primary ? [primary, secondary] : [primary];
+}
+export const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs/';
+
+/**
+ * Converts an IPFS CID, ipfs:// URI, or HTTP URL into a resolved gateway URL.
+ * Passes through https:// and http:// URLs directly.
+ */
+export function ipfsUrl(cidOrUri: string | null | undefined): string {
+  if (!cidOrUri) return '';
+  const trimmed = cidOrUri.trim();
+  if (!trimmed) return '';
+
+  if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+    return trimmed;
+  }
+
+  let cleaned = trimmed;
+  if (cleaned.startsWith('ipfs://')) {
+    cleaned = cleaned.replace('ipfs://', '');
+  }
+  if (cleaned.startsWith('ipfs/')) {
+    cleaned = cleaned.replace('ipfs/', '');
+  }
+
+  const base = IPFS_GATEWAY.endsWith('/') ? IPFS_GATEWAY : `${IPFS_GATEWAY}/`;
+  return `${base}${cleaned}`;
 }

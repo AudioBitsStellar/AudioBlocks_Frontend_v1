@@ -1,18 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import { getApiUrl } from '@/lib/apiUrl';
+import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ExplorerLink } from '@/components/ExplorerLink';
+import WalletHelpLink from '@/components/help/WalletHelpLink';
 import { NetworkFeeDisplay } from '@/components/NetworkFeeDisplay';
 import { Modal } from '@/components/ui/Modal';
+import { useStellarWallet } from '@/context/StellarWalletContext';
 import { useSorobanRelay } from '@/hooks/useSorobanRelay';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import { extractFeeFromPrepareResponse } from '@/lib/sorobanFee';
 import { getSorobanErrorMessage, extractErrorCode } from '@/lib/walletErrors';
-import WalletHelpLink from '@/components/help/WalletHelpLink';
-import { useStellarBalance } from '@/hooks/useStellarBalance';
-import { useStellarWallet } from '@/context/StellarWalletContext';
 
 interface BuyButtonProps {
   tokenId: string;
@@ -26,16 +28,19 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
   const [networkFee, setNetworkFee] = useState<number | null>(null);
-  const { data: stellarBalance } = useStellarBalance();
+  const { data: stellarBalance, isLoading: balanceLoading, isError: balanceError, refetch: refreshBalance } = useStellarBalance();
   const { publicKey } = useStellarWallet();
 
   const isWalletConnected = !!publicKey;
+  const tradingEnabled = isFeatureEnabled('marketplaceTrading');
 
   const { run, status, txHash, error, reset } = useSorobanRelay({
-    prepare: async () => {
-      const response = await fetch('/api/marketplace/buy/prepare', {
+    purchaseTokenId: tokenId,
+    prepare: async (idempotencyKey) => {
+      const response = await fetch(getApiUrl('marketplace/prepare-buy'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}) },
         body: JSON.stringify({
           tokenId,
           buyerPublicKey: publicKey,
@@ -59,10 +64,11 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
 
       return data;
     },
-    submit: async (signedXdr: string) => {
-      const response = await fetch('/api/marketplace/buy/submit', {
+    submit: async (signedXdr: string, idempotencyKey) => {
+      const response = await fetch(getApiUrl('marketplace/submit-buy'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}) },
         body: JSON.stringify({ signedXdr }),
       });
 
@@ -88,6 +94,12 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
         </div>
       );
 
+      trackEvent('purchase', {
+        tokenId,
+        price,
+        network: process.env.NEXT_PUBLIC_STELLAR_NETWORK,
+      });
+
       queryClient.invalidateQueries({ queryKey: ['marketplace'] });
       queryClient.invalidateQueries({ queryKey: ['nft'] });
       queryClient.invalidateQueries({ queryKey: ['collection'] });
@@ -100,7 +112,6 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
       const message = errorCode ? getSorobanErrorMessage(errorCode) : err.message;
 
       toast.error(message);
-      setShowConfirm(false);
       setNetworkFee(null);
     },
   });
@@ -111,23 +122,32 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
       return;
     }
 
+    if (isProcessing || isOwned || balanceLoading || balanceError || !stellarBalance || hasInsufficientFunds) return;
     await run();
   };
 
-  const handleConfirm = () => {
-    setShowConfirm(false);
-    handleBuy();
-  };
 
   const isProcessing =
-    status === 'preparing' || status === 'awaiting-signature' || status === 'submitting';
-  const isOwned = txHash != null;
+    status === 'preparing' || status === 'awaiting-signature' || status === 'submitting' || status === 'pending';
+  const isOwned = status === 'success';
 
-  const priceXlm = parseFloat(price.split(' ')[0]);
+  const priceXlm = /^\d+(?:\.\d+)?(?:\s+XLM)?$/i.test(price.trim()) ? Number(price.trim().split(/\s+/)[0]) : null;
   const estimatedFee = 0.01;
-  const totalRequired = priceXlm + estimatedFee;
+  const totalRequired = (priceXlm ?? 0) + (networkFee ?? estimatedFee);
   const hasInsufficientFunds =
-    stellarBalance?.isFunded && stellarBalance.spendableXlm < totalRequired;
+    !!stellarBalance && (!stellarBalance.isFunded || stellarBalance.spendableXlm < totalRequired);
+
+  if (!tradingEnabled) {
+    return (
+      <button
+        className="border-gray-600 border text-white px-4 py-2 rounded-2xl text-sm mb-2 opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
+        disabled
+        title="Buying is not available yet"
+      >
+        Coming soon
+      </button>
+    );
+  }
 
   return (
     <>
@@ -142,6 +162,7 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
             {status === 'preparing' && 'Preparing...'}
             {status === 'awaiting-signature' && 'Awaiting signature...'}
             {status === 'submitting' && 'Submitting...'}
+            {status === 'pending' && 'Purchase pending...'}
           </>
         ) : isOwned ? (
           'Owned'
@@ -149,6 +170,12 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
           label
         )}
       </button>
+      {status === 'pending' && (
+        <p role="status" className="text-xs text-amber-300 mb-2">
+          {error || 'Checking purchase status with the server. Do not buy again.'}
+          {txHash && <ExplorerLink type="tx" value={txHash}> View transaction</ExplorerLink>}
+        </p>
+      )}
 
       <Modal
         description="This will submit a Soroban transaction on the Stellar network."
@@ -187,19 +214,35 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
 
           <p className="text-xs text-gray-400 bg-gray-800/50 p-3 rounded-lg">
             You are buying an NFT on the Stellar{' '}
-            {process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet' ? 'mainnet' : 'testnet'}.
+            {['mainnet', 'public'].includes(process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? '') ? 'mainnet' : 'testnet'}. This
+            transaction is final once confirmed on-chain and cannot be refunded. See our{' '}
+            <Link className="underline hover:text-white" href="/legal/terms">
+              Terms of Service
+            </Link>
+            .
           </p>
 
           {error && (
-            <p className="text-xs text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-800">
+            <p
+              className="text-xs text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-800"
+              role="alert"
+            >
               {error}
             </p>
           )}
 
           <WalletHelpLink />
+          <p className="text-xs text-on-muted">
+            Purchases settle on-chain and are final in most cases. See our{' '}
+            <a className="underline" href="/refund-policy">
+              refund policy
+            </a>{' '}
+            for the exceptions.
+          </p>
           <div className="flex justify-end gap-3">
             <button
               className="px-4 py-2 rounded-2xl text-sm text-on-muted hover:text-white transition-colors"
+              disabled={isProcessing}
               onClick={() => {
                 setShowConfirm(false);
                 reset();
@@ -209,7 +252,7 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
             </button>
             <button
               className="px-4 py-2 rounded-2xl text-sm bg-brand text-white hover:bg-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={hasInsufficientFunds || !isWalletConnected}
+              disabled={isProcessing || isOwned || balanceLoading || balanceError || !stellarBalance || hasInsufficientFunds || !isWalletConnected}
               onClick={handleBuy}
             >
               {!isWalletConnected ? 'Wallet not connected' : 'Confirm purchase'}
@@ -222,3 +265,4 @@ const BuyButton = ({ tokenId, price, label, artistName, songTitle }: BuyButtonPr
 };
 
 export default BuyButton;
+

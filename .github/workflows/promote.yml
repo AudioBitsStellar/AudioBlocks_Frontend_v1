@@ -1,0 +1,46 @@
+# Promotes an already-built, already-scanned image from one environment tag
+# to another by copying its manifest — no rebuild (#843: "one image promoted
+# across environments"). Used both to promote staging -> production and, for
+# a rollback, to point production back at a previous known-good `source_tag`
+# (#844). See docs/ROLLBACK.md and docs/STAGING_PARITY_CHECKLIST.md.
+name: promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: 'Existing tag to promote, e.g. sha-<commit> or staging'
+        required: true
+      target_tag:
+        description: 'Tag to point at the same image, e.g. production'
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy manifest ${{ github.event.inputs.source_tag }} -> ${{ github.event.inputs.target_tag }}
+        run: |
+          docker buildx imagetools create \
+            --tag "${IMAGE}:${{ github.event.inputs.target_tag }}" \
+            "${IMAGE}:${{ github.event.inputs.source_tag }}"
+
+      - name: Record the promotion
+        run: |
+          echo "Promoted ${IMAGE}:${{ github.event.inputs.source_tag }} -> ${IMAGE}:${{ github.event.inputs.target_tag }}"
+          docker buildx imagetools inspect "${IMAGE}:${{ github.event.inputs.target_tag }}"

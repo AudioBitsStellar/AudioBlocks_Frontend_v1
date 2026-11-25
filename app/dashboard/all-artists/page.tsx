@@ -9,13 +9,44 @@ import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
-import { useArtists } from '@/hooks/queries/artists';
+import { useArtists, type ArtistListItem } from '@/hooks/queries/artists';
+import { usePrefetchArtist } from '@/hooks/usePrefetch';
 
 const ITEMS_PER_PAGE = 12;
 
 function pageFromSearch(search: string | null): number {
   const parsedPage = Number(search);
   return Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+}
+
+function ArtistCardItem({ artist }: { artist: ArtistListItem }) {
+  const prefetch = usePrefetchArtist(artist.id);
+  const name = artist.name?.trim() || artist.username?.trim() || 'Artist';
+
+  return (
+    <Link
+      aria-label={`View ${name}`}
+      className="rounded-lg p-3 transition-colors hover:bg-surface-hover"
+      href={`/dashboard/artist/${encodeURIComponent(artist.id)}`}
+      {...prefetch}
+    >
+      <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-md">
+        <ArtworkImage
+          fill
+          alt={`Artwork for ${name}`}
+          className="object-cover"
+          sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+          src={artist.profileImage || artist.pageCover}
+          title={name}
+        />
+      </div>
+      <div className="mb-1 flex items-start justify-between gap-2">
+        <p className="flex-1 text-sm font-bold text-white">{name}</p>
+        {artist.isVerified && <VerifiedBadge size="sm" />}
+      </div>
+      {artist.username && <p className="text-xs text-on-muted">@{artist.username}</p>}
+    </Link>
+  );
 }
 
 function AllArtistsContent() {
@@ -75,33 +106,9 @@ function AllArtistsContent() {
         </div>
       ) : data?.items.length ? (
         <div className="mb-8 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-          {data.items.map((artist) => {
-            const name = artist.name?.trim() || artist.username?.trim() || 'Artist';
-            return (
-              <Link
-                key={artist.id}
-                aria-label={`View ${name}`}
-                className="rounded-lg p-3 transition-colors hover:bg-surface-hover"
-                href={`/dashboard/artist/${encodeURIComponent(artist.id)}`}
-              >
-                <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-md">
-                  <ArtworkImage
-                    fill
-                    alt={`Artwork for ${name}`}
-                    className="object-cover"
-                    sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                    src={artist.profileImage || artist.pageCover}
-                    title={name}
-                  />
-                </div>
-                <div className="mb-1 flex items-start justify-between gap-2">
-                  <p className="flex-1 text-sm font-bold text-white">{name}</p>
-                  {artist.isVerified && <VerifiedBadge size="sm" />}
-                </div>
-                {artist.username && <p className="text-xs text-on-muted">@{artist.username}</p>}
-              </Link>
-            );
-          })}
+          {data.items.map((artist) => (
+            <ArtistCardItem key={artist.id} artist={artist} />
+          ))}
         </div>
       ) : (
         <p className="py-16 text-center text-on-muted">No artists to show yet.</p>

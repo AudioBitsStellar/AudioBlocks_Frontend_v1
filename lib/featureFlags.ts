@@ -11,15 +11,32 @@
  * `readFlagValue`) rather than `process.env[someVariable]`, because Next.js
  * only inlines statically-referenced `NEXT_PUBLIC_*` variables into the client
  * bundle.
+ *
+ * Runtime overrides (#815): a server-only `RUNTIME_FEATURE_*` variable, read on
+ * each request by `app/api/runtime-config/route.ts`, takes precedence over the
+ * build-time `NEXT_PUBLIC_FEATURE_*` value. Changing it needs a server restart,
+ * not a rebuild.
  */
 
+import { readRuntimeFlagValue } from '@/lib/runtimeConfig';
+
 /** Names of the flags understood by the app. */
-export type FeatureFlagName = 'merch' | 'events' | 'communityVoting' | 'artistPerks';
+export type FeatureFlagName =
+  | 'merch'
+  | 'events'
+  | 'communityVoting'
+  | 'artistPerks'
+  | 'marketplaceTrading';
 
 /** Static metadata for a single feature flag. */
 export interface FeatureFlagDefinition {
-  /** Environment variable that overrides the flag's default. */
+  /** Environment variable that overrides the flag's default at build time. */
   readonly envVar: `NEXT_PUBLIC_${string}`;
+  /**
+   * Server-only variable that overrides the flag at runtime, without a rebuild
+   * (#815). It is never inlined, so it is read per request.
+   */
+  readonly runtimeEnvVar: `RUNTIME_FEATURE_${string}`;
   /** Human-readable description used in docs and diagnostics. */
   readonly description: string;
   /** Endpoint(s) the feature depends on, none of which are implemented yet. */
@@ -30,16 +47,19 @@ export interface FeatureFlagDefinition {
 export const FEATURE_FLAGS: Record<FeatureFlagName, FeatureFlagDefinition> = {
   merch: {
     envVar: 'NEXT_PUBLIC_FEATURE_MERCH',
+    runtimeEnvVar: 'RUNTIME_FEATURE_MERCH',
     description: 'Merch section on the Explore page',
     pendingEndpoints: ['/api/merch'],
   },
   events: {
     envVar: 'NEXT_PUBLIC_FEATURE_EVENTS',
+    runtimeEnvVar: 'RUNTIME_FEATURE_EVENTS',
     description: 'Events section on the Explore page',
     pendingEndpoints: ['/api/events'],
   },
   communityVoting: {
     envVar: 'NEXT_PUBLIC_FEATURE_COMMUNITY_VOTING',
+    runtimeEnvVar: 'RUNTIME_FEATURE_COMMUNITY_VOTING',
     description: 'Community voting and leaderboard page',
     pendingEndpoints: [
       '/api/community/leaderboard',
@@ -49,8 +69,25 @@ export const FEATURE_FLAGS: Record<FeatureFlagName, FeatureFlagDefinition> = {
   },
   artistPerks: {
     envVar: 'NEXT_PUBLIC_FEATURE_ARTIST_PERKS',
+    runtimeEnvVar: 'RUNTIME_FEATURE_ARTIST_PERKS',
     description: 'Fan perks section on the public artist page (#586)',
     pendingEndpoints: ['/api/artists/:artistId/perks'],
+  },
+  marketplaceTrading: {
+    envVar: 'NEXT_PUBLIC_FEATURE_MARKETPLACE_TRADING',
+    description:
+      'Buying, bidding on, and listing NFTs (BuyButton, AuctionBidDialog, ListNFTDialog). ' +
+      'useSorobanRelay has no wallet-signing implementation yet, and the relay path it calls ' +
+      "doesn't match any mounted backend route, so every submission fails the same way " +
+      'regardless of which of the three flows triggers it.',
+    pendingEndpoints: [
+      'POST /api/marketplace/prepare-listing',
+      'POST /api/marketplace/submit-listing',
+      'POST /api/marketplace/prepare-buy',
+      'POST /api/marketplace/submit-buy',
+      'POST /api/marketplace/prepare-bid',
+      'POST /api/marketplace/submit-bid',
+    ],
   },
 };
 
@@ -73,6 +110,8 @@ function readFlagValue(flag: FeatureFlagName): string | undefined {
       return process.env.NEXT_PUBLIC_FEATURE_COMMUNITY_VOTING;
     case 'artistPerks':
       return process.env.NEXT_PUBLIC_FEATURE_ARTIST_PERKS;
+    case 'marketplaceTrading':
+      return process.env.NEXT_PUBLIC_FEATURE_MARKETPLACE_TRADING;
   }
 }
 
@@ -93,12 +132,20 @@ export function defaultFlagValue(nodeEnv: string | undefined = process.env.NODE_
  * Anything else falls back to `fallback`.
  */
 export function parseFlagValue(value: string | undefined, fallback: boolean): boolean {
-  if (value == null || value.trim() === '') return fallback;
+  return parseKnownFlagValue(value) ?? fallback;
+}
+
+/**
+ * Like `parseFlagValue`, but returns `undefined` for a blank or unrecognized
+ * value instead of a fallback, so a caller can try the next source (#815).
+ */
+function parseKnownFlagValue(value: string | undefined): boolean | undefined {
+  if (value == null || value.trim() === '') return undefined;
 
   const normalized = value.trim().toLowerCase();
   if (TRUTHY_VALUES.has(normalized)) return true;
   if (FALSY_VALUES.has(normalized)) return false;
-  return fallback;
+  return undefined;
 }
 
 export interface FeatureFlagOptions {
@@ -111,12 +158,23 @@ export interface FeatureFlagOptions {
 /**
  * Returns whether a feature flag is enabled.
  *
+ * Sources, first match wins (#815):
+ * 1. `options.value` (tests)
+ * 2. Runtime override published by `/api/runtime-config`, when the page has loaded it
+ * 3. The build-time `NEXT_PUBLIC_FEATURE_*` variable
+ * 4. The NODE_ENV default
+ *
  * @example
  * if (isFeatureEnabled('merch')) { ... }
  */
 export function isFeatureEnabled(flag: FeatureFlagName, options: FeatureFlagOptions = {}): boolean {
-  const rawValue = options.value ?? readFlagValue(flag);
-  return parseFlagValue(rawValue, defaultFlagValue(options.nodeEnv));
+  const fallback = defaultFlagValue(options.nodeEnv);
+  if (options.value !== undefined) return parseFlagValue(options.value, fallback);
+
+  const runtimeValue = parseKnownFlagValue(readRuntimeFlagValue(flag));
+  if (runtimeValue !== undefined) return runtimeValue;
+
+  return parseFlagValue(readFlagValue(flag), fallback);
 }
 
 /**

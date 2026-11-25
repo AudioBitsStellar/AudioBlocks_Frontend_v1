@@ -1,8 +1,9 @@
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { useEffect, useState } from 'react';
-import apiClient from '@/lib/apiClient';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
+import { trackEvent } from '@/lib/analytics';
+import apiClient from '@/lib/apiClient';
 
 /**
  * Distinguishes a user declining/cancelling a wallet signature prompt from a
@@ -21,6 +22,15 @@ function isUserRejectionError(err: unknown): boolean {
     message.includes('user cancelled') ||
     message.includes('user canceled')
   );
+}
+
+async function establishServerSession(token: string) {
+  const response = await fetch('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  if (!response.ok) throw new Error('The server could not verify this session');
 }
 
 export const Auth = () => {
@@ -51,15 +61,13 @@ export const Auth = () => {
           toast.error('Failed to sign the authentication message. Please try again.');
         }
       } finally {
-        setLoading(false); 
+        setLoading(false);
         setShouldTriggerSignature(false); // Prevent future auto-triggers
       }
     };
 
     runSignatureFlow();
   }, [user?.userId, primaryWallet, address, shouldTriggerSignature]);
-
-
 
   const authenticateUser = async (
     role: string,
@@ -78,16 +86,16 @@ export const Auth = () => {
       });
 
       const token = response.data.user.token;
+      await establishServerSession(token);
       Cookies.set('audioblocks_jwt', token);
       toast.success(response.data?.message);
       return response.data;
-
     } catch (error: any) {
       const errorMsg = error?.response?.data?.message;
 
       if (errorMsg?.toLowerCase().includes('user not found')) {
-          try {
-            const registerResponse = await apiClient.post('/api/auth/register', {
+        try {
+          const registerResponse = await apiClient.post('/api/auth/register', {
             role,
             email,
             walletAddress,
@@ -96,8 +104,10 @@ export const Auth = () => {
           });
 
           const registerToken = registerResponse.data?.user?.token;
+          await establishServerSession(registerToken);
           Cookies.set('audioblocks_jwt', registerToken);
           toast.success(registerResponse.data?.message);
+          trackEvent('signup', { role, method: 'wallet_signature' });
           return registerResponse.data;
         } catch (registerError: any) {
           toast.error(registerError?.response?.data?.message || 'Registration failed');

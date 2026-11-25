@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AlertCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function ArtistError({
   error,
@@ -21,18 +21,21 @@ export default function ArtistError({
       <div className="text-center space-y-2">
         <h1 className="text-xl font-bold text-white">Failed to Load Artist</h1>
         <p className="text-sm text-gray-400">Could not load the artist data. Please try again.</p>
+        {error.digest && (
+          <p className="text-xs text-gray-500 font-mono select-all">Reference: {error.digest}</p>
+        )}
       </div>
       <div className="flex gap-3">
         <button
-          onClick={reset}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+          onClick={reset}
         >
           <RefreshCw size={16} />
           Try Again
         </button>
         <Link
-          href="/dashboard"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+          href="/dashboard"
         >
           Back to Dashboard
         </Link>

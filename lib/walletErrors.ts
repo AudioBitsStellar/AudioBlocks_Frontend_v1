@@ -19,7 +19,13 @@ export const WALLET_CONNECTION_ERROR_MESSAGES = {
  * Based on AudioBlock_Backend/src/types/OnChainErrorCodes.ts
  */
 export const SOROBAN_ERROR_MESSAGES: Record<string, string> = {
-  INSUFFICIENT_BALANCE: 'Insufficient balance to complete this transaction.',
+  INSUFFICIENT_BALANCE: 'Insufficient spendable balance. Add funds to your wallet, keeping XLM available for network fees and the account reserve, then refresh your balance.',
+  MISSING_TRUSTLINE: 'A required asset trustline is missing. In your wallet, add the asset using the listing’s exact asset code and issuer, then try again. Keep XLM available for the additional reserve.',
+  TRUSTLINE_REQUIRED: 'Add the required asset trustline in your wallet using the listing’s exact asset code and issuer, then try again.',
+  op_no_trust: 'A required trustline is missing. Check the asset code and issuer with the listing owner before adding the asset in your wallet.',
+  op_underfunded: 'Insufficient asset balance. Add the payment asset to your wallet, then refresh your balance.',
+  tx_insufficient_balance: 'Add XLM for network fees and the account reserve, then refresh your balance.',
+  op_low_reserve: 'Add XLM to cover the account reserve before adding a trustline, then try again.',
   LISTING_NOT_FOUND: 'This listing is no longer available.',
   LISTING_ALREADY_SOLD: 'This item has already been sold.',
   UNAUTHORIZED: 'You are not authorized to perform this action.',
@@ -37,11 +43,13 @@ const USER_CANCELLATION_CODES = new Set([
   'action rejected',
   'user rejected',
   'user denied',
+  'user declined',
   'user cancelled',
   'user canceled',
 ]);
 
 const USER_CANCELLATION_PATTERNS = [
+  'user declined',
   'user rejected',
   'user denied',
   'rejected the request',
@@ -101,9 +109,22 @@ export function isUserCancellationError(error: unknown): boolean {
 
 /** Returns safe, actionable copy for a wallet connection error. */
 export function getWalletConnectionErrorMessage(error: unknown): string {
+  const values = collectErrorValues(error).join(' ');
+  if (/not installed|not available|wallet not found|extension not found/.test(values))
+    return 'Wallet unavailable. Install or enable your selected wallet, then reconnect.';
+  if (/locked|unlock/.test(values))
+    return 'Wallet locked. Open and unlock your wallet, then try again.';
+  if (/wrong network|network mismatch|network passphrase|unsupported network/.test(values))
+    return 'Wrong wallet network. Switch your wallet to the network shown in AudioBlocks, then reconnect.';
   return isUserCancellationError(error)
     ? WALLET_CONNECTION_ERROR_MESSAGES.cancelled
     : WALLET_CONNECTION_ERROR_MESSAGES.failed;
+}
+
+export function getWalletSigningErrorMessage(error: unknown): string {
+  return isUserCancellationError(error)
+    ? 'Signature rejected. Nothing was submitted. Confirm the request in your wallet when you are ready.'
+    : getWalletConnectionErrorMessage(error);
 }
 
 /**

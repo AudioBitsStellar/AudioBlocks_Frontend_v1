@@ -15,7 +15,21 @@ export function formatDuration(seconds?: number): string {
   if (seconds === undefined || !Number.isFinite(seconds) || seconds < 0) return '—';
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 }
-export default function TrackList({ tracks }: { tracks: Track[] }) {
+
+const VIRTUALIZATION_THRESHOLD = 20;
+const ESTIMATED_ROW_HEIGHT = 58;
+
+interface TrackListProps {
+  tracks: Track[];
+  virtualizeThreshold?: number;
+  maxHeight?: number | string;
+}
+
+export default function TrackList({
+  tracks,
+  virtualizeThreshold = VIRTUALIZATION_THRESHOLD,
+  maxHeight = 600,
+}: TrackListProps) {
   const { playTrack, addToQueue } = usePlayback();
   const allowExplicit = useOptionalUserPreferences()?.preferences.showExplicitContent ?? false;
   const [reportTrack, setReportTrack] = useState<Track | null>(null);

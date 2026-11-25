@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { getProfile } from '@/lib/profileService';
 import { hasCompletedOnboarding, markOnboardingComplete } from '@/lib/onboarding';
+import { getProfile } from '@/lib/profileService';
 
 /**
  * First-time user redirect to onboarding (#478).
@@ -33,7 +33,7 @@ export default function OnboardingRedirect() {
   useEffect(() => {
     if (!isReady || !user?.userId) return;
     if (pathname.startsWith('/onboarding')) return;
-    if (hasCompletedOnboarding()) return;
+    if (hasCompletedOnboarding(user.userId)) return;
 
     let cancelled = false;
     const returnTo = pathname + (window.location.search || '');
@@ -42,12 +42,12 @@ export default function OnboardingRedirect() {
       router.replace(`/onboarding?returnTo=${encodeURIComponent(returnTo || '/dashboard')}`);
     };
 
-    // #596 — a role saved on the backend (possibly from another browser) means
-    // onboarding is already done. A failed lookup falls back to the redirect.
+    // #596, #712 — backend is the source of truth. If the user already has a
+    // role saved on the backend, onboarding is complete; cache it keyed by userId.
     getProfile()
       .then((profile) => {
         if (profile?.accountType) {
-          if (!cancelled) markOnboardingComplete();
+          if (!cancelled) markOnboardingComplete(user.userId);
         } else {
           redirectToOnboarding();
         }

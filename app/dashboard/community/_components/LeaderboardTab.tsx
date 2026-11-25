@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import { UserRound } from 'lucide-react';
+import { Trophy, UserRound } from 'lucide-react';
 import type { Artist } from '@/components/ui/ArtistCard';
 
 interface LeaderboardTabProps {
@@ -8,6 +8,8 @@ interface LeaderboardTabProps {
 }
 
 const LeaderboardTab = ({ artists }: LeaderboardTabProps) => {
+  const hasNoVotes = artists.length === 0 || artists.every((a) => !a.votes || a.votes === 0);
+
   return (
     <>
       <p className="text-white text-sm mb-10">
@@ -15,12 +17,23 @@ const LeaderboardTab = ({ artists }: LeaderboardTabProps) => {
         time listening and engaging with the platform.
       </p>
 
-      {artists.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center border border-gray-800 rounded-lg">
-          <UserRound className="text-on-muted mb-4" size={48} />
+      {hasNoVotes ? (
+        <div
+          className="flex min-h-[360px] w-full flex-col items-center justify-center rounded-xl border border-gray-800 bg-surface/50 p-8 text-center"
+          data-testid="leaderboard-empty-state"
+        >
+          <div className="relative mb-6 flex items-center justify-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-gray-700 bg-surface shadow-inner">
+              <Trophy aria-hidden="true" className="text-on-muted opacity-60" size={36} />
+            </div>
+            <div className="absolute -bottom-1 -right-1 rounded-full border border-gray-700 bg-surface p-1.5 shadow">
+              <UserRound aria-hidden="true" className="text-brand opacity-80" size={16} />
+            </div>
+          </div>
           <h3 className="text-white text-lg font-semibold mb-2">No leaderboard data yet</h3>
           <p className="text-on-muted text-sm max-w-sm">
-            Votes will appear here once artists start receiving votes.
+            Votes will appear here once artists start receiving votes. Cast your vote in the Vote tab
+            to support your favorite artists.
           </p>
         </div>
       ) : (

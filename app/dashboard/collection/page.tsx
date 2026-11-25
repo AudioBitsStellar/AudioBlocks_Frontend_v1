@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useMemo, useCallback, useRef } from 'react';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { ListFilter, Music, Search, UsersRound, Send, DollarSign } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { NftTransfer } from '@/components/NftTransfer';
+import { CollectionEmptyState } from '@/components/collection/CollectionEmptyState';
 import { ListNFTDialog } from '@/components/marketplace/ListNFTDialog';
+import { NftTransfer } from '@/components/NftTransfer';
 import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -14,8 +13,10 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useOwnedCollection } from '@/hooks/useOwnedCollection';
 import { filterOwnedSongs, songCoverSrc, toOwnedNFT, type OwnedNFT } from '@/lib/collectionSongs';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 
 const ITEMS_PER_PAGE = 10;
+const marketplaceTradingEnabled = isFeatureEnabled('marketplaceTrading');
 
 const CollectionsPage = () => {
   const { address, isConnected } = useAccount();
@@ -94,7 +95,7 @@ const CollectionsPage = () => {
         {statCards.map(({ label, value, accent, bg }) => (
           <div
             key={label}
-            className="bg-surface rounded-xl hover:border hover:border-border-muted p-5 flex items-center"
+            className="bg-surface rounded-xl hover:border hover:border-border-dark p-5 flex items-center"
           >
             <div className={`rounded-full p-3 mr-5 ${bg}`}>
               <UsersRound aria-hidden="true" className={accent} size={15} />
@@ -154,20 +155,7 @@ const CollectionsPage = () => {
       )}
 
       {isConnected && !isLoading && !backendLoading && songs.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-center text-on-muted">
-          <Music aria-hidden="true" className="mb-4 opacity-40" size={64} />
-          <h3 className="text-white text-lg font-semibold mb-2">No NFTs yet</h3>
-          <p className="text-sm max-w-sm mb-6">
-            You don&apos;t own any music NFTs yet. Explore the marketplace to discover and collect
-            tracks from your favorite artists.
-          </p>
-          <Link
-            className="px-6 py-2 rounded-full bg-brand hover:bg-pink-700 text-white text-sm font-semibold transition-colors"
-            href="/marketPlace"
-          >
-            Browse Marketplace
-          </Link>
-        </div>
+        <CollectionEmptyState />
       )}
 
       {isConnected &&
@@ -212,8 +200,9 @@ const CollectionsPage = () => {
                         {song.totalStreams.toString()} streams
                       </span>
                       <button
-                        className="p-1.5 text-xs bg-brand/20 border border-brand/40 rounded-full hover:bg-brand/30 transition-colors"
-                        title="List for sale"
+                        className="p-1.5 text-xs bg-brand/20 border border-brand/40 rounded-full hover:bg-brand/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-surface-input disabled:border-border-dark"
+                        disabled={!marketplaceTradingEnabled}
+                        title={marketplaceTradingEnabled ? 'List for sale' : 'Listing is not available yet'}
                         type="button"
                         onClick={() => setListingNFT(song)}
                       >

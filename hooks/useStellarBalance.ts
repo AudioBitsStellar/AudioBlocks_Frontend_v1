@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAccount } from 'wagmi';
+import { useStellarWallet } from '@/context/StellarWalletContext';
 import { ACTIVE_STELLAR_NETWORK, STELLAR_BASE_RESERVE } from '@/lib/stellarConfig';
 import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
 
@@ -17,6 +17,8 @@ interface HorizonAccount {
   }>;
   /** Number of ledger entries owned by this account (offers, trustlines, etc.). */
   subentry_count: number;
+  num_sponsoring?: number;
+  num_sponsored?: number;
 }
 
 /**
@@ -70,7 +72,7 @@ async function fetchStellarBalance(address: string): Promise<StellarBalance | nu
   const sellingLiabilities = parseFloat(nativeBalance.selling_liabilities ?? '0');
 
   // Minimum reserve: (2 + subentry_count) * 0.5 XLM.
-  const minReserve = (2 + account.subentry_count) * STELLAR_BASE_RESERVE;
+  const minReserve = (2 + account.subentry_count + (account.num_sponsoring ?? 0) - (account.num_sponsored ?? 0)) * STELLAR_BASE_RESERVE;
 
   // Spendable balance: total balance minus reserve minus selling liabilities.
   const spendableXlm = Math.max(0, xlm - minReserve - sellingLiabilities);
@@ -103,15 +105,7 @@ async function fetchStellarBalance(address: string): Promise<StellarBalance | nu
  * ```
  */
 export function useStellarBalance() {
-  // TODO (#555): Replace with actual Stellar wallet address when Stellar wallet
-  // integration is added. For now, this uses the EVM address as a placeholder.
-  // The hook will need to be updated to read from the Stellar wallet connector
-  // (e.g., Freighter, Albedo, or a Dynamic-labs Stellar wallet) once available.
-  const { address } = useAccount();
-
-  // For now, we assume the Stellar address matches the EVM address format check.
-  // In a real integration, validate that this is a Stellar public key (G...).
-  const stellarAddress = address;
+  const { publicKey: stellarAddress } = useStellarWallet();
 
   return useQuery({
     queryKey: stellarBalanceKeys.account(stellarAddress ?? ''),
@@ -131,7 +125,5 @@ export function useStellarBalance() {
     retry: RETRY_CONFIG.DEFAULT,
     // Refetch on window focus to catch balance changes from other tabs/wallets.
     refetchOnWindowFocus: true,
-    // Keep showing the last known balance while a background refetch is in flight.
-    placeholderData: (previousData) => previousData,
   });
 }

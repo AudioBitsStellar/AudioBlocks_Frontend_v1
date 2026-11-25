@@ -30,7 +30,9 @@ export const PlayerControls = memo(function PlayerControls({
     <div className="flex items-center gap-3">
       <button
         aria-label="Toggle shuffle"
+        aria-pressed={shuffle}
         className={`hover:text-gray-300 cursor-pointer text-white ${shuffle ? 'text-pink-500' : ''}`}
+        title={shuffle ? 'Shuffle on' : 'Shuffle off'}
         onClick={onToggleShuffle}
       >
         <Shuffle size={16} />
@@ -46,6 +48,7 @@ export const PlayerControls = memo(function PlayerControls({
 
       <button
         aria-label={isBuffering ? 'Loading' : isPlaying ? 'Pause' : 'Play'}
+        aria-pressed={isPlaying}
         className="p-2 rounded-full bg-white flex items-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 justify-center"
         disabled={isBuffering}
         onClick={onTogglePlay}
@@ -65,7 +68,9 @@ export const PlayerControls = memo(function PlayerControls({
 
       <button
         aria-label="Toggle repeat"
+        aria-pressed={repeat}
         className={`hover:text-gray-300 text-white ${repeat ? 'text-pink-500' : ''}`}
+        title={repeat ? 'Repeat on' : 'Repeat off'}
         onClick={onToggleRepeat}
       >
         <Repeat size={16} />

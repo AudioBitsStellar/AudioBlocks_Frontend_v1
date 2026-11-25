@@ -3,9 +3,28 @@ import {
   getWalletConnectionErrorMessage,
   isUserCancellationError,
   WALLET_CONNECTION_ERROR_MESSAGES,
+  getWalletSigningErrorMessage,
+  getSorobanErrorMessage,
 } from '@/lib/walletErrors';
 
 describe('walletErrors', () => {
+  it.each([
+    [{ message: 'Extension not found' }, 'Install or enable'],
+    [{ error: { message: 'Wallet is locked' } }, 'unlock'],
+    [{ code: 'WRONG_NETWORK' }, 'Switch your wallet'],
+    [new Error('User declined'), 'cancelled'],
+  ])('provides an actionable state for %o', (error, expected) => {
+    expect(getWalletConnectionErrorMessage(error)).toContain(expected);
+  });
+
+  it('explains rejected signing without calling it a connection failure', () => {
+    expect(getWalletSigningErrorMessage({ code: 4001 })).toContain('Nothing was submitted');
+  });
+
+  it('explains funding and exact asset identity for trustline failures', () => {
+    expect(getSorobanErrorMessage('INSUFFICIENT_BALANCE')).toContain('account reserve');
+    expect(getSorobanErrorMessage('MISSING_TRUSTLINE')).toContain('asset code and issuer');
+  });
   describe('isUserCancellationError', () => {
     it.each([
       new Error('User rejected the request'),

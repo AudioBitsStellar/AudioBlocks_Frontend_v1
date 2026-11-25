@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Mail, Wallet, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -130,6 +131,12 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-white mb-8">Settings</h1>
+      <Link
+        className="mb-8 inline-flex rounded-full border border-gray-700 px-4 py-2 text-sm font-semibold text-white hover:bg-white/5"
+        href="/dashboard/plans"
+      >
+        View subscription plans
+      </Link>
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Linked Accounts</h2>
@@ -240,6 +247,8 @@ export default function SettingsPage() {
       />
 
       <ListeningHistorySection />
+
+      <GiftSubscriptionsSection />
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Quality Checks</h2>
