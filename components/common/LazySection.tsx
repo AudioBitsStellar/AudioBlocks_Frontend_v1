@@ -26,6 +26,13 @@ export default function LazySection({ children, minHeight, className }: LazySect
     const el = ref.current;
     if (!el || visible) return;
 
+    // Keep content available on older browsers, test environments, and webviews
+    // that do not implement IntersectionObserver.
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {

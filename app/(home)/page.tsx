@@ -2,6 +2,13 @@ import Hero from '@/components/common/home/Hero';
 import HomeSections from './HomeSections';
 import type { Metadata } from 'next';
 
+/**
+ * #830 (PERF-05): Cache the public home page with Incremental Static Regeneration (ISR).
+ * Serves statically generated HTML at edge/CDN for near-zero TTFB; revalidates in the
+ * background at most once every 60 seconds when incoming traffic arrives.
+ */
+export const revalidate = 60;
+
 const TITLE = 'AudioBlocks — Stream, Earn & Collect Music NFTs';
 const DESCRIPTION =
   'AudioBlocks is a Web3 music platform where listeners stream ad-free music and earn rewards while artists upload tracks, sell NFTs, and get paid fairly.';

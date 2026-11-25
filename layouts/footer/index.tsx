@@ -2,6 +2,22 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Facebook, Twitter, Youtube, Mail } from 'lucide-react';
 import Icon from '@/components/ui/Icon';
+import { SOCIAL_LINKS, type SocialLink } from '@/lib/constants';
+
+function renderSocialIcon(name: SocialLink['name']) {
+  switch (name) {
+    case 'youtube':
+      return <Youtube aria-hidden="true" />;
+    case 'instagram':
+      return <Icon aria-hidden="true" className="h-6 w-6" name="instagram" size="lg" />;
+    case 'facebook':
+      return <Facebook aria-hidden="true" />;
+    case 'twitter':
+      return <Twitter aria-hidden="true" />;
+    case 'mail':
+      return <Mail aria-hidden="true" />;
+  }
+}
 
 const Footer = () => {
   return (
@@ -22,12 +38,12 @@ const Footer = () => {
             <h3 className="text-[#5B5C61] font-semibold mb-4">Navigation</h3>
             <ul className="space-y-4 text-sm">
               <li>
-                <Link className="hover:text-white" href="#">
+                <Link className="hover:text-white" href="/marketPlace">
                   Marketplace
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white" href="#">
+                <Link className="hover:text-white" href="/artist-hub">
                   Artist Hub
                 </Link>
               </li>
@@ -39,12 +55,12 @@ const Footer = () => {
             <h3 className="text-[#5B5C61] font-semibold mb-4">Support</h3>
             <ul className="space-y-4 text-sm">
               <li>
-                <Link className="hover:text-white" href="#">
+                <Link className="hover:text-white" href="/collective#faq">
                   FAQ
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white" href="#">
+                <Link className="hover:text-white" href="/legal/privacy">
                   Privacy Policy
                 </Link>
               </li>
@@ -54,7 +70,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white" href="/legal/terms">
+                <Link className="hover:text-white" href="/terms">
                   Terms of Service
                 </Link>
               </li>
@@ -69,21 +85,21 @@ const Footer = () => {
                 For recent updates and news follow our social media feeds.
               </p>
               <div className="flex space-x-4 text-xl">
-                <Link className="hover:text-white" href="#">
-                  <Youtube />
-                </Link>
-                <Link className="hover:text-white" href="#">
-                  <Icon aria-hidden="true" className="h-6 w-6" name="instagram" size="lg" />
-                </Link>
-                <Link className="hover:text-white" href="#">
-                  <Facebook />
-                </Link>
-                <Link className="hover:text-white" href="#">
-                  <Twitter />
-                </Link>
-                <Link className="hover:text-white" href="#">
-                  <Mail />
-                </Link>
+                {SOCIAL_LINKS.filter((item) => !!item.href.trim()).map((item) => {
+                  const isExternal = item.href.startsWith('http');
+                  return (
+                    <Link
+                      key={item.name}
+                      aria-label={item.label}
+                      className="hover:text-white"
+                      href={item.href}
+                      rel={isExternal ? 'noopener noreferrer' : undefined}
+                      target={isExternal ? '_blank' : undefined}
+                    >
+                      {renderSocialIcon(item.name)}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>

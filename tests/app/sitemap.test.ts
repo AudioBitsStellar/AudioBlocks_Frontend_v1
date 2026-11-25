@@ -30,6 +30,8 @@ describe('sitemap (#860)', () => {
         'https://api.audioblocks.xyz/collective',
         'https://api.audioblocks.xyz/quality-standards',
         'https://api.audioblocks.xyz/help',
+        'https://api.audioblocks.xyz/privacy',
+        'https://api.audioblocks.xyz/terms',
       ])
     );
   });

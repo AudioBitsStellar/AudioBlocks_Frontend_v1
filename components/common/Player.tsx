@@ -11,7 +11,15 @@ import { ProgressBar } from '@/components/player/ProgressBar';
 import { usePlayback } from '@/context/PlaybackContext';
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { useQueuedAudio } from '@/hooks/useQueuedAudio';
-import { FullScreenPlayer } from './FullScreenPlayer';
+
+// #129: FullScreenPlayer runs motion animations and reads audio deck state that
+// is only valid post-hydration. Loading it with `ssr: false` keeps the server
+// render deterministic (nothing fullscreen is shown by default) and avoids
+// hydration mismatches caused by the overlay's client-only effects.
+const FullScreenPlayer = dynamic(
+  () => import('./FullScreenPlayer').then((m) => ({ default: m.FullScreenPlayer })),
+  { ssr: false }
+);
 
 // Lazy-load CommentPanel to reduce initial bundle size
 const CommentPanel = dynamic(() => import('./dashboard/Comment'), {

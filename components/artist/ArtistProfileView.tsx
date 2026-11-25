@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { FollowButton } from '@/components/common/FollowButton';
 import ArtistReleases from '@/components/releases/ArtistReleases';

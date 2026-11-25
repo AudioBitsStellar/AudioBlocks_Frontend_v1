@@ -1,0 +1,32 @@
+{
+  "description": "Frontend API paths (API_ENDPOINTS in lib/constants.ts) that the backend OpenAPI spec does not document yet. Each entry is tracked debt: remove it once the spec documents the route. scripts/check-api-contract.mjs fails when a route here becomes documented or unused, and when a new route is neither documented nor listed. Paths are normalized: :id, {id} and ${id} all become {}.",
+  "paths": [
+    "/api/account/deletion",
+    "/api/account/export",
+    "/api/comments/{}",
+    "/api/comments/{}/reactions",
+    "/api/comments/{}/replies",
+    "/api/comments/{}/report",
+    "/api/community/leaderboard",
+    "/api/community/vote",
+    "/api/community/votes/me",
+    "/api/events",
+    "/api/explore/artists",
+    "/api/explore/categories",
+    "/api/explore/collections",
+    "/api/merch",
+    "/api/nfts/owned/{}",
+    "/api/notifications",
+    "/api/notifications/read-all",
+    "/api/notifications/{}/read",
+    "/api/playlists",
+    "/api/playlists/followed",
+    "/api/playlists/{}",
+    "/api/playlists/{}/follow",
+    "/api/song/search",
+    "/api/song/{}/comments",
+    "/api/user/account-type",
+    "/api/users/me/recently-played",
+    "/api/users/profile"
+  ]
+}

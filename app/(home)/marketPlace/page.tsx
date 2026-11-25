@@ -3,6 +3,13 @@ import NftCollections from '@/components/common/NftCollections';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { Metadata } from 'next';
 
+/**
+ * #830 (PERF-05): Cache the public marketplace/explore page with ISR (revalidates every 60s).
+ * Protects backend catalog APIs from traffic spikes while keeping newly listed
+ * NFT drops and music collections fresh within 1 minute.
+ */
+export const revalidate = 60;
+
 const TITLE = 'Marketplace | AudioBlocks';
 const DESCRIPTION =
   'Explore and purchase unique audio-inspired NFTs, sound packs, and digital art on the AudioBlocks marketplace.';

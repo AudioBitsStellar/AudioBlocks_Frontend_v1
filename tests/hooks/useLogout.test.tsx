@@ -55,6 +55,8 @@ describe('useLogout (#468)', () => {
     localStorage.setItem('audioblocks_wallet_connected', 'true');
     localStorage.setItem('audioblocks_search_history', '[{"query":"anonymous","timestamp":1}]');
     localStorage.setItem('search-history', '[{"query":"legacy","timestamp":0}]');
+    localStorage.setItem('audioblocks_onboarding_complete', 'true');
+    localStorage.setItem('audioblocks_onboarding_complete:user-a', 'true');
     localStorage.setItem(
       'audioblocks_search_history:user-a',
       '[{"query":"private","timestamp":2}]'
@@ -78,6 +80,8 @@ describe('useLogout (#468)', () => {
     expect(localStorage.getItem('audioblocks_wallet_connected')).toBeNull();
     expect(localStorage.getItem('audioblocks_search_history')).toBeNull();
     expect(localStorage.getItem('search-history')).toBeNull();
+    expect(localStorage.getItem('audioblocks_onboarding_complete')).toBeNull();
+    expect(localStorage.getItem('audioblocks_onboarding_complete:user-a')).toBeNull();
     expect(localStorage.getItem('audioblocks_search_history:user-a')).toBeNull();
     expect(localStorage.getItem('audioblocks_search_history:user-b')).not.toBeNull();
 

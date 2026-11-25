@@ -81,6 +81,15 @@ describe('getNotificationHref', () => {
     expect(getNotificationHref(notification({ txHash: 'abc123' }))).toBe('/dashboard/transactions');
   });
 
+  it('links subscription gift notifications to the gifts settings section', () => {
+    expect(getNotificationHref({ ...notification(null), type: 'subscription_gift' })).toBe(
+      '/dashboard/settings#gifts'
+    );
+    expect(getNotificationHref({ ...notification(null), type: 'gift_subscription' })).toBe(
+      '/dashboard/settings#gifts'
+    );
+  });
+
   it('encodes ids and ignores non-string values', () => {
     expect(getNotificationHref(notification({ songId: 'a/b' }))).toBe('/embed/song/a%2Fb');
     expect(getNotificationHref(notification({ songId: 42 }))).toBeNull();

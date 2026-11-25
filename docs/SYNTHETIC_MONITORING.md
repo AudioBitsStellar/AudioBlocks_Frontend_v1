@@ -19,8 +19,12 @@ surfaces without someone watching the Actions tab.
 
 ### Required configuration
 
-Set these as repository or environment **variables** (Settings → Secrets and
-variables → Actions → Variables) — not secrets, they aren't sensitive:
+Set these as **variables** (Settings → Secrets and variables → Actions →
+Variables), not secrets, since they aren't sensitive. Put them on the
+`production` environment, which the check jobs declare. Repository-level
+variables also work. If the variables are missing, the run fails with a
+"not set" error, and the failure opens or updates a `synthetic-monitor`
+incident issue:
 
 | Variable | Example | Required |
 |---|---|---|
