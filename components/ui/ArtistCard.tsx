@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { SquareCheck, UserRound } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { usePrefetchArtist } from '@/hooks/usePrefetch';
 import { cn } from '@/lib/utils';
 import type { CommunityArtist } from '@/lib/communityService';
 
@@ -14,26 +15,23 @@ const ShareModal = dynamic(() => import('@/components/common/dashboard/Share'), 
   ssr: false,
 });
 
-function slugify(name: string): string {
-  return name.replace(/\s+/g, '-').toLowerCase();
-}
+const slugify = (name: string) => name.replace(/\s+/g, '-').toLowerCase();
 
 function getInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '?';
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
+  if (!words.length) return '?';
+  return (
+    words.length === 1 ? words[0].slice(0, 2) : `${words[0][0]}${words[words.length - 1][0]}`
+  ).toUpperCase();
 }
 
 function formatCount(value: number | string | undefined): string {
   if (value === undefined || value === null || value === '') return '0';
-  const numericValue = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(numericValue)) return String(value);
-
-  return new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(numericValue);
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num)) return String(value);
+  return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(
+    num
+  );
 }
 
 export type ArtistCardVariant = 'default' | 'community';
@@ -81,13 +79,12 @@ export default function ArtistCard({
   const imageSource = artist.image ?? artist.avatar ?? artist.avatarUrl ?? null;
   const [imageFailed, setImageFailed] = useState(false);
 
-  useEffect(() => {
-    setImageFailed(false);
-  }, [imageSource]);
+  useEffect(() => setImageFailed(false), [imageSource]);
 
   const followers = artist.followers ?? artist.followerCount;
   const collections = artist.collections ?? artist.collectionCount;
   const artistHref = href ?? `/artist/${artist.id}`;
+  const prefetch = usePrefetchArtist(artist.id ? String(artist.id) : undefined);
 
   if (variant === 'community') {
     return (
@@ -160,6 +157,7 @@ export default function ArtistCard({
         aria-label={`View ${artist.name}'s artist profile`}
         className="absolute inset-0 flex min-w-0 items-center gap-3 p-4 pr-20"
         href={artistHref}
+        {...prefetch}
       >
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-[#885FA8]">
           {imageSource && !imageFailed ? (

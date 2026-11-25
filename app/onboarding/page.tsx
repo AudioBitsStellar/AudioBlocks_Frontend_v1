@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Headphones, Mic2, Sparkles } from 'lucide-react';
 import { useSetAccountType } from '@/hooks/useProfile';
 import { AUTH_ROLES, type AuthRole } from '@/lib/authRoles';
@@ -22,21 +23,22 @@ const ARTIST_DASHBOARD_URL = process.env.NEXT_PUBLIC_ARTIST_DASHBOARD_URL;
 const OnboardingPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useDynamicContext();
   const setAccountType = useSetAccountType();
   const [savedArtist, setSavedArtist] = useState(false);
 
   const returnTo = searchParams.get('returnTo') || '/dashboard';
 
   const finish = useCallback(() => {
-    markOnboardingComplete();
+    markOnboardingComplete(user?.userId);
     router.replace(returnTo);
-  }, [returnTo, router]);
+  }, [returnTo, router, user?.userId]);
 
   const chooseRole = useCallback(
     (role: AuthRole) => {
       setAccountType.mutate(role, {
         onSuccess: () => {
-          markOnboardingComplete();
+          markOnboardingComplete(user?.userId);
           if (role === AUTH_ROLES.ARTIST) {
             setSavedArtist(true);
           } else {
@@ -45,7 +47,7 @@ const OnboardingPage = () => {
         },
       });
     },
-    [returnTo, router, setAccountType]
+    [returnTo, router, setAccountType, user?.userId]
   );
 
   // #478 — guests who hit /onboarding directly are not authenticated and have

@@ -5,6 +5,11 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { SearchOverlay } from '@/components/common/SearchOverlay';
 
 vi.mock('@dynamic-labs/sdk-react-core', () => ({ useDynamicContext: () => ({ user: null }) }));
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/',
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 describe('SearchOverlay Integration Tests', () => {
   const user = userEvent.setup();
@@ -226,5 +231,61 @@ describe('SearchOverlay "See all results" link (#569)', () => {
     await user.type(screen.getByRole('searchbox'), 'love you');
     const link = screen.getByRole('link', { name: /See all results for "love you"/ });
     expect(link).toHaveAttribute('href', '/search?q=love%20you');
+  });
+});
+
+describe('SearchOverlay input reset and focus management (#140)', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('clears search input and results when closing via Escape', async () => {
+    const user = userEvent.setup();
+    render(<SearchOverlay />);
+
+    await user.keyboard('{Control>}k{/Control}');
+    const searchInput = screen.getByRole('searchbox') as HTMLInputElement;
+    await user.type(searchInput, 'hello');
+    expect(searchInput.value).toBe('hello');
+
+    // Close via Escape
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: /search overlay/i })).not.toBeInTheDocument();
+
+    // Reopen overlay
+    await user.keyboard('{Control>}k{/Control}');
+    const reopenedInput = screen.getByRole('searchbox') as HTMLInputElement;
+    expect(reopenedInput.value).toBe('');
+    expect(reopenedInput).toHaveFocus();
+  });
+
+  it('clears search input when closing via backdrop click', async () => {
+    const user = userEvent.setup();
+    render(<SearchOverlay />);
+
+    await user.keyboard('{Control>}k{/Control}');
+    const searchInput = screen.getByRole('searchbox') as HTMLInputElement;
+    await user.type(searchInput, 'stellar');
+    expect(searchInput.value).toBe('stellar');
+
+    // Backdrop click
+    const backdrop = screen.getByRole('dialog', { name: /search overlay/i });
+    fireEvent.click(backdrop);
+
+    expect(screen.queryByRole('dialog', { name: /search overlay/i })).not.toBeInTheDocument();
+
+    // Reopen overlay
+    await user.keyboard('{Control>}k{/Control}');
+    const reopenedInput = screen.getByRole('searchbox') as HTMLInputElement;
+    expect(reopenedInput.value).toBe('');
+  });
+
+  it('focuses input and sets cursor at the end on reopen', async () => {
+    const user = userEvent.setup();
+    render(<SearchOverlay />);
+
+    await user.keyboard('{Control>}k{/Control}');
+    const searchInput = screen.getByRole('searchbox') as HTMLInputElement;
+    expect(searchInput).toHaveFocus();
+    expect(searchInput.selectionStart).toBe(0);
+    expect(searchInput.selectionEnd).toBe(0);
   });
 });

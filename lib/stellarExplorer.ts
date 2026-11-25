@@ -12,7 +12,9 @@
 export type StellarNetwork = 'public' | 'testnet';
 
 const STELLAR_EXPERT_BASE = 'https://stellar.expert/explorer';
-const IPFS_GATEWAY_BASE = 'https://ipfs.io/ipfs';
+import { IPFS_GATEWAY } from './ipfs';
+
+const IPFS_GATEWAY_BASE = IPFS_GATEWAY.replace(/\/+$/, '');
 
 const CONTRACT_ID_PATTERN = /^C[A-Z2-7]{55}$/;
 const CID_PATTERN = /^[A-Za-z0-9]{10,}$/;

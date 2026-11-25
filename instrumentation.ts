@@ -1,9 +1,12 @@
 import * as Sentry from '@sentry/nextjs';
+import { validateEnv } from './lib/env';
 import { scrubSensitiveData } from './lib/sentryScrub';
 
 const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 export async function register() {
+  validateEnv();
+
   if (!SENTRY_DSN) {
     return;
   }
