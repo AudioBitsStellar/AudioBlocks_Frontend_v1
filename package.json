@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "test:soak": "playwright test --config playwright.soak.config.ts",
     "format": "prettier --write .",
+    "check-env-sync": "node scripts/check-env-sync.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "prebuild": "node scripts/check-production-flags.cjs"
