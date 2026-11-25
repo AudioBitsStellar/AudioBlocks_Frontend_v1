@@ -2,6 +2,11 @@ import QualityStandardsCriteria from '@/components/common/quality-standards/Qual
 import QualityStandardsHero from '@/components/common/quality-standards/QualityStandardsHero';
 import type { Metadata } from 'next';
 
+/**
+ * #830 (PERF-05): Static quality standards documentation cached with ISR (revalidates every hour).
+ */
+export const revalidate = 3600;
+
 const TITLE = 'Quality Standards — How AudioBlocks Grades Your Music | AudioBlocks';
 const DESCRIPTION =
   'Learn how AudioBlocks uses AI to grade audio quality: clarity, dynamic range, noise floor and distortion, and how remasters are compared against your original upload.';

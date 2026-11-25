@@ -63,7 +63,7 @@ describe('usePrefetchCollection', () => {
     expect(prefetchSpy).not.toHaveBeenCalled();
   });
 
-  it('does not fetch when data-saver mode is enabled', async () => {
+  it('does not fetch when data-saver mode is enabled via navigator connection', async () => {
     vi.stubGlobal('navigator', { ...navigator, connection: { saveData: true } });
     const queryClient = new QueryClient();
     const prefetchSpy = vi.spyOn(queryClient, 'prefetchQuery');
@@ -79,6 +79,25 @@ describe('usePrefetchCollection', () => {
     });
 
     expect(prefetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch when data-saver mode is enabled via localStorage', async () => {
+    localStorage.setItem('audioblocks_data_saver', 'true');
+    const queryClient = new QueryClient();
+    const prefetchSpy = vi.spyOn(queryClient, 'prefetchQuery');
+
+    const { result } = renderHook(() => usePrefetchCollection('col-1'), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    act(() => result.current.onMouseEnter());
+    await act(async () => {
+      vi.advanceTimersByTime(200);
+      await vi.runAllTimersAsync();
+    });
+
+    expect(prefetchSpy).not.toHaveBeenCalled();
+    localStorage.removeItem('audioblocks_data_saver');
   });
 
   it('skips prefetch when data is already cached', async () => {

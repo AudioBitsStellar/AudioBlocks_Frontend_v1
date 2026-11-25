@@ -4,8 +4,18 @@ import { toast } from 'sonner';
 import { usePlayback, type PlaybackContextValue } from '@/context/PlaybackContext';
 import { useOptionalUserPreferences } from '@/context/UserPreferencesContext';
 import { useDataSaver } from '@/hooks/useDataSaver';
+import { trackEvent } from '@/lib/analytics';
 import { getStreamUrl } from '@/lib/apiUrl';
+import { hasRecordedFirstPlay, markFirstPlayRecorded } from '@/lib/firstPlay';
+import { initializePlaybackEvents, reportPlaybackEvent } from '@/lib/playbackEvents';
 import { attachAudioSource, type AudioSource } from '@/lib/hlsPlayer';
+import {
+  recordPlaybackAttempt,
+  recordPlaybackError,
+  recordPlaybackRebuffer,
+  recordPlaybackSession,
+  recordPlaybackStartup,
+} from '@/lib/metrics/playbackMetrics';
 import {
   clearResumePosition,
   formatResumeTime,
@@ -27,6 +37,9 @@ export function canPrefetchStreams(): boolean {
 }
 
 export function useQueuedAudio() {
+  useEffect(() => {
+    if (canPrefetchStreams()) initializePlaybackEvents();
+  }, []);
   const playback = usePlayback();
   const dataSaver = useDataSaver();
   // Streaming quality ceiling (#590). `undefined` means no cap.
@@ -49,6 +62,12 @@ export function useQueuedAudio() {
   const failedPrefetches = useRef(new Set<string>());
   const promoted = useRef<string | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
+  // #835 — playback quality metrics (startup time, rebuffer ratio, error rate).
+  const trackStartupAt = useRef<number | null>(null);
+  const trackFirstPlayingReported = useRef<string | null>(null);
+  const trackPlaybackStartedAt = useRef<number | null>(null);
+  const trackRebufferedMs = useRef(0);
+  const rebufferWaitingAt = useRef<number | null>(null);
   const compressors = useRef(
     new Map<
       HTMLAudioElement,
@@ -107,6 +126,7 @@ export function useQueuedAudio() {
     };
     const failPlayback = (message: string) => {
       const track = live.current.currentTrack;
+      if (track) recordPlaybackError(track.id, message);
       live.current.playback.setError(message);
       if (skipTimer.current) clearTimeout(skipTimer.current);
       if (track && !failedTracks.current.has(track.id)) {
@@ -310,7 +330,11 @@ export function useQueuedAudio() {
         onTime(element);
         persistResume(element);
       };
-      const paused = () => persistResume(element, true);
+      const paused = () => {
+        persistResume(element, true);
+        // A deliberate pause isn't a rebuffer, even if it happens mid-stall.
+        if (element === audioRef.current) rebufferWaitingAt.current = null;
+      };
       const metadata = () => {
         if (element === audioRef.current) {
           setDuration(Number.isFinite(element.duration) ? element.duration : 0);
@@ -339,6 +363,11 @@ export function useQueuedAudio() {
         if (element !== audioRef.current && fade.current === null) return;
         if (element === audioRef.current) {
           setIsBuffering(false);
+          if (!hasRecordedFirstPlay()) {
+            markFirstPlayRecorded();
+            const firstTrack = live.current.currentTrack;
+            if (firstTrack) trackEvent('first_play', { trackId: firstTrack.id });
+          }
           if (transitionStart.current !== null) {
             const gapMs = performance.now() - transitionStart.current;
             transitionStart.current = null;
@@ -351,17 +380,17 @@ export function useQueuedAudio() {
           const track =
             element === audioRef.current ? live.current.currentTrack : live.current.nextTrack;
           // No reporting from manifest/segment callbacks; only audible playback reaches here.
-          if (track)
-            void fetch(endpoint.replace(':id', encodeURIComponent(track.id)), {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ songId: track.id }),
-            }).catch(() => {});
+          if (track) reportPlaybackEvent(track.id);
         }
       };
       const waiting = () => {
-        if (element === audioRef.current) setIsBuffering(true);
+        if (element !== audioRef.current) return;
+        setIsBuffering(true);
+        // Only a stall *after* the track has already started playing counts
+        // as a rebuffer; the initial load's buffering is startup time.
+        if (trackPlaybackStartedAt.current !== null && rebufferWaitingAt.current === null) {
+          rebufferWaitingAt.current = performance.now();
+        }
       };
       const error = () => {
         if (element === audioRef.current)
@@ -432,6 +461,23 @@ export function useQueuedAudio() {
     if (promoted.current === streamUrl) {
       promoted.current = null;
       return;
+    }
+    // #835 — finalize the outgoing track's watch session before tearing it
+    // down, then start timing the new track's startup latency.
+    if (trackFirstPlayingReported.current && trackPlaybackStartedAt.current !== null) {
+      recordPlaybackSession(
+        trackFirstPlayingReported.current,
+        performance.now() - trackPlaybackStartedAt.current,
+        trackRebufferedMs.current
+      );
+    }
+    trackFirstPlayingReported.current = null;
+    trackPlaybackStartedAt.current = null;
+    trackRebufferedMs.current = 0;
+    rebufferWaitingAt.current = null;
+    if (currentTrack?.id) {
+      trackStartupAt.current = performance.now();
+      recordPlaybackAttempt(currentTrack.id);
     }
     commands.current.stopFade();
     if (incomingAudioRef.current) commands.current.dispose(incomingAudioRef.current);

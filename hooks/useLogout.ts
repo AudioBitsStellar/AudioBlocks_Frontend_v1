@@ -7,8 +7,9 @@ import { usePrivy } from '@privy-io/react-auth';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { useDisconnect } from 'wagmi';
-import { AUTH } from '@/lib/constants';
 import { SEARCH_HISTORY_STORAGE_KEY } from '@/hooks/useSearchHistory';
+import { AUTH } from '@/lib/constants';
+import { resetOnboarding } from '@/lib/onboarding';
 
 export interface LogoutOptions {
   /** Target path to redirect after logout. Defaults to '/' */
@@ -33,6 +34,7 @@ export async function clearAuthSessionArtifacts(userId?: string | null): Promise
       if (userId) {
         localStorage.removeItem(`${SEARCH_HISTORY_STORAGE_KEY}:${encodeURIComponent(userId)}`);
       }
+      resetOnboarding(userId);
     } catch {
       // Storage access might be restricted in some environments; ignore gracefully
     }
@@ -43,6 +45,15 @@ export async function clearAuthSessionArtifacts(userId?: string | null): Promise
     await fetch('/api/session', { method: 'DELETE' });
   } catch {
     // Non-fatal: even if this fails, the readable client cookies are removed
+  }
+
+  // Clear service worker API cache so next user never sees previous user's cached data
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    try {
+      navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHE' });
+    } catch {
+      // Non-fatal
+    }
   }
 }
 
@@ -72,7 +83,6 @@ export function useLogout() {
 
   let privyLogout: (() => Promise<void>) | null = null;
   try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const privy = usePrivy();
     privyLogout = privy.logout;
   } catch {

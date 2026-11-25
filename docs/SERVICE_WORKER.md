@@ -35,9 +35,10 @@ The Service Worker operates at the browser root level (`/sw.js`) and intercepts 
 ### 1. Network-First Strategy (`/api/*`)
 
 - **Primary Behavior**: Attempts to execute the fetch request over the network.
-- **Cache Update**: On a successful network response, a clone of the response is stored in `api-cache-v1`.
-- **Fallback**: If the network request fails (e.g. offline, timeout, server unavailable), the Service Worker serves the last cached response from `api-cache-v1`.
-- **Use Case**: Ensures listeners receive up-to-date playlist details, balance stats, and social feeds while preserving offline fallback data.
+- **Cache Filtering & Rules**: Only `response.ok && response.type === 'basic'` responses are cached. Requests carrying an `Authorization` header or not matching an explicit allow-list of public cacheable API paths (`/api/songs`, `/api/artists`, `/api/releases`, `/api/playlists`, `/api/categories`, `/api/community`, etc.) are strictly excluded to prevent caching private or error responses.
+- **Cache Update**: On a valid matching network response, a clone is stored in `api-cache-v2`.
+- **Fallback**: If the network request fails (e.g. offline, timeout, server unavailable), the Service Worker serves the last cached response from `api-cache-v2`.
+- **Session Logout Clearing**: On user logout, a `postMessage({ type: 'CLEAR_API_CACHE' })` is dispatched to the service worker to instantly delete `api-cache-v2` and protect per-user session data.
 
 ### 2. Cache-First Strategy (Static Assets & Media)
 
@@ -60,7 +61,7 @@ The Service Worker operates at the browser root level (`/sw.js`) and intercepts 
 Service Worker updates and cache cleanups are driven by the `CACHE_VERSION` string:
 
 ```javascript
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `static-assets-cache-${CACHE_VERSION}`;
 const API_CACHE_NAME = `api-cache-${CACHE_VERSION}`;
 ```

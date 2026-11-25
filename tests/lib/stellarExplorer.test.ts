@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   getIpfsUrl,
+  getStellarAccountUrl,
   getStellarContractUrl,
+  getStellarTxUrl,
   isValidContractId,
   shortenId,
 } from '@/lib/stellarExplorer';
@@ -9,6 +11,37 @@ import {
 // 56-character StrKey contract ID: 'C' followed by 55 base32 characters.
 const CONTRACT_ID = 'C' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.repeat(2).slice(0, 55);
 const CID = 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
+
+describe('getStellarTxUrl / getStellarAccountUrl', () => {
+  const originalEnv = process.env.NEXT_PUBLIC_STELLAR_NETWORK;
+
+  afterEach(() => {
+    process.env.NEXT_PUBLIC_STELLAR_NETWORK = originalEnv;
+  });
+
+  it('defaults to testnet when NEXT_PUBLIC_STELLAR_NETWORK is unset', () => {
+    delete process.env.NEXT_PUBLIC_STELLAR_NETWORK;
+    expect(getStellarTxUrl('abc123')).toBe('https://stellar.expert/explorer/testnet/tx/abc123');
+    expect(getStellarAccountUrl('GABC')).toBe(
+      'https://stellar.expert/explorer/testnet/account/GABC'
+    );
+  });
+
+  it('uses the public network when NEXT_PUBLIC_STELLAR_NETWORK is "mainnet"', () => {
+    process.env.NEXT_PUBLIC_STELLAR_NETWORK = 'mainnet';
+    expect(getStellarTxUrl('abc123')).toBe('https://stellar.expert/explorer/public/tx/abc123');
+    expect(getStellarAccountUrl('GABC')).toBe(
+      'https://stellar.expert/explorer/public/account/GABC'
+    );
+  });
+
+  it('lets an explicit network override the environment default', () => {
+    process.env.NEXT_PUBLIC_STELLAR_NETWORK = 'mainnet';
+    expect(getStellarTxUrl('abc123', 'testnet')).toBe(
+      'https://stellar.expert/explorer/testnet/tx/abc123'
+    );
+  });
+});
 
 describe('isValidContractId', () => {
   it('accepts a 56-character C-prefixed StrKey', () => {

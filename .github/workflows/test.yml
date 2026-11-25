@@ -21,65 +21,70 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
       # Sentry 7's peer range excludes Next 15; use the committed lockfile's legacy peer resolution.
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci --legacy-peer-deps --ignore-scripts
       - run: npm run lint
 
   type-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci --legacy-peer-deps --ignore-scripts
       - run: npm run type-check
 
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci --legacy-peer-deps --ignore-scripts
       # vitest exits non-zero (failing this step, and the check) when
       # coverage drops below the thresholds configured in vitest.config.ts.
       - run: npm run test:coverage
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: coverage-report
           path: coverage/
 
   e2e:
-    name: Playwright E2E
+    name: Playwright E2E (${{ matrix.project }})
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit, mobile-chrome, mobile-safari]
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     env:
       CI: true
       NEXT_PUBLIC_API_URL: http://localhost:4000/api
+      NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID: ci-dynamic-env
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
-      - run: npm ci --legacy-peer-deps
-      - run: npx playwright install --with-deps chromium
+      - run: npm ci --legacy-peer-deps --ignore-scripts
+      - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run build
-      - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - run: npm run test:e2e -- --project=${{ matrix.project }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
-          name: playwright-report-and-traces
+          name: playwright-report-and-traces-${{ matrix.project }}
           path: |
             playwright-report/
             test-results/

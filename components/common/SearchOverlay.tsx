@@ -1,45 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { Clock, Loader2, Search, Trash2, X } from 'lucide-react';
+import { SearchOverlayFooter } from '@/components/search/SearchOverlayFooter';
+import { SearchOverlayHistory } from '@/components/search/SearchOverlayHistory';
+import { SearchOverlayInput } from '@/components/search/SearchOverlayInput';
+import {
+  SearchOverlayResults,
+  MIN_QUERY_LENGTH,
+  groupResults,
+} from '@/components/search/SearchOverlayResults';
 import { useSearch } from '@/hooks/useSearch';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
-import type { SearchResult } from '@/lib/exploreService';
 
-/** `useSearch` only queries once the trimmed input reaches this length. */
-const MIN_QUERY_LENGTH = 3;
-const RESULT_GROUPS: SearchResult['type'][] = ['track', 'artist', 'collection'];
-
-interface ResultGroup {
-  type: SearchResult['type'];
-  /** Index of the group's first item in the flat keyboard-navigation order. */
-  offset: number;
-  items: SearchResult[];
-}
-
-/** Buckets results by type in one pass, in a fixed display order. */
-function groupResults(results: SearchResult[]): { groups: ResultGroup[]; ordered: SearchResult[] } {
-  const buckets = new Map<SearchResult['type'], SearchResult[]>(RESULT_GROUPS.map((t) => [t, []]));
-  for (const result of results) buckets.get(result.type)?.push(result);
-
-  const groups: ResultGroup[] = [];
-  const ordered: SearchResult[] = [];
-  for (const type of RESULT_GROUPS) {
-    const items = buckets.get(type)!;
-    if (items.length === 0) continue;
-    groups.push({ type, offset: ordered.length, items });
-    ordered.push(...items);
-  }
-  return { groups, ordered };
-}
-
-/**
- * Global search dialog (#600): Cmd/Ctrl+K toggles it, Escape closes it, arrow
- * keys move through results (or recent searches when the input is empty),
- * Enter selects, and focus returns to the previously focused element on close.
- */
 export function SearchOverlay() {
   const { user } = useDynamicContext();
   const [isOpen, setIsOpen] = useState(false);
@@ -48,12 +22,30 @@ export function SearchOverlay() {
   const inputRef = useRef<HTMLInputElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  const { results, loading, error } = useSearch(query, 200);
+  const closeOverlay = useCallback(() => {
+    setIsOpen(false);
+    setQuery('');
+    setSelectedIndex(-1);
+  }, []);
+
+  // Pass query only when open to clear search results and cancel stale requests on close
+  const { results, loading, error } = useSearch(isOpen ? query : '', 200);
   const { suggestions, addSearch, removeSearch, clearHistory } = useSearchHistory(user?.userId);
+
+  // Clear search input and close overlay on route changes (navigating away)
+  const pathname = usePathname();
+  useEffect(() => {
+    closeOverlay();
+  }, [pathname, closeOverlay]);
+
+  useEffect(() => {
+    const handlePopState = () => closeOverlay();
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [closeOverlay]);
 
   const trimmedQuery = query.trim();
   const { groups, ordered } = useMemo(() => groupResults(results), [results]);
-  // The options arrow keys move through: results while searching, recent searches otherwise.
   const optionCount = trimmedQuery ? ordered.length : suggestions.length;
 
   useEffect(() => {
@@ -61,18 +53,21 @@ export function SearchOverlay() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsOpen((open) => {
-          if (!open) previousFocusRef.current = document.activeElement as HTMLElement | null;
-          return !open;
+          if (!open) {
+            previousFocusRef.current = document.activeElement as HTMLElement | null;
+            return true;
+          }
+          closeOverlay();
+          return false;
         });
       } else if (e.key === 'Escape') {
-        setIsOpen(false);
+        closeOverlay();
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
+  }, [closeOverlay]);
 
-  // Focus, input reset and body scroll lock while open; focus restore on close.
   useEffect(() => {
     if (!isOpen) {
       previousFocusRef.current?.focus();
@@ -81,7 +76,11 @@ export function SearchOverlay() {
     }
     setQuery('');
     setSelectedIndex(-1);
-    inputRef.current?.focus();
+    if (inputRef.current) {
+      inputRef.current.focus();
+      const len = inputRef.current.value.length;
+      inputRef.current.setSelectionRange(len, len);
+    }
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -94,20 +93,20 @@ export function SearchOverlay() {
       const value = searchQuery.trim();
       if (!value) return;
       addSearch(value);
-      setIsOpen(false);
+      closeOverlay();
     },
-    [addSearch]
+    [addSearch, closeOverlay]
   );
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Tab') {
-      const dialog = e.currentTarget.closest('[role="dialog"]');
-      const focusable = dialog?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-      );
+      const focusable = e.currentTarget
+        .closest('[role="dialog"]')
+        ?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+        );
       if (!focusable?.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      const [first, last] = [focusable[0], focusable[focusable.length - 1]];
       if (e.shiftKey && document.activeElement === first) {
         e.preventDefault();
         last.focus();
@@ -118,8 +117,6 @@ export function SearchOverlay() {
       return;
     }
 
-    // Search commands belong to the searchbox. Let interactive controls in
-    // history use their native Enter/arrow key behavior.
     if (e.target !== inputRef.current) return;
 
     if (e.key === 'ArrowDown') {
@@ -150,152 +147,50 @@ export function SearchOverlay() {
       aria-modal="true"
       className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4 bg-black/80 backdrop-blur-sm"
       role="dialog"
-      onClick={() => setIsOpen(false)}
+      onClick={closeOverlay}
     >
       <div
         className="w-full max-w-xl bg-[#111] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
-        <div className="flex items-center px-4 py-3 border-b border-gray-800">
-          <Search className="w-5 h-5 text-gray-500 mr-3 shrink-0" />
-          <input
-            ref={inputRef}
-            aria-label="Search Input"
-            className="flex-1 bg-transparent border-none outline-none text-white text-lg placeholder:text-gray-500"
-            placeholder="Search tracks, artists, collections..."
-            role="searchbox"
-            type="text"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setSelectedIndex(-1);
-            }}
+        <SearchOverlayInput
+          inputRef={inputRef}
+          loading={loading}
+          query={query}
+          onChange={(val) => {
+            setQuery(val);
+            setSelectedIndex(-1);
+          }}
+          onClose={closeOverlay}
+        />
+
+        <SearchOverlayResults
+          error={error}
+          groups={groups}
+          loading={loading}
+          minQueryLength={MIN_QUERY_LENGTH}
+          optionClass={optionClass}
+          ordered={ordered}
+          selectedIndex={selectedIndex}
+          trimmedQuery={trimmedQuery}
+          onHoverIndex={setSelectedIndex}
+          onSelect={submit}
+        />
+
+        {!trimmedQuery && (
+          <SearchOverlayHistory
+            optionClass={optionClass}
+            selectedIndex={selectedIndex}
+            suggestions={suggestions}
+            onClear={clearHistory}
+            onHoverIndex={setSelectedIndex}
+            onRemove={removeSearch}
+            onSelect={submit}
           />
-          {loading && <Loader2 className="w-4 h-4 text-gray-400 animate-spin mr-2 shrink-0" />}
-          <button
-            aria-label="Close search overlay"
-            className="p-1 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
-            type="button"
-            onClick={() => setIsOpen(false)}
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {trimmedQuery && (
-          <div className="max-h-96 overflow-y-auto py-2" role="listbox">
-            {groups.map(({ type, offset, items }) => (
-              <div key={type} aria-label={`${type}s`} role="group">
-                <h3 className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  {type}s
-                </h3>
-                {items.map((result, i) => {
-                  const index = offset + i;
-                  return (
-                    <div
-                      key={result.id}
-                      aria-selected={index === selectedIndex}
-                      className={optionClass(index)}
-                      role="option"
-                      onClick={() => submit(result.title)}
-                      onMouseEnter={() => setSelectedIndex(index)}
-                    >
-                      <div className="relative w-9 h-9 rounded overflow-hidden shrink-0 bg-gray-900">
-                        <Image
-                          fill
-                          alt={result.title}
-                          className="object-cover"
-                          src={result.image || '/placeholder.svg'}
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-white font-medium text-sm truncate">
-                          {result.title}
-                        </div>
-                        <div className="text-gray-400 text-xs truncate">{result.subtitle}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-            {ordered.length === 0 && error && !loading && (
-              <div className="px-4 py-8 text-center text-red-400 text-sm" role="alert">
-                Search is unavailable right now. Please try again.
-              </div>
-            )}
-            {ordered.length === 0 &&
-              !error &&
-              (loading || trimmedQuery.length >= MIN_QUERY_LENGTH) && (
-                <div className="px-4 py-8 text-center text-gray-500 text-sm">
-                  {loading ? 'Searching...' : `No results found for "${trimmedQuery}"`}
-                </div>
-              )}
-          </div>
         )}
 
-        {!trimmedQuery && suggestions.length > 0 && (
-          <div className="max-h-96 overflow-y-auto py-2">
-            <div className="px-4 py-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Recent Searches
-              </span>
-              <button
-                aria-label="Clear search history"
-                className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors"
-                type="button"
-                onClick={clearHistory}
-              >
-                <Trash2 className="w-3 h-3" />
-                Clear
-              </button>
-            </div>
-            {suggestions.map((entry, index) => (
-              <div
-                key={entry.query}
-                aria-current={index === selectedIndex ? 'true' : undefined}
-                className={`${optionClass(index)} cursor-default`}
-                onMouseEnter={() => setSelectedIndex(index)}
-              >
-                <button
-                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                  type="button"
-                  onClick={() => submit(entry.query)}
-                >
-                  <Clock className="w-4 h-4 text-gray-500 shrink-0" />
-                  <span className="text-gray-300 text-sm truncate">{entry.query}</span>
-                </button>
-                <button
-                  aria-label={`Remove '${entry.query}' from history`}
-                  className="rounded p-1 text-gray-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                  type="button"
-                  onClick={() => removeSearch(entry.query)}
-                >
-                  <X aria-hidden="true" className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="px-4 py-2 border-t border-gray-800 bg-[#0a0a0a] flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-gray-800 font-sans">↑</kbd>
-              <kbd className="px-1.5 py-0.5 rounded bg-gray-800 font-sans">↓</kbd>
-              Navigate
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-gray-800 font-sans">↵</kbd>
-              Select
-            </span>
-          </div>
-          <span className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 rounded bg-gray-800 font-sans">esc</kbd>
-            Close
-          </span>
-        </div>
+        <SearchOverlayFooter />
       </div>
     </div>
   );

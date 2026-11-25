@@ -108,6 +108,47 @@ describe('public artist page (#586)', () => {
       title: 'Alexia Stephen | AudioBlocks',
       url: '/artist/a1',
     });
+    expect(metadata.twitter).toMatchObject({ card: 'summary_large_image' });
+  });
+
+  it('falls back to the site logo so share debuggers always have an image (#859)', async () => {
+    const metadata = await generateMetadata({ params });
+    const og = metadata.openGraph as Record<string, unknown>;
+    expect(og.images).toEqual([
+      { url: '/logo.png', width: 1200, height: 630, alt: 'Alexia Stephen' },
+    ]);
+    expect(metadata.twitter).toMatchObject({ images: ['/logo.png'] });
+  });
+
+  it('uses the artist profile image when one is set (#859)', async () => {
+    vi.mocked(fetchArtistProfile).mockResolvedValue({
+      ...artist,
+      profileImage: 'https://cdn.example.com/alexia.jpg',
+    });
+    const metadata = await generateMetadata({ params });
+    const og = metadata.openGraph as Record<string, unknown>;
+    expect(og.images).toEqual([
+      {
+        url: 'https://cdn.example.com/alexia.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Alexia Stephen',
+      },
+    ]);
+  });
+
+  it('renders MusicGroup structured data for search engines (#860)', async () => {
+    const { container } = renderPage(await Page({ params }));
+    const script = container.querySelector('#artist-jsonld');
+    expect(script).not.toBeNull();
+    const data = JSON.parse(script!.textContent ?? '{}');
+    expect(data).toMatchObject({
+      '@context': 'https://schema.org',
+      '@type': 'MusicGroup',
+      name: 'Alexia Stephen',
+      description: 'Afro-jazz from Lagos',
+      url: '/artist/a1',
+    });
   });
 });
 

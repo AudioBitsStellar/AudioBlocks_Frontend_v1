@@ -1,0 +1,16 @@
+# gitleaks configuration (SEC-12, #793).
+#
+# Extends the built-in rule set, so every default detector still runs. The
+# allowlist below is deliberately narrow: each entry matches one known
+# non-secret value, not a whole file or path.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known non-secret test fixtures"
+regexes = [
+  # Playwright mock response in tests/e2e/auth.spec.ts. It is a fake JWT
+  # placeholder returned by a mocked API route, not a credential.
+  '''e2e-signup-jwt''',
+]

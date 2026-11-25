@@ -38,22 +38,22 @@ const CategorySection = memo(function CategorySection({ activeGenre = 'All' }: P
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-4 mt-5">
+        <div className="flex gap-4 overflow-hidden mt-5 md:grid md:grid-cols-5">
           {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="md:min-w-[170px] h-[60px] rounded-xl animate-pulse bg-gray-800"
+              className="h-[60px] min-w-0 max-w-[170px] flex-[0_0_42%] rounded-xl animate-pulse bg-gray-800 md:flex-auto"
             />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-3 md:grid-cols-5 overflow-x-auto gap-4 mt-5 scrollbar-hide">
+        <div className="flex min-w-0 gap-4 overflow-x-auto overflow-y-hidden mt-5 scrollbar-hide md:grid md:grid-cols-5 md:overflow-visible">
           {items.map((category, index) => {
             const isActive = activeGenre === category.name;
             return (
               <div
                 key={`${category.name}-${index}`}
-                className={`relative md:min-w-[170px] h-[60px] rounded-xl overflow-hidden shrink-0 group ${
+                className={`relative h-[60px] min-w-0 max-w-[170px] flex-[0_0_42%] rounded-xl overflow-hidden shrink-0 group md:flex-auto ${
                   isActive ? 'ring-2 ring-brand ring-offset-2 ring-offset-black' : ''
                 }`}
               >

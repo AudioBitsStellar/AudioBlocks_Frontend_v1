@@ -13,6 +13,8 @@ export interface ApiResponseLike {
   data: unknown;
   status?: number;
   config?: { url?: string };
+  /** Correlation id of the request, surfaced to the user on error (#837). */
+  requestId?: string;
 }
 
 export interface Pagination {
@@ -27,6 +29,7 @@ export interface Pagination {
 export class ApiShapeError extends Error {
   readonly body: unknown;
   readonly url: string | undefined;
+  readonly requestId: string | undefined;
 
   constructor(reason: string, res: ApiResponseLike) {
     const url = res.config?.url;
@@ -34,6 +37,7 @@ export class ApiShapeError extends Error {
     this.name = 'ApiShapeError';
     this.body = res.data;
     this.url = url;
+    this.requestId = res.requestId;
   }
 }
 
