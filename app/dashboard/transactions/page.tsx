@@ -1,10 +1,31 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Search, Filter, Download, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTransaction } from '@/context/TransactionContext';
-import TransactionTable from '@/components/dashboard/TransactionTable';
+
+/**
+ * #156: TransactionTable is the largest leaf on this route (rendering,
+ * filtering, download, pagination). Loading it only after the shell paints
+ * keeps the transactions chunk itself under the shared-dashboard target and
+ * makes the route's first paint measurably faster. `ssr: false` is safe
+ * here: the parent page is already a client page, and the table has no
+ * SEO-relevant content.
+ */
+const TransactionTable = dynamic(() => import('@/components/dashboard/TransactionTable'), {
+  ssr: false,
+  loading: () => (
+    <div
+      aria-live="polite"
+      className="h-48 flex items-center justify-center text-sm text-gray-400"
+      role="status"
+    >
+      Loading transactions…
+    </div>
+  ),
+});
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

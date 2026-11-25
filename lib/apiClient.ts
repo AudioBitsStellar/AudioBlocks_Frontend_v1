@@ -2,96 +2,27 @@ import Cookies from 'js-cookie';
 import { recordApiFailure, recordApiSuccess } from './apiOutage';
 import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS, TELEMETRY } from './constants';
 import { getValidatedEnv } from './env';
+import {
+  ApiError,
+  AuthError,
+  NetworkError,
+  NotFoundError,
+  RateLimitError,
+  ServerError,
+  errorFromResponse,
+  isOffline,
+  logApiErrorInDev,
+  parseRetryAfter,
+} from './errors';
 import { generateRequestId } from './requestId';
 
 const { NEXT_PUBLIC_API_URL } = getValidatedEnv();
 
-/**
- * Error thrown when a request cannot reach the API or is otherwise unable to
- * complete because of a network failure.
- */
-export class NetworkError extends Error {
-  /** Correlation id sent to the backend with the failed request (#837). */
-  requestId?: string;
-
-  /**
-   * Creates a network error.
-   *
-   * @param message - Human-readable explanation of the network failure.
-   * @param requestId - Correlation id of the request that failed.
-   */
-  constructor(message: string = ERROR_MESSAGES.NETWORK, requestId?: string) {
-    super(message);
-    this.name = 'NetworkError';
-    this.requestId = requestId;
-  }
-}
-
-/**
- * Error thrown when the API rejects a request because authentication is
- * missing or invalid.
- */
-export class AuthError extends Error {
-  /** Correlation id sent to the backend with the failed request (#837). */
-  requestId?: string;
-
-  /**
-   * Creates an authentication error.
-   *
-   * @param message - Human-readable explanation of the authentication failure.
-   * @param requestId - Correlation id of the request that failed.
-   */
-  constructor(message: string = ERROR_MESSAGES.UNAUTHORIZED, requestId?: string) {
-    super(message);
-    this.name = 'AuthError';
-    this.requestId = requestId;
-  }
-}
-
-/**
- * Error thrown when the requested API resource does not exist.
- */
-export class NotFoundError extends Error {
-  /** Correlation id sent to the backend with the failed request (#837). */
-  requestId?: string;
-
-  /**
-   * Creates a not-found error.
-   *
-   * @param message - Human-readable explanation of the missing resource.
-   * @param requestId - Correlation id of the request that failed.
-   */
-  constructor(message: string = ERROR_MESSAGES.NOT_FOUND, requestId?: string) {
-    super(message);
-    this.name = 'NotFoundError';
-    this.requestId = requestId;
-  }
-}
-
-/**
- * Error returned for an unsuccessful HTTP response that is not represented by
- * a more specific API error class.
- */
-export class ApiError extends Error {
-  /** HTTP status code returned by the API. */
-  status: number;
-  /** Correlation id sent to the backend with the failed request (#837). */
-  requestId?: string;
-
-  /**
-   * Creates an API response error.
-   *
-   * @param message - Human-readable explanation of the API failure.
-   * @param status - HTTP status code returned by the API.
-   * @param requestId - Correlation id of the request that failed.
-   */
-  constructor(message: string, status: number, requestId?: string) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.requestId = requestId;
-  }
-}
+// #106: the typed error classes moved to `lib/errors.ts` so they have a
+// single home shared by the client, consumer hooks, and tests. Re-export
+// from this module so existing `import { NetworkError } from '@/lib/apiClient'`
+// call sites keep working without a mass-rename.
+export { ApiError, AuthError, NetworkError, NotFoundError, RateLimitError, ServerError };
 
 interface FetchOptions extends RequestInit {
   timeout?: number;
@@ -185,18 +116,14 @@ async function fetchWithRetry(
     else recordApiSuccess();
 
     if (!response.ok) {
-      if (response.status === HTTP_STATUS.UNAUTHORIZED) {
-        throw new AuthError(undefined, requestId);
-      }
-      if (response.status === HTTP_STATUS.NOT_FOUND) {
-        throw new NotFoundError(undefined, requestId);
-      }
+      // #106: 429 retries internally while attempts remain; once exhausted
+      // the typed `RateLimitError` carries the parsed Retry-After in ms so
+      // callers do not have to reach into the response.
       if (response.status === HTTP_STATUS.RATE_LIMIT && attempt <= retries) {
-        const retryAfter = response.headers.get('Retry-After');
-        const delayMs = retryAfter
-          ? parseInt(retryAfter) * 1000
-          : API_CONFIG.RETRY_DELAYS.RATE_LIMIT_FALLBACK;
-        await delay(delayMs);
+        const retryAfterMs =
+          parseRetryAfter(response.headers.get('Retry-After')) ??
+          API_CONFIG.RETRY_DELAYS.RATE_LIMIT_FALLBACK;
+        await delay(retryAfterMs);
         return fetchWithRetry(url, options, retries, attempt + 1);
       }
       if (response.status >= HTTP_STATUS.SERVER_ERROR && attempt <= retries) {
@@ -205,7 +132,9 @@ async function fetchWithRetry(
         return fetchWithRetry(url, options, retries, attempt + 1);
       }
 
-      throw new ApiError(`HTTP error! status: ${response.status}`, response.status, requestId);
+      const err = errorFromResponse(response, requestId);
+      logApiErrorInDev(err);
+      throw err;
     }
 
     return response;
@@ -215,8 +144,9 @@ async function fetchWithRetry(
       if (options.signal?.aborted) {
         throw error;
       }
-      recordApiFailure();
-      throw Object.assign(new Error(ERROR_MESSAGES.TIMEOUT), { requestId });
+      const timeoutErr = Object.assign(new Error(ERROR_MESSAGES.TIMEOUT), { requestId });
+      logApiErrorInDev(timeoutErr);
+      throw timeoutErr;
     }
 
     // #816 — a TypeError from fetch means no response arrived (network failure).
@@ -229,7 +159,12 @@ async function fetchWithRetry(
     }
 
     if (error instanceof TypeError) {
-      throw new NetworkError(error.message, requestId);
+      // #106: tag the error with `offline` when `navigator.onLine` reports
+      // the device is disconnected; the UI can then show "you are offline"
+      // instead of a generic retry message.
+      const netErr = new NetworkError(error.message, requestId, isOffline());
+      logApiErrorInDev(netErr);
+      throw netErr;
     }
 
     throw error;

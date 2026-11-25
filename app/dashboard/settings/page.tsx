@@ -1,15 +1,32 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Mail, Wallet, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
-import { GiftSubscriptionsSection } from '@/components/gifts/GiftSubscriptionsSection';
-import DataSaverToggle from '@/components/help/DataSaverToggle';
-import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
-import { useUserPreferences, type AudioQuality } from '@/context/UserPreferencesContext';
 import { useRecentlyPlayed } from '@/hooks/useRecentlyPlayed';
+import { useUserPreferences, type AudioQuality } from '@/context/UserPreferencesContext';
+
+/**
+ * #156: the three heaviest leaf components on this route pull in their own
+ * dependency subgraphs (Dynamic SDK surface for AccountLinkingUI, the data
+ * saver store for DataSaverToggle, the privacy consent + export flow for
+ * PrivacyDataSection). Dynamic-importing them keeps the settings chunk
+ * small and ships only the code the user actually scrolled to.
+ */
+const AccountLinkingUI = dynamic(() => import('@/components/auth/AccountLinkingUI'), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-[#1E1E1E] rounded-lg animate-pulse" />,
+});
+const DataSaverToggle = dynamic(() => import('@/components/help/DataSaverToggle'), {
+  ssr: false,
+  loading: () => <div className="h-10 bg-[#1E1E1E] rounded animate-pulse" />,
+});
+const PrivacyDataSection = dynamic(() => import('@/components/settings/PrivacyDataSection'), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-[#1E1E1E] rounded-lg animate-pulse" />,
+});
 
 function LinkedAccountsList() {
   const { user, handleUnlinkWallet } = useDynamicContext();
