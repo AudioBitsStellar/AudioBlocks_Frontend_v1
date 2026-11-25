@@ -21,6 +21,7 @@ jobs:
       pull-requests: write
     env:
       NEXT_PUBLIC_API_URL: http://localhost:4000/api
+      NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID: ci-dynamic-env
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 

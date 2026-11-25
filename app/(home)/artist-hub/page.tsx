@@ -15,9 +15,13 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
+  alternates: { canonical: '/artist-hub' },
+  robots: { index: true, follow: true },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
+    url: '/artist-hub',
+    siteName: 'AudioBlocks',
     type: 'website',
     images: [{ url: '/logo.png', width: 1200, height: 630, alt: 'AudioBlocks Artist Hub' }],
   },
