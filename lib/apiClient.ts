@@ -1,4 +1,5 @@
 import Cookies from 'js-cookie';
+import { recordApiFailure, recordApiSuccess } from './apiOutage';
 import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS, TELEMETRY } from './constants';
 import { getValidatedEnv } from './env';
 import { generateRequestId } from './requestId';
@@ -136,11 +137,14 @@ export async function refreshAccessToken(): Promise<string> {
     Cookies.set(AUTH.COOKIE_NAME, token, AUTH.COOKIE_OPTIONS);
     if (nextRefreshToken)
       Cookies.set(AUTH.REFRESH_COOKIE_NAME, nextRefreshToken, AUTH.COOKIE_OPTIONS);
-    void fetch('/api/session', {
+    const sessionResponse = await fetch('/api/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
+    if (!sessionResponse.ok) {
+      throw new AuthError('Refreshed token could not establish a verified session');
+    }
     return token;
   })().finally(() => {
     refreshPromise = null;
@@ -176,6 +180,9 @@ async function fetchWithRetry(
   try {
     const response = await fetch(url, finalOptions);
     clearTimeout(id);
+    // #816 — a server error means the API is struggling. Any other status means it answered.
+    if (response.status >= HTTP_STATUS.SERVER_ERROR) recordApiFailure();
+    else recordApiSuccess();
 
     if (!response.ok) {
       if (response.status === HTTP_STATUS.UNAUTHORIZED) {
@@ -208,8 +215,12 @@ async function fetchWithRetry(
       if (options.signal?.aborted) {
         throw error;
       }
+      recordApiFailure();
       throw Object.assign(new Error(ERROR_MESSAGES.TIMEOUT), { requestId });
     }
+
+    // #816 — a TypeError from fetch means no response arrived (network failure).
+    if (error instanceof TypeError) recordApiFailure();
 
     if (error instanceof TypeError && attempt <= retries) {
       const delayMs = API_CONFIG.RETRY_DELAYS.BASE_BACKOFF * Math.pow(2, attempt);

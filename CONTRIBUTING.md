@@ -194,8 +194,9 @@ the matching variable to `false`.
 To add a flag:
 
 1. Add its name to `FeatureFlagName` in `lib/featureFlags.ts`.
-2. Add an entry to `FEATURE_FLAGS` with the `envVar`, a description and the
-   endpoints it waits on.
+2. Add an entry to `FEATURE_FLAGS` with the `envVar`, the matching server-only
+   `runtimeEnvVar` (`RUNTIME_FEATURE_*`, for runtime overrides, #815), a
+   description and the endpoints it waits on.
 3. Add a `case` to `readFlagValue` that reads the variable through a **literal**
    `process.env.NEXT_PUBLIC_...` access. Next.js only inlines literal accesses
    into the client bundle, so `process.env[name]` will not work in the browser.

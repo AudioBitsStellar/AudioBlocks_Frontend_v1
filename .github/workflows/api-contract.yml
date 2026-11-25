@@ -1,0 +1,36 @@
+# API contract drift check (#822).
+#
+# Fails when the listener app's API paths (API_ENDPOINTS) drift from the
+# backend's OpenAPI spec without being recorded in
+# scripts/api-contract-known-gaps.json. Runs on every pull request, on a daily
+# schedule (so backend changes are caught without a frontend PR), and on demand.
+#
+# Set the repository variable BACKEND_OPENAPI_URL to check another spec, such as
+# a staging backend's. It defaults to the backend's main branch.
+name: API contract
+
+on:
+  pull_request:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Frontend API paths match the backend OpenAPI spec
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check API paths against the backend spec
+        env:
+          BACKEND_OPENAPI_URL: ${{ vars.BACKEND_OPENAPI_URL }}
+        run: node scripts/check-api-contract.mjs

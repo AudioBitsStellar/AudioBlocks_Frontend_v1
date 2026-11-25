@@ -139,6 +139,15 @@ These calls are behind feature flags (#637), so production never sends them whil
 | `lib/reportService.ts` (`SONG_REPORT`)    | `POST /api/song/:id/report`     | `POST /api/song/:id/report`     | ok. The comment next to `SONG_REPORT` in `lib/constants.ts` still says this route is not mounted, but it now is |
 | `lib/reportService.ts` (`COMMENT_REPORT`) | `POST /api/comments/:id/report` | `POST /api/comments/:id/report` | ok                                                                                                              |
 
+## Keeping this in sync (#822)
+
+The `API_ENDPOINTS` paths are checked against the backend's OpenAPI spec by
+[`scripts/check-api-contract.mjs`](../scripts/check-api-contract.mjs). The
+[API contract workflow](../.github/workflows/api-contract.yml) runs it on every
+pull request and daily. It fails when a frontend path is neither documented in the
+spec nor listed in [`scripts/api-contract-known-gaps.json`](../scripts/api-contract-known-gaps.json).
+It also fails when a listed gap is documented now or no longer used, so the list only shrinks.
+
 ## Backend issues to open
 
 No existing AudioBlock_Backend issue covers the routes below. Each one needs an issue before it can be linked from the tables above.

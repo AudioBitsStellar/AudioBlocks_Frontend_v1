@@ -1,0 +1,40 @@
+name: player-soak
+
+# Long-session playback soak (#817). Not a PR check: it is slow, so it runs on
+# demand and once a week. See docs/SOAK_TESTING.md.
+on:
+  workflow_dispatch:
+    inputs:
+      duration_ms:
+        description: 'Run length in milliseconds (default 4 hours = 14400000)'
+        required: false
+        default: '14400000'
+  schedule:
+    - cron: '0 2 * * 0'
+
+permissions:
+  contents: read
+
+jobs:
+  soak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      SOAK_DURATION_MS: ${{ inputs.duration_ms || '14400000' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Sentry 7's peer range excludes Next 15; use the committed lockfile's legacy peer resolution.
+      - run: npm ci --legacy-peer-deps
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:soak
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: player-soak-memory-report
+          path: test-results/soak/
+          if-no-files-found: ignore
+          retention-days: 30

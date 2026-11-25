@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useMemo, useCallback, useRef } from 'react';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { ListFilter, Music, Search, UsersRound, Send, DollarSign } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { NftTransfer } from '@/components/NftTransfer';
+import { CollectionEmptyState } from '@/components/collection/CollectionEmptyState';
 import { ListNFTDialog } from '@/components/marketplace/ListNFTDialog';
+import { NftTransfer } from '@/components/NftTransfer';
 import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -154,20 +153,7 @@ const CollectionsPage = () => {
       )}
 
       {isConnected && !isLoading && !backendLoading && songs.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-center text-on-muted">
-          <Music aria-hidden="true" className="mb-4 opacity-40" size={64} />
-          <h3 className="text-white text-lg font-semibold mb-2">No NFTs yet</h3>
-          <p className="text-sm max-w-sm mb-6">
-            You don&apos;t own any music NFTs yet. Explore the marketplace to discover and collect
-            tracks from your favorite artists.
-          </p>
-          <Link
-            className="px-6 py-2 rounded-full bg-brand hover:bg-pink-700 text-white text-sm font-semibold transition-colors"
-            href="/marketPlace"
-          >
-            Browse Marketplace
-          </Link>
-        </div>
+        <CollectionEmptyState />
       )}
 
       {isConnected &&

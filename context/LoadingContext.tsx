@@ -4,10 +4,13 @@ import {
   createContext,
   useContext,
   useCallback,
+  useEffect,
   useReducer,
   useMemo,
+  useRef,
   ReactNode,
 } from 'react';
+import { usePathname } from 'next/navigation';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -91,11 +94,27 @@ export interface LoadingContextValue {
    */
   withLoading: <T>(key: string, fn: () => Promise<T>) => Promise<T>;
   
-  /** 
+  /**
    * Snapshot of the raw loading state — useful for debugging or dev-tools.
    * @type {Readonly<LoadingState>}
    */
   loadingState: Readonly<LoadingState>;
+
+  /** #126: alias for `startLoading(name)` matching the issue's documented API. */
+  register: (name: string) => void;
+
+  /** #126: alias for `clearLoading(name)` matching the issue's documented API. */
+  clear: (name: string) => void;
+
+  /** #126: names of every operation that is currently loading. For debug tooling. */
+  activeNames: string[];
+
+  /**
+   * #126: names of operations that passed the 10 s timeout threshold without
+   * being cleared. Consumers (the global loading bar) can show an error
+   * fallback for these while keeping the rest of the loading state intact.
+   */
+  timedOut: string[];
 }
 
 // ── Reducer ───────────────────────────────────────────────────────────────────
@@ -148,8 +167,18 @@ const LoadingContext = createContext<LoadingContextValue | null>(null);
  * @param {ReactNode} props.children - Child components to be wrapped with loading context
  * @returns {JSX.Element} Loading context provider
  */
+/** #126: ms before a still-active named loading state is reported as timed-out. */
+const LOADING_TIMEOUT_MS = 10_000;
+
 export function LoadingProvider({ children }: { children: ReactNode }) {
   const [loadingState, dispatch] = useReducer(reducer, {});
+  // Track when each key first became active so the 10 s fallback is measured
+  // from the first `register`, not from the most recent increment.
+  const startedAtRef = useRef<Record<string, number>>({});
+  const [timedOut, setTimedOut] = useReducer(
+    (_: string[], next: string[]) => next,
+    [] as string[]
+  );
 
   const startLoading = useCallback((key: string) => {
     dispatch({ type: 'START', key });
@@ -189,6 +218,68 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  // #126: clear every active loading state when the route changes. Stale keys
+  // from a prior page would otherwise keep the global bar visible after the
+  // navigation that caused them already unmounted the component that set them.
+  // `usePathname` only re-runs on client navigations; the first value is the
+  // initial path, so the first effect is a no-op.
+  const pathname = usePathname();
+  const previousPathRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (previousPathRef.current !== null && previousPathRef.current !== pathname) {
+      startedAtRef.current = {};
+      setTimedOut([]);
+      dispatch({ type: 'CLEAR_ALL' });
+    }
+    previousPathRef.current = pathname;
+  }, [pathname]);
+
+  // #126: keep the per-key start timestamps in sync with the active loading
+  // state. A key that appears for the first time records `now`; a key that
+  // drops to zero (fully stopped or cleared) is removed. Running after every
+  // state change keeps the timeout watcher below from leaking entries.
+  useEffect(() => {
+    const started = startedAtRef.current;
+    const now = Date.now();
+    for (const key of Object.keys(loadingState)) {
+      if (started[key] === undefined) started[key] = now;
+    }
+    for (const key of Object.keys(started)) {
+      if ((loadingState[key] ?? 0) <= 0) delete started[key];
+    }
+    // Any previously timed-out keys that no longer exist drop out of the list.
+    setTimedOut(timedOut.filter((name) => (loadingState[name] ?? 0) > 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingState]);
+
+  // #126: 10 s timeout fallback. A single interval watches all active keys
+  // and tags any that have outlived the threshold. The UI reads `timedOut` to
+  // render an error fallback for them while leaving the underlying state
+  // alone; the caller still has to clear.
+  useEffect(() => {
+    if (Object.keys(loadingState).length === 0) {
+      if (timedOut.length > 0) setTimedOut([]);
+      return;
+    }
+    const id = setInterval(() => {
+      const now = Date.now();
+      const stale = Object.keys(startedAtRef.current).filter(
+        (name) => now - startedAtRef.current[name] >= LOADING_TIMEOUT_MS
+      );
+      // Only update when the set actually changes; identical arrays stay
+      // reference-equal so dependents do not re-render on every tick.
+      const changed =
+        stale.length !== timedOut.length || stale.some((n) => !timedOut.includes(n));
+      if (changed) setTimedOut(stale);
+    }, 500);
+    return () => clearInterval(id);
+  }, [loadingState, timedOut]);
+
+  const activeNames = useMemo(
+    () => Object.keys(loadingState).filter((key) => (loadingState[key] ?? 0) > 0),
+    [loadingState]
+  );
+
   const value = useMemo<LoadingContextValue>(
     () => ({
       isLoading,
@@ -199,11 +290,82 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
       clearAll,
       withLoading,
       loadingState,
+      // #126
+      register: startLoading,
+      clear: clearLoading,
+      activeNames,
+      timedOut,
     }),
-    [isLoading, isAnyLoading, startLoading, stopLoading, clearLoading, clearAll, withLoading, loadingState],
+    [
+      isLoading,
+      isAnyLoading,
+      startLoading,
+      stopLoading,
+      clearLoading,
+      clearAll,
+      withLoading,
+      loadingState,
+      activeNames,
+      timedOut,
+    ],
   );
 
   return <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>;
+}
+
+/**
+ * #126: global loading bar. Render once in the root layout; it shows a single
+ * indeterminate bar across the top while any named loading state is active,
+ * and switches to an error fallback for operations that have been active for
+ * more than 10 seconds. A debug panel listing the active names is rendered
+ * when `debug` is true (opt-in: the panel is otherwise never visible so it
+ * never leaks named loading keys into production UI).
+ */
+export function GlobalLoadingBar({ debug = false }: { debug?: boolean } = {}) {
+  const ctx = useContext(LoadingContext);
+  // Rendering outside a provider should not crash the whole layout: the bar
+  // just goes silent. The provider check in `useLoading` still fires for
+  // code that explicitly calls the hook.
+  if (!ctx) return null;
+  if (ctx.activeNames.length === 0) return null;
+
+  const hasTimedOut = ctx.timedOut.length > 0;
+  return (
+    <div
+      aria-live="polite"
+      className={
+        'fixed inset-x-0 top-0 z-[60] h-1 ' +
+        (hasTimedOut
+          ? 'bg-red-600/80'
+          : 'bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse')
+      }
+      data-loading-bar
+      data-timed-out={hasTimedOut ? 'true' : 'false'}
+      role="status"
+    >
+      <span className="sr-only">
+        {hasTimedOut
+          ? `Loading timed out for: ${ctx.timedOut.join(', ')}`
+          : `Loading: ${ctx.activeNames.join(', ')}`}
+      </span>
+      {debug && (
+        <div className="fixed top-2 right-2 bg-black/80 text-white text-xs rounded px-2 py-1 pointer-events-auto">
+          <div className="font-semibold">Active loading ({ctx.activeNames.length})</div>
+          <ul>
+            {ctx.activeNames.map((name) => (
+              <li
+                key={name}
+                className={ctx.timedOut.includes(name) ? 'text-red-300' : 'text-gray-200'}
+              >
+                {name}
+                {ctx.timedOut.includes(name) ? ' (timed out)' : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**

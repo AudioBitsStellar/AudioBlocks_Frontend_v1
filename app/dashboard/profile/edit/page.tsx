@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import AvatarCrop from '@/components/common/dashboard/AvatarCrop';
 import { Modal } from '@/components/ui/Modal';
-import { useFormState } from '@/hooks/useFormState';
+import { profileFormSchema, useFormState } from '@/hooks/useFormState';
 import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { sanitizeUserInput } from '@/lib/sanitize';
@@ -23,34 +23,29 @@ const EditProfile = () => {
 
   const {
     values,
-    setValues,
     handleChange,
     handleBlur,
     errors,
     isFormValid,
+    isFormDirty,
+    isSubmitting,
     fieldError,
-    setAllTouched,
-  } = useFormState({
-    displayName: '',
-    bio: '',
-    website: '',
-    twitter: '',
-  });
+    reset,
+    submit,
+  } = useFormState(
+    {
+      displayName: '',
+      bio: '',
+      website: '',
+      twitter: '',
+    },
+    profileFormSchema
+  );
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
   const [rawImageSrc, setRawImageSrc] = useState<string>('');
-  const [initialValues, setInitialValues] = useState({
-    displayName: '',
-    bio: '',
-    website: '',
-    twitter: '',
-  });
-  const isDirty =
-    values.displayName !== initialValues.displayName ||
-    values.bio !== initialValues.bio ||
-    values.website !== initialValues.website ||
-    values.twitter !== initialValues.twitter;
+  const isDirty = isFormDirty();
   const { isDialogOpen, leaveWithoutSaving, navigate, stay } = useUnsavedChangesGuard(isDirty);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,10 +57,9 @@ const EditProfile = () => {
         website: profile.website || '',
         twitter: profile.twitter || '',
       };
-      setValues(nextValues);
-      setInitialValues(nextValues);
+      reset(nextValues);
     }
-  }, [profile, setValues]);
+  }, [profile, reset]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,23 +93,26 @@ const EditProfile = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Mark all fields as touched so errors show on submit attempt
-    setAllTouched();
-    if (!isFormValid) return;
-    update(
-      {
-        name: sanitizeUserInput(values.displayName),
-        bio: sanitizeUserInput(values.bio),
-        website: values.website,
-        twitter: values.twitter,
-      },
-      {
-        onSuccess: () => {
-          setInitialValues(values);
-          router.push('/dashboard/profile');
-        },
-      }
-    );
+    void submit(async (data) => {
+      await new Promise<void>((resolve, reject) => {
+        update(
+          {
+            name: sanitizeUserInput(data.displayName),
+            bio: sanitizeUserInput(data.bio),
+            website: data.website,
+            twitter: data.twitter,
+          },
+          {
+            onSuccess: () => {
+              reset(data);
+              router.push('/dashboard/profile');
+              resolve();
+            },
+            onError: () => reject(new Error('Failed to save profile.')),
+          }
+        );
+      });
+    }).catch(() => undefined);
   };
 
   const handleBack = () => {
@@ -250,10 +247,10 @@ const EditProfile = () => {
 
             <button
               className="bg-pink-600 text-white px-6 py-2 rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isPending || !isFormValid}
+              disabled={isPending || isSubmitting || !isFormValid}
               type="submit"
             >
-              {isPending ? 'Saving…' : 'Save'}
+              {isPending || isSubmitting ? 'Saving…' : 'Save'}
             </button>
           </form>
 
