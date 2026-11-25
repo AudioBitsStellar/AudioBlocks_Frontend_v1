@@ -615,5 +615,30 @@ describe('PlaybackContext', () => {
       expect(result.current.getRecentlyPlayed().map((e) => e.trackId)).toEqual(['c', 'a', 'b']);
       expect(result.current.getRecentlyPlayed(2).map((e) => e.trackId)).toEqual(['c', 'a']);
     });
+
+    it('pauses playback on beforeunload or pagehide (#128)', () => {
+      const { result, unmount } = render();
+      act(() => result.current.play());
+      expect(result.current.isPlaying).toBe(true);
+
+      act(() => {
+        window.dispatchEvent(new Event('beforeunload'));
+      });
+      expect(result.current.isPlaying).toBe(false);
+
+      act(() => result.current.play());
+      expect(result.current.isPlaying).toBe(true);
+
+      act(() => {
+        window.dispatchEvent(new Event('pagehide'));
+      });
+      expect(result.current.isPlaying).toBe(false);
+
+      const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
+      unmount();
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('pagehide', expect.any(Function));
+      removeEventListenerSpy.mockRestore();
+    });
   });
 });

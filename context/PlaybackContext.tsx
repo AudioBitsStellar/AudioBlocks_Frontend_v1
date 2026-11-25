@@ -195,9 +195,11 @@ export type PlaybackContextValue = PlaybackState & {
  * re-render when playback state changes.
  */
 export type PlaybackActions = {
-  [K in keyof PlaybackContextValue as PlaybackContextValue[K] extends (...args: never[]) => unknown
-    ? K
-    : never]: PlaybackContextValue[K];
+  [
+    K in keyof PlaybackContextValue as PlaybackContextValue[K] extends (...args: never[]) => unknown
+      ? K
+      : never
+  ]: PlaybackContextValue[K];
 };
 
 /** The player starts with the demo playlist only when demo data is enabled; otherwise it starts empty. */
@@ -592,6 +594,20 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveToStorage(GAPPLESS_STORAGE_KEY, state.gapless);
   }, [state.gapless]);
+
+  // Stop playback when browser tab is closed or user navigates to an external URL (#128).
+  // Playback continues across client-side SPA navigation because PlaybackProvider remains mounted.
+  useEffect(() => {
+    const handleUnload = () => {
+      dispatch({ type: 'PAUSE' });
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handleUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
+    };
+  }, []);
 
   // Latest history for `getRecentlyPlayed`, so that action stays stable while
   // still reading current data.
