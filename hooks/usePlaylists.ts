@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { trackEvent } from '@/lib/analytics';
 import { CACHE_DURATIONS, RETRY_CONFIG } from '@/lib/constants';
 import {
   createPlaylist,
@@ -67,6 +68,12 @@ export function useToggleFollowPlaylist() {
       });
 
       return { previous };
+    },
+    onSuccess: (_data, { playlist, follow }) => {
+      // "save" funnel step (#839) — a track-level save/favorite isn't wired
+      // up yet (see docs/FUNNEL_METRICS.md), so this is the save-equivalent
+      // write action that actually exists today: following a playlist.
+      if (follow) trackEvent('save', { kind: 'playlist', playlistId: playlist.id });
     },
     onError: (_error, _variables, context) => {
       queryClient.setQueryData(PLAYLIST_QUERY_KEYS.followed, context?.previous);

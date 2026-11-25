@@ -1,76 +1,28 @@
 import Cookies from 'js-cookie';
-import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS } from './constants';
+import { recordApiFailure, recordApiSuccess } from './apiOutage';
+import { API_CONFIG, AUTH, ERROR_MESSAGES, HTTP_STATUS, TELEMETRY } from './constants';
 import { getValidatedEnv } from './env';
+import {
+  ApiError,
+  AuthError,
+  NetworkError,
+  NotFoundError,
+  RateLimitError,
+  ServerError,
+  errorFromResponse,
+  isOffline,
+  logApiErrorInDev,
+  parseRetryAfter,
+} from './errors';
+import { generateRequestId } from './requestId';
 
 const { NEXT_PUBLIC_API_URL } = getValidatedEnv();
 
-/**
- * Error thrown when a request cannot reach the API or is otherwise unable to
- * complete because of a network failure.
- */
-export class NetworkError extends Error {
-  /**
-   * Creates a network error.
-   *
-   * @param message - Human-readable explanation of the network failure.
-   */
-  constructor(message: string = ERROR_MESSAGES.NETWORK) {
-    super(message);
-    this.name = 'NetworkError';
-  }
-}
-
-/**
- * Error thrown when the API rejects a request because authentication is
- * missing or invalid.
- */
-export class AuthError extends Error {
-  /**
-   * Creates an authentication error.
-   *
-   * @param message - Human-readable explanation of the authentication failure.
-   */
-  constructor(message: string = ERROR_MESSAGES.UNAUTHORIZED) {
-    super(message);
-    this.name = 'AuthError';
-  }
-}
-
-/**
- * Error thrown when the requested API resource does not exist.
- */
-export class NotFoundError extends Error {
-  /**
-   * Creates a not-found error.
-   *
-   * @param message - Human-readable explanation of the missing resource.
-   */
-  constructor(message: string = ERROR_MESSAGES.NOT_FOUND) {
-    super(message);
-    this.name = 'NotFoundError';
-  }
-}
-
-/**
- * Error returned for an unsuccessful HTTP response that is not represented by
- * a more specific API error class.
- */
-export class ApiError extends Error {
-  /** HTTP status code returned by the API. */
-  status: number;
-
-  /**
-   * Creates an API response error.
-   *
-   * @param message - Human-readable explanation of the API failure.
-   * @param status - HTTP status code returned by the API.
-   */
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-  }
-}
+// #106: the typed error classes moved to `lib/errors.ts` so they have a
+// single home shared by the client, consumer hooks, and tests. Re-export
+// from this module so existing `import { NetworkError } from '@/lib/apiClient'`
+// call sites keep working without a mass-rename.
+export { ApiError, AuthError, NetworkError, NotFoundError, RateLimitError, ServerError };
 
 interface FetchOptions extends RequestInit {
   timeout?: number;
@@ -116,11 +68,14 @@ export async function refreshAccessToken(): Promise<string> {
     Cookies.set(AUTH.COOKIE_NAME, token, AUTH.COOKIE_OPTIONS);
     if (nextRefreshToken)
       Cookies.set(AUTH.REFRESH_COOKIE_NAME, nextRefreshToken, AUTH.COOKIE_OPTIONS);
-    void fetch('/api/session', {
+    const sessionResponse = await fetch('/api/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
+    if (!sessionResponse.ok) {
+      throw new AuthError('Refreshed token could not establish a verified session');
+    }
     return token;
   })().finally(() => {
     refreshPromise = null;
@@ -135,6 +90,9 @@ async function fetchWithRetry(
   attempt = 1
 ): Promise<Response> {
   const { timeout = API_CONFIG.DEFAULT_TIMEOUT, ...fetchOptions } = options;
+  // #837 — read back the id `request()` already put on the headers, so every
+  // error thrown below (including on retries) can carry it for display.
+  const requestId = new Headers(options.headers).get(TELEMETRY.REQUEST_ID_HEADER) ?? undefined;
 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
@@ -153,20 +111,19 @@ async function fetchWithRetry(
   try {
     const response = await fetch(url, finalOptions);
     clearTimeout(id);
+    // #816 — a server error means the API is struggling. Any other status means it answered.
+    if (response.status >= HTTP_STATUS.SERVER_ERROR) recordApiFailure();
+    else recordApiSuccess();
 
     if (!response.ok) {
-      if (response.status === HTTP_STATUS.UNAUTHORIZED) {
-        throw new AuthError();
-      }
-      if (response.status === HTTP_STATUS.NOT_FOUND) {
-        throw new NotFoundError();
-      }
+      // #106: 429 retries internally while attempts remain; once exhausted
+      // the typed `RateLimitError` carries the parsed Retry-After in ms so
+      // callers do not have to reach into the response.
       if (response.status === HTTP_STATUS.RATE_LIMIT && attempt <= retries) {
-        const retryAfter = response.headers.get('Retry-After');
-        const delayMs = retryAfter
-          ? parseInt(retryAfter) * 1000
-          : API_CONFIG.RETRY_DELAYS.RATE_LIMIT_FALLBACK;
-        await delay(delayMs);
+        const retryAfterMs =
+          parseRetryAfter(response.headers.get('Retry-After')) ??
+          API_CONFIG.RETRY_DELAYS.RATE_LIMIT_FALLBACK;
+        await delay(retryAfterMs);
         return fetchWithRetry(url, options, retries, attempt + 1);
       }
       if (response.status >= HTTP_STATUS.SERVER_ERROR && attempt <= retries) {
@@ -175,7 +132,9 @@ async function fetchWithRetry(
         return fetchWithRetry(url, options, retries, attempt + 1);
       }
 
-      throw new ApiError(`HTTP error! status: ${response.status}`, response.status);
+      const err = errorFromResponse(response, requestId);
+      logApiErrorInDev(err);
+      throw err;
     }
 
     return response;
@@ -185,8 +144,13 @@ async function fetchWithRetry(
       if (options.signal?.aborted) {
         throw error;
       }
-      throw new Error(ERROR_MESSAGES.TIMEOUT);
+      const timeoutErr = Object.assign(new Error(ERROR_MESSAGES.TIMEOUT), { requestId });
+      logApiErrorInDev(timeoutErr);
+      throw timeoutErr;
     }
+
+    // #816 — a TypeError from fetch means no response arrived (network failure).
+    if (error instanceof TypeError) recordApiFailure();
 
     if (error instanceof TypeError && attempt <= retries) {
       const delayMs = API_CONFIG.RETRY_DELAYS.BASE_BACKOFF * Math.pow(2, attempt);
@@ -195,7 +159,12 @@ async function fetchWithRetry(
     }
 
     if (error instanceof TypeError) {
-      throw new NetworkError(error.message);
+      // #106: tag the error with `offline` when `navigator.onLine` reports
+      // the device is disconnected; the UI can then show "you are offline"
+      // instead of a generic retry message.
+      const netErr = new NetworkError(error.message, requestId, isOffline());
+      logApiErrorInDev(netErr);
+      throw netErr;
     }
 
     throw error;
@@ -216,6 +185,10 @@ async function request(endpoint: string, options: FetchOptions = {}, hasRetriedA
   if (token) {
     headers.set(AUTH.TOKEN_HEADER, `${AUTH.TOKEN_PREFIX} ${token}`);
   }
+  // #837 — every request gets its own correlation id, sent to the backend and
+  // echoed back on thrown errors so it can be shown in error states.
+  const requestId = generateRequestId();
+  headers.set(TELEMETRY.REQUEST_ID_HEADER, requestId);
 
   let response: Response;
   try {
@@ -228,14 +201,14 @@ async function request(endpoint: string, options: FetchOptions = {}, hasRetriedA
         return request(endpoint, { ...options, headers }, true);
       } catch {
         clearSession();
-        throw new AuthError('Session expired');
+        throw new AuthError('Session expired', error.requestId);
       }
     }
     throw error;
   }
 
   const data = await response.json().catch(() => null);
-  return { data, status: response.status, headers: response.headers };
+  return { data, status: response.status, headers: response.headers, requestId };
 }
 
 /**

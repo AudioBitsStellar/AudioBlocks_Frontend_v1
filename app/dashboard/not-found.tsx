@@ -1,9 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Home } from 'lucide-react';
 
 export default function DashboardNotFound() {
+  const router = useRouter();
+
+  const handleGoBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      window.history.back();
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[60vh] text-center px-4">
       <div className="relative">
@@ -21,8 +32,9 @@ export default function DashboardNotFound() {
             Go to Dashboard
           </Link>
           <button
-            className="inline-flex items-center gap-2 bg-[#1E181D] hover:bg-[#885FA8] text-gray-300 px-6 py-3 rounded-full transition"
-            onClick={() => window.history.back()}
+            className="inline-flex items-center gap-2 bg-[#1E181D] hover:bg-[#885FA8] text-gray-300 px-6 py-3 rounded-full transition cursor-pointer"
+            type="button"
+            onClick={handleGoBack}
           >
             <ArrowLeft size={16} />
             Go Back

@@ -96,6 +96,17 @@ body {
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
+
+  /* Issue #133: mobile swipe disambiguation.
+     `touch-action: pan-y` tells the browser only vertical panning is a
+     built-in gesture; horizontal ones go to the JS handler
+     (`useEdgeSwipe`) without the browser trying to start a scroll at the
+     same time as the back-swipe. iOS Safari otherwise races the two and
+     flips unpredictably between native back-nav and drawer-open.
+     `overscroll-behavior-x: contain` stops horizontal rubber-banding
+     from carousels escaping the page bounds. */
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
 }
 
 /* Issue #163: baseline visible focus indicator for every focusable element,

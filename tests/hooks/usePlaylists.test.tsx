@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PLAYLIST_QUERY_KEYS, useToggleFollowPlaylist } from '@/hooks/usePlaylists';
+import { trackEvent } from '@/lib/analytics';
 import { followPlaylist, unfollowPlaylist } from '@/lib/playlistService';
 import type { PlaylistSummary } from '@/lib/playlistService';
 import { toast } from 'sonner';
@@ -16,8 +17,11 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
+vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn() }));
+
 const mockFollow = vi.mocked(followPlaylist);
 const mockUnfollow = vi.mocked(unfollowPlaylist);
+const mockTrackEvent = vi.mocked(trackEvent);
 
 const existing: PlaylistSummary = { id: 'p1', name: 'Mix', userId: 'u2' };
 const candidate: PlaylistSummary = { id: 'p2', name: 'Night', userId: 'u3' };
@@ -58,6 +62,9 @@ describe('useToggleFollowPlaylist', () => {
     });
     expect(mockFollow).toHaveBeenCalledWith('p2');
     resolveRequest();
+    await waitFor(() =>
+      expect(mockTrackEvent).toHaveBeenCalledWith('save', { kind: 'playlist', playlistId: 'p2' })
+    );
   });
 
   it('removes the playlist when unfollowing', async () => {
@@ -75,6 +82,7 @@ describe('useToggleFollowPlaylist', () => {
       );
       expect(ids).toEqual(['p2']);
     });
+    expect(mockTrackEvent).not.toHaveBeenCalled();
   });
 
   it('restores the previous followed list and shows an error when the request fails', async () => {

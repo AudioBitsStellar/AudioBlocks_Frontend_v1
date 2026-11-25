@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { Modal } from '@/components/ui/Modal';
 import { useSorobanRelay } from '@/hooks/useSorobanRelay';

@@ -2,10 +2,14 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronDown, ChevronUp, GripVertical, Trash2, X, Save } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { usePlaybackActions, usePlaybackSelector } from '@/context/PlaybackContext';
 import { useAnnounce } from '@/hooks/useAnnounce';
+
+const VIRTUALIZE_THRESHOLD = 15;
+const ESTIMATED_ITEM_HEIGHT = 56;
 
 interface QueueDrawerProps {
   open: boolean;
@@ -27,10 +31,21 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
   const [playlistName, setPlaylistName] = useState('My Queue Playlist');
   const announce = useAnnounce();
   const listRef = useRef<HTMLUListElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   // Row and button to focus once the queue has re-rendered after a move.
   const pendingFocus = useRef<{ index: number; direction: 'up' | 'down' } | null>(null);
   const dragItem = useRef<DragItem | null>(null);
   const dragOverItem = useRef<DragItem | null>(null);
+
+  const shouldVirtualize = queue.length > VIRTUALIZE_THRESHOLD;
+  const virtualizer = useVirtualizer({
+    count: queue.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => ESTIMATED_ITEM_HEIGHT,
+    overscan: 5,
+    enabled: shouldVirtualize,
+    initialRect: { width: 400, height: 600 },
+  });
 
   const handleDragStart = useCallback((index: number) => {
     dragItem.current = { index };
@@ -111,6 +126,102 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
     setPlaylistName('My Queue Playlist');
   }, [queue, playlistName]);
 
+  const renderQueueItem = (
+    track: (typeof queue)[number],
+    index: number,
+    style?: React.CSSProperties
+  ) => (
+    <li
+      key={`${track.id}-${index}`}
+      data-queue-index={index}
+      draggable
+      style={style}
+      aria-setsize={queue.length}
+      aria-posinset={index + 1}
+      className={`flex items-center gap-2 rounded-md bg-white/5 px-2 py-2 hover:bg-white/10 transition cursor-default ${
+        style ? 'absolute left-0 top-0 w-full' : ''
+      }`}
+      onDragEnd={handleDragEnd}
+      onDragEnter={() => handleDragEnter(index)}
+      onDragOver={(e) => e.preventDefault()}
+      onDragStart={() => handleDragStart(index)}
+    >
+      {/* Mouse drag handle only; keyboard and touch users use the move buttons. */}
+      <div
+        aria-hidden="true"
+        className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-white shrink-0"
+      >
+        <GripVertical size={16} />
+      </div>
+
+      <div className="relative w-10 h-10 rounded overflow-hidden shrink-0">
+        <Image
+          fill
+          alt={track.title}
+          className="object-cover"
+          src={track.cover || '/placeholder-cover.svg'}
+          onError={(e) => {
+            e.currentTarget.src = '/placeholder-cover.svg';
+          }}
+        />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-white">{track.title}</p>
+        <p className="truncate text-xs text-gray-400">{track.artist}</p>
+      </div>
+
+      <div className="flex shrink-0 flex-col">
+        <button
+          aria-label={`Move ${track.title} up`}
+          className="flex h-5 w-8 items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+          data-move="up"
+          disabled={index === 0}
+          type="button"
+          onClick={() => handleMove(index, 'up')}
+        >
+          <ChevronUp size={14} />
+        </button>
+        <button
+          aria-label={`Move ${track.title} down`}
+          className="flex h-5 w-8 items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+          data-move="down"
+          disabled={index === queue.length - 1}
+          type="button"
+          onClick={() => handleMove(index, 'down')}
+        >
+          <ChevronDown size={14} />
+        </button>
+      </div>
+
+      {removeIndex === index ? (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            className="text-xs text-red-400 hover:text-red-300 underline"
+            onClick={() => handleRemove(index)}
+          >
+            Remove
+          </button>
+          <button
+            aria-label="Cancel remove"
+            className="text-gray-400 hover:text-white"
+            onClick={() => setRemoveIndex(null)}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ) : (
+        <button
+          aria-label={`Remove ${track.title} from queue`}
+          className="shrink-0 text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition"
+          onClick={() => setRemoveIndex(index)}
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
+    </li>
+  );
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -128,12 +239,30 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
           </SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 pb-4">
           {queue.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">
               <p className="text-sm">Your queue is empty.</p>
               <p className="text-xs mt-1">Add tracks from the player or browse page.</p>
             </div>
+          ) : shouldVirtualize ? (
+            <ul
+              ref={listRef}
+              className="relative"
+              role="list"
+              style={{
+                height: `${virtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {virtualizer.getVirtualItems().map((virtualItem) => {
+                const track = queue[virtualItem.index];
+                return renderQueueItem(track, virtualItem.index, {
+                  transform: `translateY(${virtualItem.start}px)`,
+                });
+              })}
+            </ul>
           ) : (
             <ul ref={listRef} className="space-y-1" role="list">
               {queue.map((track, index) => (

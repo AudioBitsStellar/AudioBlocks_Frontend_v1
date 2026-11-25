@@ -59,6 +59,24 @@ const IPFS_GATEWAY_BASE = 'https://ipfs.io/ipfs';
 const CONTRACT_ID_PATTERN = /^C[A-Z2-7]{55}$/;
 const CID_PATTERN = /^[A-Za-z0-9]{10,}$/;
 
+/** Network used when a helper below isn't given one explicitly. */
+function defaultNetwork(): StellarNetwork {
+  return process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet';
+}
+
+/** Explorer URL for a transaction hash. */
+export function getStellarTxUrl(hash: string, network: StellarNetwork = defaultNetwork()): string {
+  return `${STELLAR_EXPERT_BASE}/${network}/tx/${hash}`;
+}
+
+/** Explorer URL for a Stellar account (G... address). */
+export function getStellarAccountUrl(
+  accountId: string,
+  network: StellarNetwork = defaultNetwork()
+): string {
+  return `${STELLAR_EXPERT_BASE}/${network}/account/${accountId}`;
+}
+
 export function isValidContractId(value: string): boolean {
   return CONTRACT_ID_PATTERN.test(value);
 }

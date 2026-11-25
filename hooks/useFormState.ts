@@ -19,37 +19,70 @@ export interface FormErrors {
   coverImage?: string;
 }
 
-export function validate(values: FormValues): FormErrors {
+export interface FieldSchema {
+  required?: string;
+  maxLength?: { length: number; message: string };
+  pattern?: { test: RegExp; message: string };
+  custom?: (value: string) => string | undefined;
+}
+
+export type FormSchema = Record<keyof FormValues, FieldSchema>;
+
+export const profileFormSchema: FormSchema = {
+  displayName: {
+    required: 'Name is required',
+    maxLength: {
+      length: MAX_DISPLAY_NAME,
+      message: `Display name must be ${MAX_DISPLAY_NAME} characters or fewer.`,
+    },
+  },
+  bio: {
+    maxLength: { length: 500, message: 'Bio must be 500 characters or fewer.' },
+  },
+  website: {
+    custom: (value) =>
+      value && !isValidProfileUrl(value)
+        ? 'Enter a valid URL starting with http:// or https://'
+        : undefined,
+  },
+  twitter: {
+    pattern: {
+      test: TWITTER_REGEX,
+      message: 'Enter a valid X username (1–15 characters, letters, numbers, or _).',
+    },
+  },
+};
+
+export function validate(values: FormValues, schema: FormSchema = profileFormSchema): FormErrors {
   const errors: FormErrors = {};
-
-  if (!values.displayName.trim()) {
-    errors.displayName = 'Name is required';
-  } else if (values.displayName.trim().length > MAX_DISPLAY_NAME) {
-    errors.displayName = `Display name must be ${MAX_DISPLAY_NAME} characters or fewer.`;
-  }
-
-  if (values.bio.length > 500) {
-    errors.bio = `Bio must be 500 characters or fewer.`;
-  }
-
-  if (values.website && !isValidProfileUrl(values.website)) {
-    errors.website = 'Enter a valid URL starting with http:// or https://';
-  }
-
-  if (values.twitter && !TWITTER_REGEX.test(values.twitter)) {
-    errors.twitter = 'Enter a valid X username (1–15 characters, letters, numbers, or _).';
-  }
-
+  (Object.keys(schema) as Array<keyof FormValues>).forEach((field) => {
+    const rule = schema[field];
+    const value = values[field] ?? '';
+    if (rule.required && !value.trim()) {
+      errors[field] = rule.required;
+      return;
+    }
+    if (rule.maxLength && value.length > rule.maxLength.length) {
+      errors[field] = rule.maxLength.message;
+      return;
+    }
+    if (value && rule.pattern && !rule.pattern.test.test(value)) {
+      errors[field] = rule.pattern.message;
+      return;
+    }
+    const custom = rule.custom?.(value);
+    if (custom) errors[field] = custom;
+  });
   return errors;
 }
 
-export function useFormState(initialValues: FormValues) {
+export function useFormState(initialValues: FormValues, schema: FormSchema = profileFormSchema) {
   const initialRef = useRef<FormValues>(initialValues);
   const [values, setValues] = useState<FormValues>(initialValues);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const errors = validate(values);
+  const errors = validate(values, schema);
   const isFormValid = Object.keys(errors).length === 0 && values.displayName.trim().length > 0;
 
   // ── Dirty tracking (#120) ─────────────────────────────────────────────────
@@ -104,7 +137,7 @@ export function useFormState(initialValues: FormValues) {
   const submit = useCallback(
     async (onSubmit: (values: FormValues) => Promise<void>): Promise<FormValues> => {
       setTouched({ displayName: true, bio: true, website: true, twitter: true });
-      const currentErrors = validate(values);
+      const currentErrors = validate(values, schema);
       if (Object.keys(currentErrors).length > 0) {
         return Promise.reject(new Error('Form has validation errors'));
       }
@@ -118,7 +151,7 @@ export function useFormState(initialValues: FormValues) {
         setIsSubmitting(false);
       }
     },
-    [values],
+    [schema, values],
   );
 
   // ── Error helpers ─────────────────────────────────────────────────────────

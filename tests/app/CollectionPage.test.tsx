@@ -114,4 +114,17 @@ describe('CollectionsPage (#755)', () => {
     });
     expect(screen.getByText('Track 11')).toBeInTheDocument();
   });
+
+  it('renders empty-state component with CTA linking to /marketPlace when user owns 0 NFTs (#16)', () => {
+    mocks.owned = [];
+    render(<CollectionsPage />);
+
+    expect(screen.getByTestId('collection-empty-state')).toBeInTheDocument();
+    expect(screen.getByText('No NFTs yet')).toBeInTheDocument();
+    expect(
+      screen.getByText(/You don't own any music NFTs yet/i)
+    ).toBeInTheDocument();
+    const cta = screen.getByRole('link', { name: /marketplace/i });
+    expect(cta).toHaveAttribute('href', '/marketPlace');
+  });
 });

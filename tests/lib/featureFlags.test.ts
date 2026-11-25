@@ -112,6 +112,47 @@ describe('FEATURE_FLAGS', () => {
   });
 });
 
+describe('runtime overrides (#815)', () => {
+  afterEach(() => {
+    delete window.__AUDIOBLOCKS_RUNTIME_CONFIG__;
+  });
+
+  it('a runtime value overrides the build-time variable', () => {
+    vi.stubEnv('NEXT_PUBLIC_FEATURE_MERCH', 'true');
+    window.__AUDIOBLOCKS_RUNTIME_CONFIG__ = { featureFlags: { merch: 'false' } };
+
+    expect(isFeatureEnabled('merch', { nodeEnv: 'production' })).toBe(false);
+  });
+
+  it('a runtime value can enable a flag that is off by default', () => {
+    window.__AUDIOBLOCKS_RUNTIME_CONFIG__ = { featureFlags: { events: 'on' } };
+
+    expect(isFeatureEnabled('events', { nodeEnv: 'production' })).toBe(true);
+  });
+
+  it('blank or unrecognized runtime values fall back to the build-time variable', () => {
+    vi.stubEnv('NEXT_PUBLIC_FEATURE_MERCH', 'true');
+
+    window.__AUDIOBLOCKS_RUNTIME_CONFIG__ = { featureFlags: { merch: 'sometimes' } };
+    expect(isFeatureEnabled('merch', { nodeEnv: 'production' })).toBe(true);
+
+    window.__AUDIOBLOCKS_RUNTIME_CONFIG__ = { featureFlags: { merch: '   ' } };
+    expect(isFeatureEnabled('merch', { nodeEnv: 'production' })).toBe(true);
+  });
+
+  it('an explicit value option still wins over the runtime value', () => {
+    window.__AUDIOBLOCKS_RUNTIME_CONFIG__ = { featureFlags: { merch: 'false' } };
+
+    expect(isFeatureEnabled('merch', { value: 'true', nodeEnv: 'production' })).toBe(true);
+  });
+
+  it('ignores runtime values for other flags', () => {
+    window.__AUDIOBLOCKS_RUNTIME_CONFIG__ = { featureFlags: { events: 'true' } };
+
+    expect(isFeatureEnabled('merch', { nodeEnv: 'production' })).toBe(false);
+  });
+});
+
 describe('filterEnabledByFlag', () => {
   const items = [
     { name: 'Explore' },

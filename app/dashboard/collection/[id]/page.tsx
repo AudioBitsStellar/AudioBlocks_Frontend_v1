@@ -3,24 +3,23 @@
 import { use, useMemo } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Download } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { IPFS_GATEWAY, ipfsUrl } from '@/lib/ipfs';
 import { shortenId } from '@/lib/stellarExplorer';
 
-const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 
-function ipfsImage(cid: string): string {
-  if (cid.startsWith('Qm') || cid.startsWith('baf')) return `${IPFS_GATEWAY}${cid}`;
-  return '/audio.jpg';
-}
 
 export default function CollectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   useScrollRestoration(`collection-${id}`);
   const { songs, isLoading } = useNFTCollection();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const song = useMemo(() => {
     if (isLoading) return undefined;
@@ -55,7 +54,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
             alt={`Cover art for ${shortenId(song.songCID, 8, 4)}`}
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 320px"
-            src={ipfsImage(song.songCID)}
+            src={song.coverUrl ? ipfsUrl(song.coverUrl) : '/audio.jpg'}
             title={shortenId(song.songCID, 8, 4)}
           />
         </div>
@@ -70,16 +69,52 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
           {/* Issue #339: owning the NFT (this page only renders for songs in
               the connected wallet's collection) unlocks a direct download of
               the underlying audio, not just streaming. */}
-          <a
-            download
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand hover:bg-pink-700 text-white text-sm font-semibold transition-colors"
-            href={`${IPFS_GATEWAY}${song.songCID}`}
-            rel="noopener noreferrer"
-            target="_blank"
+<button
+            type="button"
+            disabled={isDownloading}
+            onClick={async () => {
+              setIsDownloading(true);
+              try {
+                // TODO: If the backend exposes an authenticated download endpoint for owned NFTs, prefer it here.
+                const url = ipfsUrl(song.songCID);
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to download audio file');
+
+                const contentType = response.headers.get('content-type') || '';
+                let ext = 'mp3';
+                if (contentType.includes('audio/wav') || contentType.includes('wave')) ext = 'wav';
+                else if (contentType.includes('audio/ogg')) ext = 'ogg';
+                else if (contentType.includes('audio/flac')) ext = 'flac';
+                else if (contentType.includes('audio/aac')) ext = 'aac';
+                else if (contentType.includes('audio/mp4') || contentType.includes('m4a')) ext = 'm4a';
+
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                const artistName = song.artistName && song.artistName !== song.artistAddress ? song.artistName : 'Artist';
+                const title = song.title && song.title !== song.songCID ? song.title : song.songCID;
+                a.download = `${artistName} - ${title}.${ext}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+              } catch (err) {
+                console.error(err);
+                toast.error('Failed to download audio file. Please try again.');
+              } finally {
+                setIsDownloading(false);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand hover:bg-pink-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
+            {isDownloading ? (
+              <Loader2 aria-hidden="true" className="animate-spin" size={16} />
+            ) : (
             <Download aria-hidden="true" size={16} />
-            Download audio
-          </a>
+            )}
+            {isDownloading ? 'Downloading…' : 'Download audio'}
+          </button>
         </div>
       </div>
     </div>

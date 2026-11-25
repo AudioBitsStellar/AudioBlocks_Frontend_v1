@@ -21,7 +21,8 @@ export const VolumeControl = memo(function VolumeControl({
   return (
     <div className="relative group flex items-center justify-center">
       <button
-        aria-label={isMuted ? 'Unmute' : 'Mute'}
+        aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
+        aria-pressed={isMuted || volume === 0}
         className="hover:text-gray-300 text-white"
         onClick={onToggleMute}
       >

@@ -37,6 +37,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.staging.example
 
 # vercel
 .vercel
@@ -51,3 +52,9 @@ next-env.d.ts
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
+
+# Local PR drafts and lint output: keep these out of the repository (#795).
+/eslint-report.json
+/pr_body.md
+/PR_DESCRIPTION.md
+/IMPLEMENTATION_SUMMARY.md
