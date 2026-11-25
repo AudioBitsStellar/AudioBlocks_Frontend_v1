@@ -218,6 +218,7 @@ const MUTED_STORAGE_KEY = 'audioblocks_muted';
 const RECENTLY_PLAYED_STORAGE_KEY = 'audioblocks_recently_played';
 const NORMALIZE_AUDIO_STORAGE_KEY = 'audioblocks_normalize_audio';
 const GAPPLESS_STORAGE_KEY = 'audioblocks_gapless';
+const CROSSFADE_STORAGE_KEY = 'audioblocks_crossfade_duration';
 
 /**
  * JSON from localStorage is untrusted: it can be modified by browser tools,
@@ -526,10 +527,26 @@ function createPlaybackStore(initial: PlaybackState): PlaybackStore {
 const noopSubscribe = () => () => {};
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
-  // #129: initialise with the pure fallback so server-rendered HTML and the first client
-  // render are byte-identical. Real localStorage values are applied in the effect below,
-  // which only runs on the client after hydration - React never sees a mismatch.
-  const [state, dispatch] = useReducer(reducer, initialState);
+  // Hydrate queue, history, and volume from localStorage on mount (#121).
+  const hydratedState: PlaybackState = {
+    ...initialState,
+    queue: loadFromStorage<Track[]>(QUEUE_STORAGE_KEY, []).filter(isTrackAvailable),
+    history: loadFromStorage<PlaybackEvent[]>(HISTORY_STORAGE_KEY, []),
+    recentlyPlayed: loadFromStorage<Track[]>(RECENTLY_PLAYED_STORAGE_KEY, []),
+    // #121: restore volume and muted state from the device so the user's
+    // preferred level survives page reloads and browser restarts.
+    volume: loadFromStorage<number>(VOLUME_STORAGE_KEY, initialState.volume),
+    isMuted: loadFromStorage<boolean>(MUTED_STORAGE_KEY, initialState.isMuted),
+    normalizeAudio: loadFromStorage<boolean>(
+      NORMALIZE_AUDIO_STORAGE_KEY,
+      initialState.normalizeAudio
+    ),
+    gapless: loadFromStorage<boolean>(GAPPLESS_STORAGE_KEY, initialState.gapless),
+    crossfadeDuration: loadFromStorage<number>(
+      CROSSFADE_STORAGE_KEY,
+      initialState.crossfadeDuration
+    ),
+  };
 
   const didHydrateRef = useRef(false);
   useEffect(() => {
@@ -595,19 +612,9 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     saveToStorage(GAPPLESS_STORAGE_KEY, state.gapless);
   }, [state.gapless]);
 
-  // Stop playback when browser tab is closed or user navigates to an external URL (#128).
-  // Playback continues across client-side SPA navigation because PlaybackProvider remains mounted.
   useEffect(() => {
-    const handleUnload = () => {
-      dispatch({ type: 'PAUSE' });
-    };
-    window.addEventListener('beforeunload', handleUnload);
-    window.addEventListener('pagehide', handleUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleUnload);
-      window.removeEventListener('pagehide', handleUnload);
-    };
-  }, []);
+    saveToStorage(CROSSFADE_STORAGE_KEY, state.crossfadeDuration);
+  }, [state.crossfadeDuration]);
 
   // Latest history for `getRecentlyPlayed`, so that action stays stable while
   // still reading current data.

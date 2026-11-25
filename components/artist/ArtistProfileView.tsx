@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { FollowButton } from '@/components/common/FollowButton';
 import ArtistReleases from '@/components/releases/ArtistReleases';
 import { usePlayback } from '@/context/PlaybackContext';
 import { getInitials } from '@/hooks/queries/users';
@@ -56,27 +57,26 @@ export function ArtistProfileView({ artist }: { artist: ArtistProfile }) {
             <img alt="" className="h-full w-full object-cover" src={artist.pageCover} />
           )}
         </div>
-        <div className="flex items-end gap-4 px-4 -mt-12 md:-mt-16">
-          <div
-            aria-hidden="true"
-            className="flex h-24 w-24 md:h-32 md:w-32 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-background bg-surface-elevated text-2xl font-bold"
-          >
-            {artist.profileImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img alt="" className="h-full w-full object-cover" src={artist.profileImage} />
-            ) : (
-              getInitials(name)
-            )}
+        <div className="flex items-end justify-between gap-4 px-4 -mt-12 md:-mt-16">
+          <div className="flex items-end gap-4 min-w-0">
+            <div
+              aria-hidden="true"
+              className="flex h-24 w-24 md:h-32 md:w-32 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-background bg-surface-elevated text-2xl font-bold"
+            >
+              {artist.profileImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt="" className="h-full w-full object-cover" src={artist.profileImage} />
+              ) : (
+                getInitials(name)
+              )}
+            </div>
+            <div className="min-w-0 pb-2">
+              <h1 className="text-2xl md:text-3xl font-bold break-words">{name}</h1>
+              {artist.username && <p className="text-on-muted">@{artist.username}</p>}
+            </div>
           </div>
-          <Link
-            className="absolute right-4 top-4 rounded-full bg-[#D2045B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b0034c]"
-            href="/dashboard/settings#gifts"
-          >
-            Gift a subscription
-          </Link>
-          <div className="min-w-0 pb-2">
-            <h1 className="text-2xl md:text-3xl font-bold break-words">{name}</h1>
-            {artist.username && <p className="text-on-muted">@{artist.username}</p>}
+          <div className="pb-2 shrink-0">
+            <FollowButton userId={artist.id} />
           </div>
         </div>
 
