@@ -8,14 +8,10 @@ import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useNFTCollection } from '@/hooks/useNFTCollection';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { IPFS_GATEWAY, ipfsUrl } from '@/lib/ipfs';
 import { shortenId } from '@/lib/stellarExplorer';
 
-const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 
-function ipfsImage(cid: string): string {
-  if (cid.startsWith('Qm') || cid.startsWith('baf')) return `${IPFS_GATEWAY}${cid}`;
-  return '/audio.jpg';
-}
 
 export default function CollectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -55,7 +51,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
             alt={`Cover art for ${shortenId(song.songCID, 8, 4)}`}
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 320px"
-            src={ipfsImage(song.songCID)}
+            src={song.coverUrl ? ipfsUrl(song.coverUrl) : '/audio.jpg'}
             title={shortenId(song.songCID, 8, 4)}
           />
         </div>
@@ -73,7 +69,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
           <a
             download
             className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand hover:bg-pink-700 text-white text-sm font-semibold transition-colors"
-            href={`${IPFS_GATEWAY}${song.songCID}`}
+            href={ipfsUrl(song.songCID)}
             rel="noopener noreferrer"
             target="_blank"
           >

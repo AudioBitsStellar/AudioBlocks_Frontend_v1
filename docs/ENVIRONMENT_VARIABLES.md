@@ -29,6 +29,7 @@ staging-specific values (`.env.staging.example`).
 |----------|------|-------------|---------|
 | `NEXT_PUBLIC_API_BASE_URL` | string | Backend API base URL | `https://api.audioblocks.dev` |
 | `NEXT_PUBLIC_API_TIMEOUT` | number | API request timeout in ms | `30000` |
+| `NEXT_PUBLIC_IPFS_GATEWAY` | string | IPFS gateway URL for resolving CIDs and artwork | `https://ipfs.io/ipfs/` |
 
 ### Dynamic Labs (Wallet Connection)
 
