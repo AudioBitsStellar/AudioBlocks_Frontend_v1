@@ -6,6 +6,13 @@ This document describes all environment variables used by AudioBlocks Frontend. 
 
 Environment variables are loaded from `.env.local` at startup. Missing required variables will cause validation errors and prevent the app from rendering.
 
+This file, `.env.example` and the `Dockerfile`'s build `ARG`s are kept in
+sync (#867 — DOC-03): every `NEXT_PUBLIC_*` variable in `.env.example` needs
+a matching Dockerfile `ARG`/`ENV` pair (Next.js inlines these at build time,
+so a missing `ARG` means a Docker build silently can't override it) and a
+row in this document. `npm run check-env-sync` checks this automatically —
+see "Env var sync check" in `CONTRIBUTING.md`.
+
 ## Required Variables
 
 ### Blockchain & Web3
@@ -16,6 +23,20 @@ Environment variables are loaded from `.env.local` at startup. Missing required 
 | `NEXT_PUBLIC_RPC_URL` | string | RPC endpoint URL for the blockchain | `https://sepolia.infura.io/v3/YOUR_KEY` |
 | `NEXT_PUBLIC_CONTRACT_ADDRESS` | string | Smart contract address for AudioBlocks | `0x...` |
 | `NEXT_PUBLIC_USDC_ADDRESS` | string | USDC token contract address | `0x...` |
+| `NEXT_PUBLIC_STELLAR_NETWORK` | string | Stellar network (#555): `testnet` or `public`. Anything else falls back to `testnet` | `testnet` |
+
+See [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) for how this app carries both
+EVM-oriented variables (above) and Stellar/Soroban ones side by side.
+
+### API & Media URLs
+
+| Variable | Type | Description | Example |
+|----------|------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | string | Backend API base URL used by `apiClient`, streaming and most `fetch` call sites. See [`docs/api-contract.md`](api-contract.md) for the exact `/api` suffix convention and known mismatches | `http://localhost:4000` |
+| `NEXT_PUBLIC_API_BASE_URL` | string | A second, separately-set backend base URL (see [API Configuration](#api-configuration) below) — not read by the same call sites as `NEXT_PUBLIC_API_URL`; keep both pointed at the same backend | `https://api.audioblocks.dev` |
+| `NEXT_PUBLIC_SITE_URL` | string | This app's own public origin, used for metadata and embed codes (`app/layout.tsx`, `components/ui/EmbedCodeGenerator.tsx`) | `http://localhost:3000` |
+| `NEXT_PUBLIC_MEDIA_HOST` | string | Origin or bare host for the backend's own media storage (S3/CDN) allowed through `next/image` (#595) | `media.audioblocks.dev` |
+| `NEXT_PUBLIC_IPFS_GATEWAY` | string | Primary IPFS gateway for cover art / NFT artwork (e.g. a Pinata dedicated gateway); falls back to the public `https://ipfs.io` gateway when unset. See [`docs/IPFS_INTEGRATION.md`](IPFS_INTEGRATION.md) | `your-gateway.mypinata.cloud` |
 
 ### API Configuration
 
@@ -23,6 +44,7 @@ Environment variables are loaded from `.env.local` at startup. Missing required 
 |----------|------|-------------|---------|
 | `NEXT_PUBLIC_API_BASE_URL` | string | Backend API base URL | `https://api.audioblocks.dev` |
 | `NEXT_PUBLIC_API_TIMEOUT` | number | API request timeout in ms | `30000` |
+| `NEXT_PUBLIC_API_MOCKING` | string | `enabled`/`disabled` — serve API requests from the MSW mocks in `mocks/` instead of a backend (#603). See "Mocking the API (MSW)" in `CONTRIBUTING.md` | `disabled` |
 
 ### Dynamic Labs (Wallet Connection)
 
@@ -51,7 +73,11 @@ Flags gate sections whose backend endpoints are not live yet. They live in `lib/
 | `communityVoting` | `NEXT_PUBLIC_FEATURE_COMMUNITY_VOTING` | on | off | Community voting and leaderboard page (the route 404s when off) | `/api/community/leaderboard`, `/api/community/vote`, `/api/community/votes/me` |
 | `artistPerks` | `NEXT_PUBLIC_FEATURE_ARTIST_PERKS` | on | off | Fan perks section on the public artist page (#586) | `/api/artists/:artistId/perks` |
 
-`.env.example` keeps these four lines commented out so a copy to `.env.local` gets the environment default. Setting a variable to `false` in `.env.local` hides that section locally, so uncomment a line only when you want to override the default. Restart the dev server after changing it. See "Feature flags" in `CONTRIBUTING.md` for how to add a flag.
+`.env.example` keeps these four lines commented out so a copy to `.env.local` gets the environment default. Setting a variable to `false` in `.env.local` hides that section locally, so uncomment a line only when you want to override the default. Restart the dev server after changing it.
+
+**Runtime overrides (#815).** Each flag also has a server-only variable that overrides the build-time value without a rebuild: `RUNTIME_FEATURE_MERCH`, `RUNTIME_FEATURE_EVENTS`, `RUNTIME_FEATURE_COMMUNITY_VOTING` and `RUNTIME_FEATURE_ARTIST_PERKS`. The server reads them on every request and serves them from `/api/runtime-config`, which loads before the app renders. To turn a feature off in production, set its `RUNTIME_FEATURE_*` variable to `false` and restart the server. An unset or unrecognized value keeps the `NEXT_PUBLIC_FEATURE_*` value. Limits: the change needs a server restart, since the value comes from the process environment, and the server-rendered HTML still uses the build-time value, so a section whose flag changed at runtime may re-render after hydration.
+
+See "Feature flags" in `CONTRIBUTING.md` for how to add a flag.
 
 ### Privy Authentication
 
@@ -61,6 +87,22 @@ Flags gate sections whose backend endpoints are not live yet. They live in `lib/
 | `NEXT_PUBLIC_PRIVY_APP_ID` | string | Privy app id from the [Privy dashboard](https://dashboard.privy.io) (required when Privy is enabled) | `YOUR_APP_ID` |
 
 See `docs/PRIVY_SETUP.md` for the full setup guide.
+
+### Error Monitoring (Sentry)
+
+| Variable | Type | Description | Example |
+|----------|------|-------------|---------|
+| `NEXT_PUBLIC_SENTRY_DSN` | string | Client-side Sentry DSN. Error monitoring is off entirely when unset (`instrumentation.ts`, `sentry.client.config.ts`) | unset |
+| `NEXT_PUBLIC_SENTRY_TRACE_SAMPLE_RATE` | number | Client-side performance trace sample rate, 0–1 | `0.1` |
+| `SENTRY_TRACE_SAMPLE_RATE` | number | Same sample rate for the server-side Sentry instance (`instrumentation.ts`) — not `NEXT_PUBLIC_`, since it only runs server-side | `0.1` |
+| `SENTRY_AUTH_TOKEN` | string | Build-time auth token for uploading source maps to Sentry (`next.config.ts`). A secret — see [`docs/SECURITY_INCIDENT_RUNBOOK.md`](SECURITY_INCIDENT_RUNBOOK.md) if it leaks | unset |
+
+### Playback & Play Counting
+
+| Variable | Type | Description | Example |
+|----------|------|-------------|---------|
+| `NEXT_PUBLIC_STREAM_PLAY_COUNT_MODE` | string | `request` (default) counts a play on the `GET /stream/:id` call itself; `event` instead posts to `NEXT_PUBLIC_PLAYBACK_EVENT_URL` once playback starts. Only switch to `event` after the backend deploys event-based play counting | `request` |
+| `NEXT_PUBLIC_PLAYBACK_EVENT_URL` | string | Endpoint for event-based play counting; must contain a literal `:id` placeholder. Only read when `NEXT_PUBLIC_STREAM_PLAY_COUNT_MODE=event` (`hooks/useQueuedAudio.ts`) | `https://api.audioblocks.dev/api/plays/:id` |
 
 ## Optional Variables
 
@@ -72,6 +114,10 @@ See `docs/PRIVY_SETUP.md` for the full setup guide.
 | `NEXT_PUBLIC_CACHE_TTL` | number | `300000` | Cache time-to-live in milliseconds | `600000` |
 | `NEXT_PUBLIC_ANALYTICS_ENABLED` | boolean | `"true"` | Enable analytics tracking. Even when enabled, analytics load only after the visitor accepts the consent banner (#597) | `"false"` |
 | `NEXT_PUBLIC_ARTIST_DASHBOARD_URL` | string | unset | Link to the artist dashboard app, shown to artists after onboarding (#596). The CTA is hidden when unset | `https://artists.audioblocks.dev` |
+| `NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE` | string | network's default passphrase | Override the signing passphrase for `NEXT_PUBLIC_STELLAR_NETWORK` (`context/TransactionContext.tsx`) | unset |
+| `NEXT_PUBLIC_STELLAR_HORIZON_URL` | string | network's default Horizon URL | Override the Horizon server for `NEXT_PUBLIC_STELLAR_NETWORK` (`lib/stellarNetwork.ts`) | unset |
+| `NEXT_PUBLIC_STELLAR_RPC_URL` | string | `https://soroban-testnet.stellar.org` | Override the Soroban RPC endpoint (`context/TransactionContext.tsx`) | unset |
+| `NEXT_PUBLIC_STELLAR_SOROBAN_RPC_URL` | string | network's default Soroban RPC URL | Override the Soroban RPC endpoint read by `lib/stellarNetwork.ts` (kept separate from `NEXT_PUBLIC_STELLAR_RPC_URL` above — **(verify)** whether these two should be unified) | unset |
 
 ## Setup Instructions
 

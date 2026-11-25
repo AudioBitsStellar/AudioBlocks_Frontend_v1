@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
 import { MotionConfig } from 'framer-motion';
 import { Toaster } from 'sonner';
 import './globals.css';
@@ -8,14 +9,19 @@ import 'slick-carousel/slick/slick-theme.css';
 import AccessibilityAnnouncer from '@/components/AccessibilityAnnouncer';
 import AnalyticsConsentBanner from '@/components/AnalyticsConsentBanner';
 import AnalyticsScript from '@/components/AnalyticsScript';
+import ApiOutageBanner from '@/components/ApiOutageBanner';
 import MswProvider from '@/components/common/MswProvider';
 import EnvCheck from '@/components/EnvCheck';
+import MaintenanceBanner from '@/components/MaintenanceBanner';
+import RuntimeConfigLoader from '@/components/RuntimeConfigLoader';
+import SentryErrorBoundary from '@/components/SentryErrorBoundary';
 import SWRegister from '@/components/SWRegister';
 import { ThemeScript } from '@/components/ThemeScript';
 import RouteProgress from '@/components/ui/RouteProgress';
+import WebVitalsReporter from '@/components/WebVitalsReporter';
 import PrivyAuthProvider from '@/context/PrivyAuthProvider';
 import Provider from '@/context/provider';
-import SentryErrorBoundary from '@/components/SentryErrorBoundary';
+import { RUNTIME_CONFIG_SCRIPT_PATH } from '@/lib/runtimeConfig';
 import type { Metadata } from 'next';
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -56,6 +62,9 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <ThemeScript />
+        {/* #815 — runtime feature-flag overrides. `beforeInteractive` loads this
+            before any app code runs, so flags resolve on the first render. */}
+        <Script id="runtime-config" src={RUNTIME_CONFIG_SCRIPT_PATH} strategy="beforeInteractive" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
@@ -69,9 +78,14 @@ export default function RootLayout({
             <PrivyAuthProvider>
               <Provider>
                 <SentryErrorBoundary>
+                  <RuntimeConfigLoader />
+                  <ApiOutageBanner />
                   <Suspense fallback={null}>
                     <RouteProgress />
                   </Suspense>
+                  <WebVitalsReporter />
+                  <MaintenanceBanner />
+                  <ApiOutageBanner />
                   <SWRegister />
                   <EnvCheck />
                   <AccessibilityAnnouncer />

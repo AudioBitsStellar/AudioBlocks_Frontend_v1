@@ -79,6 +79,8 @@ export function useCrossfade({
     }
     disconnect(incomingRouteRef.current?.source, incomingRouteRef.current?.gain);
     incomingRouteRef.current = null;
+    disconnect(outgoingRouteRef.current?.source, outgoingRouteRef.current?.gain);
+    outgoingRouteRef.current = null;
     setIncomingUrl(null);
   }, [setCrossfading]);
 
@@ -210,6 +212,45 @@ export function useCrossfade({
       if (raf !== null) cancelAnimationFrame(raf);
     };
   }, [audioRef, isPlaying, crossfadeDuration, repeat, currentIndex, startCrossfade]);
+
+  // Handle seek during crossfade: abort crossfade if seeking outside fade window
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleSeeking = () => {
+      if (!crossfadeActiveRef.current) return;
+      const remaining = audio.duration - audio.currentTime;
+      if (remaining > crossfadeDuration || remaining <= 0) {
+        if (audioRef.current) {
+          audioRef.current.volume = level;
+        }
+        if (normGraphRef.current?.gain) {
+          normGraphRef.current.gain.gain.value = level;
+        }
+        cleanupIncoming();
+      }
+    };
+
+    audio.addEventListener('seeking', handleSeeking);
+    audio.addEventListener('seeked', handleSeeking);
+    return () => {
+      audio.removeEventListener('seeking', handleSeeking);
+      audio.removeEventListener('seeked', handleSeeking);
+    };
+  }, [audioRef, crossfadeDuration, level, normGraphRef, cleanupIncoming]);
+
+  // Synchronize pause/play with incoming audio element during crossfade
+  useEffect(() => {
+    const incoming = incomingAudioRef.current;
+    if (!crossfadeActiveRef.current || !incoming) return;
+
+    if (!isPlaying) {
+      incoming.pause();
+    } else {
+      void incoming.play().catch(() => {});
+    }
+  }, [isPlaying]);
 
   // Gapless (#329): preload the next track. Only sequential playback with an
   // empty queue is eligible — shuffle/queue order is decided at transition time.

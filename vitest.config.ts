@@ -2,10 +2,11 @@ import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
-// #152: coverage thresholds. Global bar is deliberately modest (this repo
+// #152, #818: coverage thresholds. Global bar is deliberately modest (this repo
 // had zero tests before this change) — the CI failure on unmet thresholds
 // is the point: it forces coverage to only ever go up as tests are added,
-// rather than silently regressing.
+// rather than silently regressing. These thresholds are enforced in CI
+// (test.yml runs npm run test:coverage) to gate all PRs.
 export default defineConfig({
   plugins: [react()],
   resolve: {

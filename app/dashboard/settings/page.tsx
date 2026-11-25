@@ -1,14 +1,32 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Mail, Wallet, Trash2 } from 'lucide-react';
-import { useState } from 'react';
 import { toast } from 'sonner';
 import { useRecentlyPlayed } from '@/hooks/useRecentlyPlayed';
 import { useUserPreferences, type AudioQuality } from '@/context/UserPreferencesContext';
-import AccountLinkingUI from '@/components/auth/AccountLinkingUI';
-import DataSaverToggle from '@/components/help/DataSaverToggle';
-import PrivacyDataSection from '@/components/settings/PrivacyDataSection';
+
+/**
+ * #156: the three heaviest leaf components on this route pull in their own
+ * dependency subgraphs (Dynamic SDK surface for AccountLinkingUI, the data
+ * saver store for DataSaverToggle, the privacy consent + export flow for
+ * PrivacyDataSection). Dynamic-importing them keeps the settings chunk
+ * small and ships only the code the user actually scrolled to.
+ */
+const AccountLinkingUI = dynamic(() => import('@/components/auth/AccountLinkingUI'), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-[#1E1E1E] rounded-lg animate-pulse" />,
+});
+const DataSaverToggle = dynamic(() => import('@/components/help/DataSaverToggle'), {
+  ssr: false,
+  loading: () => <div className="h-10 bg-[#1E1E1E] rounded animate-pulse" />,
+});
+const PrivacyDataSection = dynamic(() => import('@/components/settings/PrivacyDataSection'), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-[#1E1E1E] rounded-lg animate-pulse" />,
+});
 
 function LinkedAccountsList() {
   const { user, handleUnlinkWallet } = useDynamicContext();
@@ -128,6 +146,12 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-white mb-8">Settings</h1>
+      <Link
+        className="mb-8 inline-flex rounded-full border border-gray-700 px-4 py-2 text-sm font-semibold text-white hover:bg-white/5"
+        href="/dashboard/plans"
+      >
+        View subscription plans
+      </Link>
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Linked Accounts</h2>
@@ -223,6 +247,8 @@ export default function SettingsPage() {
       </section>
 
       <ListeningHistorySection />
+
+      <GiftSubscriptionsSection />
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold text-white mb-4">Quality Checks</h2>

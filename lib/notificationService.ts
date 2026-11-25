@@ -54,6 +54,10 @@ function dataId(data: AppNotification['data'], key: string): string | null {
  * (playlist, song, or transaction), or `null` when it has no target.
  */
 export function getNotificationHref(notification: AppNotification): string | null {
+  if (notification.type === 'subscription_gift' || notification.type === 'gift_subscription') {
+    return '/dashboard/settings#gifts';
+  }
+
   const playlistId = dataId(notification.data, 'playlistId');
   if (playlistId) return `/dashboard/playlist/${playlistId}`;
 

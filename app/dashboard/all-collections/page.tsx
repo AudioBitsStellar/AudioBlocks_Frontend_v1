@@ -8,13 +8,42 @@ import { ArtworkImage } from '@/components/ui/ArtworkImage';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useCollections } from '@/hooks/queries/collections';
+import { useCollections, type Collection } from '@/hooks/queries/collections';
+import { usePrefetchCollection } from '@/hooks/usePrefetch';
 
 const ITEMS_PER_PAGE = 12;
 
 function pageFromSearch(search: string | null): number {
   const parsedPage = Number(search);
   return Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+}
+
+function CollectionCardItem({ collection }: { collection: Collection }) {
+  const prefetch = usePrefetchCollection(collection.id);
+  return (
+    <Link
+      aria-label={`View ${collection.title}`}
+      className="rounded-lg p-3 transition-colors hover:bg-surface-hover"
+      href={`/dashboard/collection/${encodeURIComponent(collection.id)}`}
+      {...prefetch}
+    >
+      <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-md">
+        <ArtworkImage
+          fill
+          alt={`Cover art for ${collection.title}`}
+          className="object-cover"
+          sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+          src={collection.cover}
+          title={collection.title}
+        />
+      </div>
+      <p className="text-sm font-bold text-white">{collection.title}</p>
+      <p className="text-xs text-on-muted">{collection.artist || 'Unknown artist'}</p>
+      <p className="text-sm font-medium text-white">
+        {collection.trackCount} {collection.trackCount === 1 ? 'track' : 'tracks'}
+      </p>
+    </Link>
+  );
 }
 
 function AllCollectionsContent() {
@@ -75,28 +104,7 @@ function AllCollectionsContent() {
       ) : data?.items.length ? (
         <div className="mb-8 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
           {data.items.map((collection) => (
-            <Link
-              key={collection.id}
-              aria-label={`View ${collection.title}`}
-              className="rounded-lg p-3 transition-colors hover:bg-surface-hover"
-              href={`/dashboard/collection/${encodeURIComponent(collection.id)}`}
-            >
-              <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-md">
-                <ArtworkImage
-                  fill
-                  alt={`Cover art for ${collection.title}`}
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                  src={collection.cover}
-                  title={collection.title}
-                />
-              </div>
-              <p className="text-sm font-bold text-white">{collection.title}</p>
-              <p className="text-xs text-on-muted">{collection.artist || 'Unknown artist'}</p>
-              <p className="text-sm font-medium text-white">
-                {collection.trackCount} {collection.trackCount === 1 ? 'track' : 'tracks'}
-              </p>
-            </Link>
+            <CollectionCardItem key={collection.id} collection={collection} />
           ))}
         </div>
       ) : (
