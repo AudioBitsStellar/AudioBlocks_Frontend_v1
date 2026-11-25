@@ -19,6 +19,8 @@ on:
 permissions:
   contents: read
   packages: write
+  # Read the staging smoke-test result for the commit before promoting it (#820).
+  checks: read
 
 jobs:
   deploy-staging:
@@ -63,6 +65,38 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
+  # E2E smoke test against the freshly deployed staging site (#820). A failure
+  # marks this commit's check red and blocks its promotion to production below.
+  smoke-staging:
+    name: Smoke test staging (E2E)
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: true
+      PLAYWRIGHT_BASE_URL: ${{ vars.STAGING_URL }}
+      NEXT_PUBLIC_API_URL: ${{ vars.STAGING_NEXT_PUBLIC_API_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npx playwright install --with-deps chromium
+      - name: Run smoke tests against staging
+        run: npm run test:e2e -- tests/e2e/smoke.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: staging-smoke-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
   deploy-production:
     name: Deploy to production
     if: startsWith(github.ref, 'refs/tags/v')
@@ -72,6 +106,35 @@ jobs:
       url: ${{ vars.PRODUCTION_URL }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # Promotion gate (#820): the tagged commit must have passed the staging
+      # smoke test. Waits while it is still running; any other result blocks.
+      - name: Require a passing staging smoke test for this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          for attempt in $(seq 1 60); do
+            state=$(gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" \
+              --jq '[.check_runs[] | select(.name == "Smoke test staging (E2E)")] | last | .conclusion // "pending"')
+            case "$state" in
+              success)
+                echo "Staging smoke test passed for $SHA."
+                exit 0
+                ;;
+              pending)
+                echo "Waiting for the staging smoke test on $SHA (attempt $attempt of 60)."
+                sleep 30
+                ;;
+              *)
+                echo "::error::Staging smoke test for $SHA ended with '$state'. Production promotion is blocked."
+                exit 1
+                ;;
+            esac
+          done
+          echo "::error::No passing staging smoke test for $SHA after 30 minutes. Production promotion is blocked."
+          exit 1
 
       - name: Log in to GHCR
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
