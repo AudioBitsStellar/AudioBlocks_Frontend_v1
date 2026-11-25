@@ -28,6 +28,7 @@ export const NowPlayingInfo = memo(function NowPlayingInfo({
           fill
           alt={track?.title ?? 'Now playing'}
           className="rounded-md object-cover"
+          sizes="48px"
           src={coverSrc}
           onError={onCoverError}
         />

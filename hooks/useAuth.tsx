@@ -24,6 +24,15 @@ function isUserRejectionError(err: unknown): boolean {
   );
 }
 
+async function establishServerSession(token: string) {
+  const response = await fetch('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  if (!response.ok) throw new Error('The server could not verify this session');
+}
+
 export const Auth = () => {
   const { user } = useDynamicContext();
   const { primaryWallet, handleLogOut } = useDynamicContext();
@@ -77,6 +86,7 @@ export const Auth = () => {
       });
 
       const token = response.data.user.token;
+      await establishServerSession(token);
       Cookies.set('audioblocks_jwt', token);
       toast.success(response.data?.message);
       return response.data;
@@ -94,6 +104,7 @@ export const Auth = () => {
           });
 
           const registerToken = registerResponse.data?.user?.token;
+          await establishServerSession(registerToken);
           Cookies.set('audioblocks_jwt', registerToken);
           toast.success(registerResponse.data?.message);
           trackEvent('signup', { role, method: 'wallet_signature' });

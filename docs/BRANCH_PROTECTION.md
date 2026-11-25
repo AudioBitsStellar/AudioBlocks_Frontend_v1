@@ -29,6 +29,7 @@ These map to jobs defined under [`.github/workflows`](../.github/workflows):
 | `test / coverage` | `test.yml` | `coverage` | Test failures, or coverage dropping below the thresholds in `vitest.config.ts` |
 | `security / dependency-audit` | `security.yml` | `dependency-audit` | `npm audit --audit-level=high` findings |
 | `security / codeql` | `security.yml` | `codeql` | CodeQL static-analysis alerts |
+| `security / trivy-image-scan` | `security.yml` | `trivy-image-scan` | CRITICAL/HIGH vulnerabilities in the built Docker image (#845) |
 
 **To apply these rules:** See the branch protection configuration in GitHub Settings → Branches. Contact a repository administrator to update the branch protection rule for `main` to include `test / type-check` as a required status check.
 

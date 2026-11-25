@@ -7,6 +7,11 @@ import { artistDisplayName, fetchArtistProfile } from '@/lib/artistService';
 import { generateArtistJsonLd } from '@/lib/jsonld';
 import type { Metadata } from 'next';
 
+/**
+ * #830 (PERF-05): Cache public artist profile pages with ISR (5-minute revalidation).
+ */
+export const revalidate = 300;
+
 type Props = { params: Promise<{ id: string }> };
 
 // Default preview image for artists without a profileImage, so share

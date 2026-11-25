@@ -7,6 +7,7 @@ import Sidebar from '@/components/common/dashboard/sidebar';
 import TopNavbar from '@/components/common/dashboard/topnavbar';
 import { QueueDrawer } from '@/components/common/QueueDrawer';
 import { PageTransition } from '@/components/ui/PageTransition';
+import { PlaybackProvider } from '@/context/PlaybackContext';
 import { useEdgeSwipe } from '@/hooks/useEdgeSwipe';
 
 // Player reads/writes browser-only audio APIs (HTMLAudioElement, localStorage-backed
@@ -21,7 +22,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   useEdgeSwipe({ onSwipeFromRightEdge: openQueue });
 
   return (
-    <div className="w-full overflow-x-hidden touch-pan-y">
+    <PlaybackProvider>
+      <div className="w-full overflow-x-hidden touch-pan-y">
       {/* #478 — first-time visitors are routed to /onboarding before they see
           the dashboard; renders nothing itself. */}
       <OnboardingRedirect />
@@ -37,8 +39,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <Player />
       </div>
 
-      <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
-    </div>
+        <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
+      </div>
+    </PlaybackProvider>
   );
 };
 

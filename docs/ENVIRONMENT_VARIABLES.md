@@ -6,6 +6,12 @@ This document describes all environment variables used by AudioBlocks Frontend. 
 
 Environment variables are loaded from `.env.local` at startup. Missing required variables will cause validation errors and prevent the app from rendering.
 
+Running in Docker (staging/production)? These same variables are supplied at
+container startup, not baked into the image at build time — see
+[`docs/RUNTIME_CONFIG.md`](RUNTIME_CONFIG.md) for how, and
+[`docs/STAGING_PARITY_CHECKLIST.md`](STAGING_PARITY_CHECKLIST.md) for the
+staging-specific values (`.env.staging.example`).
+
 ## Required Variables
 
 ### Blockchain & Web3
