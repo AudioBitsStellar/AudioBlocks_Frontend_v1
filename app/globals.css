@@ -38,6 +38,40 @@
   /* Issue #46: shared dark-theme design tokens. `muted` is the recurring
      "#A3A3A3" secondary-text gray hard-coded across dashboard pages. */
   --color-muted: var(--muted);
+
+  /*
+   * Dashboard/player/marketplace "surface" layer. Dozens of components use
+   * bg-surface / bg-surface-input / bg-surface-elevated / bg-surface-hover
+   * alongside literal text-white and border-border-dark (never the
+   * light/dark-aware --foreground), so this is a fixed dark panel hierarchy,
+   * not something that switches with the light/dark theme toggle. Without
+   * these, Tailwind silently drops the class and every one of those panels,
+   * inputs, and menus renders with no background at all.
+   */
+  --color-surface: #1a1a1a;
+  --color-surface-elevated: #1e1e1e;
+  --color-surface-input: #121212;
+  --color-surface-hover: #262626;
+
+  /*
+   * shadcn/ui semantic tokens expected by components/ui/{button,badge,card,
+   * input,tooltip}.tsx (components.json requests cssVariables: true) but
+   * never defined, so Tailwind dropped bg-primary, bg-secondary, bg-accent,
+   * bg-destructive, bg-card, border-input and ring-ring everywhere they were
+   * used, leaving those elements with no color at all.
+   */
+  --color-primary: var(--color-brand);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--color-surface-hover);
+  --color-secondary-foreground: #ffffff;
+  --color-accent: var(--color-surface-hover);
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #dc2626;
+  --color-muted-foreground: var(--on-muted);
+  --color-input: var(--border-dark);
+  --color-ring: var(--color-brand);
+  --color-card: var(--color-surface);
+  --color-card-foreground: #ffffff;
 }
 
 :root {

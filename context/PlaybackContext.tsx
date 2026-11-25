@@ -22,6 +22,8 @@ import {
   type SleepTimerOption,
 } from '@/lib/sleepTimer';
 import { isTrackAvailable, shuffleTracks } from '@/lib/tracks';
+import { demoOr } from '@/lib/fixtures';
+import { demoPlaylist } from '@/lib/fixtures/playback';
 
 export type Track = {
   id: string;
@@ -678,10 +680,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         return result;
       },
       // Crossfade (#115)
-      setCrossfadeDuration: (duration) => dispatch({ type: 'SET_CROSSFADE_DURATION', duration }),
-      setCrossfading: (isCrossfading) => dispatch({ type: 'SET_CROSSFADING', isCrossfading }),
+      setCrossfadeDuration,
+      setCrossfading,
       // Audio normalization (#328)
-      setNormalizeAudio: (enabled) => dispatch({ type: 'SET_NORMALIZE_AUDIO', enabled }),
+      setNormalizeAudio,
       // Gapless playback (#329)
       setGapless,
       // Sleep timer (#589)
@@ -689,7 +691,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       cancelSleepTimer,
       expireSleepTimer,
     }),
-    [setGapless, setSleepTimer, cancelSleepTimer, expireSleepTimer]
+    [setCrossfadeDuration, setCrossfading, setNormalizeAudio, setGapless, setSleepTimer, cancelSleepTimer, expireSleepTimer]
   );
 
   // External store behind `usePlaybackSelector`. Subscribers re-render only when

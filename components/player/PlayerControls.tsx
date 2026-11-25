@@ -29,7 +29,7 @@ export const PlayerControls = memo(function PlayerControls({
   return (
     <div className="flex items-center gap-3">
       <button
-        aria-label={shuffle ? 'Disable shuffle' : 'Enable shuffle'}
+        aria-label="Toggle shuffle"
         aria-pressed={shuffle}
         className={`hover:text-gray-300 cursor-pointer text-white ${shuffle ? 'text-pink-500' : ''}`}
         title={shuffle ? 'Shuffle on' : 'Shuffle off'}
@@ -67,7 +67,7 @@ export const PlayerControls = memo(function PlayerControls({
       </button>
 
       <button
-        aria-label={repeat ? 'Disable repeat' : 'Enable repeat'}
+        aria-label="Toggle repeat"
         aria-pressed={repeat}
         className={`hover:text-gray-300 text-white ${repeat ? 'text-pink-500' : ''}`}
         title={repeat ? 'Repeat on' : 'Repeat off'}

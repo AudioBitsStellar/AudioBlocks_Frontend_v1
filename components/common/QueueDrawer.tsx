@@ -265,7 +265,92 @@ export function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
             </ul>
           ) : (
             <ul ref={listRef} className="space-y-1" role="list">
-              {queue.map((track, index) => renderQueueItem(track, index))}
+              {queue.map((track, index) => (
+                <li
+                  key={`${track.id}-${index}`}
+                  data-queue-index={index}
+                  draggable
+                  className="group flex items-center gap-2 rounded-md bg-white/5 px-2 py-2 hover:bg-white/10 transition cursor-default"
+                  onDragEnd={handleDragEnd}
+                  onDragEnter={() => handleDragEnter(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragStart={() => handleDragStart(index)}
+                >
+                  {/* Mouse drag handle only; keyboard and touch users use the move buttons. */}
+                  <div
+                    aria-hidden="true"
+                    className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-white shrink-0"
+                  >
+                    <GripVertical size={16} />
+                  </div>
+
+                  <div className="relative w-10 h-10 rounded overflow-hidden shrink-0">
+                    <Image
+                      fill
+                      alt={track.title}
+                      className="object-cover"
+                      src={track.cover || '/placeholder-cover.svg'}
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder-cover.svg';
+                      }}
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-white">{track.title}</p>
+                    <p className="truncate text-xs text-gray-400">{track.artist}</p>
+                  </div>
+
+                  <div className="flex shrink-0 flex-col">
+                    <button
+                      aria-label={`Move ${track.title} up`}
+                      className="flex h-5 w-8 items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+                      data-move="up"
+                      disabled={index === 0}
+                      type="button"
+                      onClick={() => handleMove(index, 'up')}
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      aria-label={`Move ${track.title} down`}
+                      className="flex h-5 w-8 items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+                      data-move="down"
+                      disabled={index === queue.length - 1}
+                      type="button"
+                      onClick={() => handleMove(index, 'down')}
+                    >
+                      <ChevronDown size={14} />
+                    </button>
+                  </div>
+
+                  {removeIndex === index ? (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        className="text-xs text-red-400 hover:text-red-300 underline"
+                        onClick={() => handleRemove(index)}
+                      >
+                        Remove
+                      </button>
+                      <button
+                        aria-label="Cancel remove"
+                        className="text-gray-400 hover:text-white"
+                        onClick={() => setRemoveIndex(null)}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      aria-label={`Remove ${track.title} from queue`}
+                      className="shrink-0 text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition"
+                      onClick={() => setRemoveIndex(index)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </li>
+              ))}
             </ul>
           )}
         </div>
