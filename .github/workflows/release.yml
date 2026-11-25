@@ -25,6 +25,9 @@ jobs:
       - run: npm ci
 
       - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000/api
+          NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID: ci-dynamic-env
 
       - run: npx semantic-release
         env:

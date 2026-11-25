@@ -44,6 +44,9 @@ jobs:
           cache: npm
       - run: npm ci --legacy-peer-deps
       - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000/api
+          NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID: ci-dynamic-env
       - run: node scripts/scan-client-secrets.cjs
 
   dependency-audit:
