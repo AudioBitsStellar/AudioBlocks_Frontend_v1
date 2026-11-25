@@ -182,27 +182,52 @@ graph TD
 
 ### Public site — `app/(home)/`
 
-| Route          | Description                                                                    |
-| -------------- | ------------------------------------------------------------------------------ |
-| `/`            | Landing page: hero, featured tracks, sound carousel, "how it works", discovery |
-| `/artist-hub`  | Marketing page directing artists to the artist dashboard app                   |
-| `/collective`  | Community page: collective overview, members, events, FAQ                      |
-| `/marketPlace` | NFT marketplace demo                                                           |
+| Route                | Description                                                                    |
+| -------------------- | ------------------------------------------------------------------------------ |
+| `/`                  | Landing page: hero, featured tracks, sound carousel, "how it works", discovery |
+| `/artist-hub`        | Marketing page directing artists to the artist dashboard app                   |
+| `/artist/[id]`       | Public artist profile view                                                     |
+| `/collective`        | Community page: collective overview, members, events, FAQ                      |
+| `/help/purchase`     | Purchase and checkout FAQ                                                      |
+| `/help/wallet`       | Wallet connection instructions and troubleshooting                             |
+| `/legal/terms`       | Platform terms of service                                                      |
+| `/marketPlace`       | NFT marketplace demo                                                           |
+| `/quality-standards` | Audio and track submission quality guidelines                                  |
+| `/release/[id]`      | Single track / release detail page                                             |
+| `/search`            | Global search page with genre filters and pagination                           |
 
-### Authenticated app — `app/dashboard/` (requires `audioblocks_jwt` cookie)
+### Authenticated app — `app/dashboard/` (requires `audioblocks_session` or `audioblocks_jwt` cookie)
 
 | Route                        | Description                                                                                     |
 | ---------------------------- | ----------------------------------------------------------------------------------------------- |
 | `/dashboard`                 | Explore: categories, collections, events, artists, merch                                        |
-| `/dashboard/playlist`        | The listener's playlist                                                                         |
-| `/dashboard/community`       | Artist voting and listening-hours leaderboard (flag-gated, see [Feature flags](#feature-flags)) |
-| `/dashboard/collection`      | The listener's owned NFTs/assets                                                                |
-| `/dashboard/profile`         | Listener profile                                                                                |
 | `/dashboard/all-artists`     | Browse all artists                                                                              |
 | `/dashboard/all-collections` | Browse all NFT collections                                                                      |
+| `/dashboard/artist/[id]`     | Authenticated artist detail view with discography                                               |
+| `/dashboard/collection`      | The listener's owned NFTs and assets                                                            |
+| `/dashboard/collection/[id]` | Collection detail view                                                                          |
+| `/dashboard/community`       | Artist voting and listening-hours leaderboard (flag-gated, see [Feature flags](#feature-flags)) |
+| `/dashboard/library`         | User saved tracks and collections library                                                       |
+| `/dashboard/notifications`   | Real-time notifications center                                                                  |
+| `/dashboard/playlist`        | The listener's current playlist and queue                                                       |
+| `/dashboard/playlist/[id]`   | Custom / user playlist detail view                                                              |
+| `/dashboard/profile`         | Listener profile overview                                                                       |
+| `/dashboard/profile/edit`    | Edit profile settings                                                                           |
+| `/dashboard/settings`        | Account preferences, audio quality, and data-saver toggle                                       |
+| `/dashboard/transactions`    | Stellar payment and purchase transaction history                                                |
 
-`middleware.ts` gates every `/dashboard/*` route on the presence of the
-`audioblocks_jwt` cookie, redirecting unauthenticated visitors to `/`.
+### Authentication & Utility Routes
+
+| Route              | Description                                                       |
+| ------------------ | ----------------------------------------------------------------- |
+| `/login`           | Dedicated login and wallet connection page                        |
+| `/onboarding`      | First-time listener onboarding and role configuration             |
+| `/embed/song/[id]` | Embeddable compact audio player widget for external sites         |
+| `/maintenance`     | Maintenance mode page (active when `MAINTENANCE_MODE` is enabled) |
+
+Diagnostic and internal telemetry routes (`/internal/metrics/*`, `/sentry-example-page`) are internal tools and deliberately omitted from public navigation.
+
+`middleware.ts` gates protected routes (`/dashboard/*`, `/profile/*`, and `/onboarding`) on the presence of the `audioblocks_session` or `audioblocks_jwt` cookie (or Privy authentication tokens). Unauthenticated requests are redirected to `/?auth=login&returnTo=<target>` (or `/login?returnTo=<target>`), preserving the target path in the `returnTo` query parameter so users return to their requested destination after authenticating.
 
 ## Authentication
 
@@ -330,7 +355,7 @@ layouts/
 └── footer/                          # Public site footer
 
 config/
-└── abi.tsx                          # Contract ABI / address (scaffolding — see Known Gaps)
+└── abi.ts                           # Contract ABI / address (scaffolding — see Known Gaps)
 
 middleware.ts                        # JWT route gate for /dashboard/*
 public/                              # Static assets (images, icons, placeholders)
@@ -454,15 +479,51 @@ then click **Sign in** in the navbar and follow the Dynamic Labs flow.
 
 ## Testing
 
-The project uses Vitest and React Testing Library for unit/integration tests and Playwright for E2E tests:
+AudioBlocks Frontend includes an automated test suite powered by **Vitest** for unit/component testing and **Playwright** for end-to-end (E2E) & visual regression testing.
 
-```bash
-# Run unit and integration tests
-npm test
+### Test Directory Structure
 
-# Run tests with coverage reporting
-npm run test:coverage
 ```
+tests/
+├── app/                 # Page-level tests for routes under app/
+├── components/          # Component unit tests (Player, Controls, SearchOverlay, ...)
+├── context/             # React context tests (PlaybackContext)
+├── hooks/               # Custom hook tests (useSearch, useSearchHistory, usePrefetch, ...)
+├── lib/                 # Service and utility tests
+├── fixtures/            # Shared test data
+├── e2e/                 # Playwright end-to-end tests
+├── playback-harness/    # Playwright playback test harness
+└── visual/              # Visual regression and UI layout tests (PlayerBar)
+```
+
+### Running Tests
+
+- **Run All Unit Tests**:
+  ```bash
+  npm test
+  ```
+- **Run Unit Tests in Watch Mode**:
+  ```bash
+  npm run test:watch
+  ```
+- **Generate Test Coverage Report**:
+  ```bash
+  npm run test:coverage
+  ```
+- **Run End-to-End (E2E) Tests**:
+  ```bash
+  npm run test:e2e
+  ```
+- **Run E2E Tests in Interactive UI Mode**:
+  ```bash
+  npm run test:e2e:ui
+  ```
+
+Pull requests run the Playwright Chromium suite against a production build on
+`ubuntu-24.04`. Player-bar pixel snapshots are currently marked skipped because
+the repository has no checked-in reference images. They should be regenerated
+on this pinned runner before being enabled in CI. Failed E2E runs upload the
+HTML report and Playwright traces as artifacts.
 
 ### Manual testing checklist
 
@@ -563,11 +624,14 @@ Open a GitHub issue with:
 - Most dashboard and discovery pages (Explore, Playlist, Community,
   Collection, Marketplace) currently render static/dummy data rather than
   live data from the backend or chain.
-- `config/abi.tsx` defines a contract address and ABI that aren't currently
+- `config/abi.ts` defines a contract address and ABI that aren't currently
   referenced anywhere in the app — scaffolding for a future direct on-chain
   read/write feature.
-- `@tanstack/react-query` is wired into the provider tree (required
-  internally by `wagmi`) but isn't yet used for the app's own data fetching.
+- Dynamic Labs `environmentId` is hardcoded in `context/provider.tsx` and
+  should be moved to an environment variable (`NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`).
+- `@tanstack/react-query` is wired into the provider tree and is used for
+  the app's own data fetching across `hooks/queries/*` (collections, artists,
+  users, tracks), the all-collections/all-artists catalog, and transaction history.
 - Several frontend API calls don't match a mounted backend route. See the
   [API contract map](docs/api-contract.md) for each call's status (ok, path
   mismatch, missing on backend, or mocked) and the backend issue tracking it.
@@ -575,54 +639,6 @@ Open a GitHub issue with:
   mock list. It already accepts an `AbortSignal`, which `useSearch` uses to
   cancel superseded queries; pass that signal through to `apiClient.get` when
   it is wired to the backend.
-
-## Testing
-
-AudioBlocks Frontend includes an automated test suite powered by **Vitest** for unit/component testing and **Playwright** for end-to-end (E2E) & visual regression testing.
-
-### Test Directory Structure
-
-```
-tests/
-├── app/                 # Page-level tests for routes under app/
-├── components/          # Component unit tests (Player, Controls, SearchOverlay, ...)
-├── context/             # React context tests (PlaybackContext)
-├── hooks/               # Custom hook tests (useSearch, useSearchHistory, ...)
-├── lib/                 # Service and utility tests
-├── fixtures/            # Shared test data
-├── e2e/                 # Playwright end-to-end tests
-├── playback-harness/    # Playwright playback test harness
-└── visual/              # Visual regression and UI layout tests (PlayerBar)
-```
-
-### Running Tests
-
-- **Run All Unit Tests**:
-  ```bash
-  npm test
-  ```
-- **Run Unit Tests in Watch Mode**:
-  ```bash
-  npm run test:watch
-  ```
-- **Generate Test Coverage Report**:
-  ```bash
-  npm run test:coverage
-  ```
-- **Run End-to-End (E2E) Tests**:
-  ```bash
-  npm run test:e2e
-  ```
-- **Run E2E Tests in Interactive UI Mode**:
-  ```bash
-  npm run test:e2e:ui
-  ```
-
-Pull requests run the Playwright Chromium suite against a production build on
-`ubuntu-24.04`. Player-bar pixel snapshots are currently marked skipped because
-the repository has no checked-in reference images. They should be regenerated
-on this pinned runner before being enabled in CI. Failed E2E runs upload the
-HTML report and Playwright traces as artifacts.
 
 ---
 

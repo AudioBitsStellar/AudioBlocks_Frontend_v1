@@ -69,7 +69,7 @@ const CommunityTabs = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="vote">
+        <TabsContent className="min-h-[420px] outline-none" value="vote">
           <VoteTab
             artists={artists}
             isError={artistsError}
@@ -80,7 +80,7 @@ const CommunityTabs = () => {
           />
         </TabsContent>
 
-        <TabsContent value="leaderboard">
+        <TabsContent className="min-h-[420px] outline-none" value="leaderboard">
           <LeaderboardTab artists={artists} />
         </TabsContent>
       </Tabs>

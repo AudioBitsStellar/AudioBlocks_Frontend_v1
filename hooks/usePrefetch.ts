@@ -11,7 +11,18 @@ const HOVER_PREFETCH_DELAY = 200;
 function isDataSaverEnabled(): boolean {
   if (typeof navigator === 'undefined') return false;
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-  return !!connection?.saveData;
+  if (connection?.saveData) return true;
+  try {
+    if (
+      typeof window !== 'undefined' &&
+      window.localStorage?.getItem('audioblocks_data_saver') === 'true'
+    ) {
+      return true;
+    }
+  } catch {
+    /* storage is optional */
+  }
+  return false;
 }
 
 /** Schedules work at low priority so it never competes with user-driven rendering. */
@@ -52,12 +63,21 @@ export function prefetchArtist(queryClient: QueryClient, artistId: string): void
 type PrefetchFn = (queryClient: QueryClient, id: string) => void;
 
 /** Fires `prefetchFn` after a hover delay; cancels if the pointer leaves before it elapses. */
-function useHoverPrefetch(prefetchFn: PrefetchFn, id: string | undefined, delay = HOVER_PREFETCH_DELAY) {
-  const queryClient = useQueryClient();
+function useHoverPrefetch(
+  prefetchFn: PrefetchFn,
+  id: string | undefined,
+  delay = HOVER_PREFETCH_DELAY
+) {
+  let queryClient: QueryClient | null = null;
+  try {
+    queryClient = useQueryClient();
+  } catch {
+    queryClient = null;
+  }
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onMouseEnter = useCallback(() => {
-    if (!id) return;
+    if (!id || !queryClient) return;
     timeoutRef.current = setTimeout(() => prefetchFn(queryClient, id), delay);
   }, [id, delay, prefetchFn, queryClient]);
 

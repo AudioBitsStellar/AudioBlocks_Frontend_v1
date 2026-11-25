@@ -146,12 +146,10 @@ describe('useInfiniteQuery', () => {
   });
 
   it('accepts initialData without an immediate fetch', async () => {
-    const fetcher = vi.fn(
-      async (): Promise<InfinitePage<Item>> => ({
-        data: [{ id: 'server' }],
-        nextCursor: null,
-      })
-    );
+    const fetcher = vi.fn(async (): Promise<InfinitePage<Item>> => ({
+      data: [{ id: 'server' }],
+      nextCursor: null,
+    }));
 
     const { result } = renderHook(() =>
       useInfiniteQuery<Item>({
@@ -164,5 +162,29 @@ describe('useInfiniteQuery', () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.data).toEqual([{ id: 'seed' }]);
     expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('starts from the supplied cursor and does not fetch while disabled', async () => {
+    const fetcher = vi.fn(async (cursor: PageParam): Promise<InfinitePage<Item>> => ({
+      data: [{ id: String(cursor) }],
+      nextCursor: null,
+    }));
+    const { result, rerender } = renderHook(
+      ({ enabled }: { enabled: boolean }) =>
+        useInfiniteQuery<Item>({
+          key: 'cursor-and-enabled',
+          fetcher,
+          initialCursor: 'page-2',
+          enabled,
+        }),
+      { initialProps: { enabled: false } }
+    );
+
+    expect(result.current.isLoading).toBe(false);
+    expect(fetcher).not.toHaveBeenCalled();
+
+    rerender({ enabled: true });
+    await waitFor(() => expect(result.current.data).toEqual([{ id: 'page-2' }]));
+    expect(fetcher).toHaveBeenCalledWith('page-2', expect.any(AbortSignal));
   });
 });

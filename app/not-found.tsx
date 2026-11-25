@@ -2,9 +2,20 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Home } from 'lucide-react';
 
 const NotFound = () => {
+  const router = useRouter();
+
+  const handleGoBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      window.history.back();
+    } else {
+      router.push('/');
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col max-w-xl h-screen m-auto items-center justify-center min-h-screen bg-black text-[#A3A3A3] overflow-hidden">
@@ -31,8 +42,9 @@ const NotFound = () => {
               Go Home
             </Link>
             <button
-              className="inline-flex items-center gap-2 bg-[#1E181D] hover:bg-[#885FA8] text-gray-300 px-6 py-3 rounded-full transition text-sm"
-              onClick={() => window.history.back()}
+              className="inline-flex items-center gap-2 bg-[#1E181D] hover:bg-[#885FA8] text-gray-300 px-6 py-3 rounded-full transition text-sm cursor-pointer"
+              type="button"
+              onClick={handleGoBack}
             >
               <ArrowLeft size={16} />
               Go Back

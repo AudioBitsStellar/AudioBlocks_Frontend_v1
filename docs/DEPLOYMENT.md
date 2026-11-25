@@ -56,6 +56,18 @@ These can't be done from a workflow file — they're repo/environment settings:
    job in `deploy.yml` the same way if a given deployment needs them (e.g.
    wallet/contract addresses for a non-default chain).
 
+## Promotion gate (#820)
+
+Each push to `main` deploys to staging, then runs the E2E smoke test
+(`tests/e2e/smoke.spec.ts`) against the staging site and API. The job is
+**Smoke test staging (E2E)** in [`deploy.yml`](../.github/workflows/deploy.yml).
+Set the `STAGING_URL` and `STAGING_NEXT_PUBLIC_API_URL` variables for it to run.
+
+Production deploys from a version tag only proceed when the tagged commit's smoke
+test passed. The production job waits up to 30 minutes for a result and blocks on any
+other outcome. This gate is the enforcement point: the smoke test runs after a merge,
+so it cannot be a required check on pull requests.
+
 ## Rollback
 
 Fly.io keeps prior releases per app. To roll back production without waiting

@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 import { GripVertical, Play, Trash2, Loader2, Shield } from 'lucide-react';
 import { usePlayback } from '@/context/PlaybackContext';
 import CollaboratorsPanel from '@/components/playlist/CollaboratorsPanel';
 import { CreateSmartPlaylistDialog } from '@/components/playlist/CreateSmartPlaylistDialog';
 import { FollowedPlaylistsList } from '@/components/playlist/FollowedPlaylistsList';
+import apiClient from '@/lib/apiClient';
 import { useHasAuthSession } from '@/hooks/useHasAuthSession';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Track {
   id: string | number;
@@ -18,135 +20,229 @@ interface Track {
   coverUrl?: string;
 }
 
-const Playlist = () => {
+export default function Playlist() {
   const { playTrack, currentIndex, playlist, isPlaying } = usePlayback();
-  const [tracks, setTracks] = useState<Track[]>([]);
   const [draggedTrackId, setDraggedTrackId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isSmartDialogOpen, setIsSmartDialogOpen] = useState(false);
   const signedIn = useHasAuthSession();
+  const queryClient = useQueryClient();
 
-  // Fetch playlists from backend (Issue #617)
-  useEffect(() => {
-    const fetchPlaylists = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetch('/api/playlists');
-        if (!response.ok) throw new Error('Failed to fetch playlists');
-        const data = await response.json();
-        setTracks(data.tracks || []);
-      } catch (err) {
-        // Fallback to empty playlist if backend unavailable
-        console.error('Error fetching playlists:', err);
-        setTracks([]);
-      } finally {
-        setLoading(false);
+  const playlistQuery = useQuery({
+    queryKey: ['playlists'],
+    queryFn: async () => {
+      const response = await apiClient.get('/api/playlists');
+      return response.data;
+    },
+  });
+
+  const playlists = playlistQuery.data?.data || playlistQuery.data?.playlists || (Array.isArray(playlistQuery.data) ? playlistQuery.data : []);
+  const currentPlaylist = playlists[0];
+  const playlistId = currentPlaylist?.id;
+  const tracks: Track[] = currentPlaylist?.tracks || currentPlaylist?.songs || [];
+
+  const reorderMutation = useMutation({
+    mutationFn: async (newTracks: Track[]) => {
+      if (!playlistId) return;
+      await apiClient.put(`/api/playlists/${playlistId}/reorder`, {
+        songIds: newTracks.map((t) => t.id),
+      });
+    },
+    onMutate: async (newTracks) => {
+      await queryClient.cancelQueries({ queryKey: ['playlists'] });
+      const previousData = queryClient.getQueryData(['playlists']);
+      queryClient.setQueryData(['playlists'], (old: any) => {
+        if (!old) return old;
+        if (Array.isArray(old)) {
+          return old.map((p, idx) => (idx === 0 ? { ...p, tracks: newTracks, songs: newTracks } : p));
       }
+        if (old.data && Array.isArray(old.data)) {
+          return {
+            ...old,
+            data: old.data.map((p: any, idx: number) =>
+              idx === 0 ? { ...p, tracks: newTracks, songs: newTracks } : p
+            ),
     };
+        }
+        return old;
+      });
+      return { previousData };
+    },
+    onError: (_err, _newTracks, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['playlists'], context.previousData);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+    },
+  });
 
-    fetchPlaylists();
-  }, []);
+  const removeSongMutation = useMutation({
+    mutationFn: async (songId: string | number) => {
+      if (!playlistId) return;
+      await apiClient.delete(`/api/playlists/${playlistId}/songs/${songId}`);
+    },
+    onMutate: async (songId) => {
+      await queryClient.cancelQueries({ queryKey: ['playlists'] });
+      const previousData = queryClient.getQueryData(['playlists']);
+      queryClient.setQueryData(['playlists'], (old: any) => {
+        if (!old) return old;
+        const filterTracks = (tList: Track[]) => tList.filter((t) => t.id !== songId);
+        if (Array.isArray(old)) {
+          return old.map((p, idx) =>
+            idx === 0
+              ? { ...p, tracks: filterTracks(p.tracks || p.songs || []), songs: filterTracks(p.tracks || p.songs || []) }
+              : p
+          );
+        }
+        if (old.data && Array.isArray(old.data)) {
+          return {
+            ...old,
+            data: old.data.map((p: any, idx: number) =>
+              idx === 0
+                ? { ...p, tracks: filterTracks(p.tracks || p.songs || []), songs: filterTracks(p.tracks || p.songs || []) }
+                : p
+            ),
+          };
+        }
+        return old;
+      });
+      return { previousData };
+    },
+    onError: (_err, _songId, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['playlists'], context.previousData);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+    },
+  });
 
-  const handleDrop = (targetTrackId: string) => {
+  const handleDrop = (targetTrackId: string | number) => {
     if (!draggedTrackId || draggedTrackId === targetTrackId) {
       setDraggedTrackId(null);
       return;
     }
 
-    setTracks((currentTracks) => {
-      const draggedIndex = currentTracks.findIndex((track) => track.id === draggedTrackId);
-      const targetIndex = currentTracks.findIndex((track) => track.id === targetTrackId);
+    const draggedIndex = tracks.findIndex((track) => track.id === draggedTrackId);
+    const targetIndex = tracks.findIndex((track) => track.id === targetTrackId);
 
-      if (draggedIndex < 0 || targetIndex < 0) return currentTracks;
+    if (draggedIndex < 0 || targetIndex < 0) {
+      setDraggedTrackId(null);
+      return;
+    }
 
-      const reorderedTracks = [...currentTracks];
+    const reorderedTracks = [...tracks];
       const [draggedTrack] = reorderedTracks.splice(draggedIndex, 1);
       reorderedTracks.splice(targetIndex, 0, draggedTrack);
-      return reorderedTracks;
-    });
 
     setDraggedTrackId(null);
+    reorderMutation.mutate(reorderedTracks);
   };
 
-  const handleRemove = (trackId: string) => {
-    setTracks((currentTracks) => currentTracks.filter((track) => track.id !== trackId));
+  const handleRemoveTrack = (songId: string | number) => {
+    removeSongMutation.mutate(songId);
   };
 
+  if (playlistQuery.isLoading) {
   return (
-    <div className="font-inter">
-      <p className="text-xs font-medium text-left text-white mb-2">My Playlist</p>
+      <div className="flex h-96 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#F2AFC9]" />
+      </div>
+    );
+  }
 
-      <div className="bg-gradient-to-r from-[#6E0596] to-[#580577] p-8 py-12 rounded-lg text-white flex items-center justify-between mb-6">
-        <div className="flex-1 gap-2">
-          <h1 className="md:text-6xl text-3xl mb-2 font-extrabold">My Playlist</h1>
-          <p className="font-semibold text-base">
-            {tracks.length} {tracks.length === 1 ? 'Song' : 'Songs'} Added
-          </p>
+  if (playlistQuery.isError) {
+    return (
+      <div className="p-6">
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-center text-white">
+          <p className="mb-4">Failed to load playlist</p>
+          <button
+            className="rounded bg-[#D2045B] px-4 py-2 font-semibold text-white hover:bg-[#D2045B]/80 transition-colors"
+            type="button"
+            onClick={() => void playlistQuery.refetch()}
+          >
+            Retry
+          </button>
         </div>
       </div>
+    );
+  }
 
-      {signedIn && (
-        <div className="mb-6 flex justify-end">
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">{currentPlaylist?.name || 'My Playlist'}</h1>
+          <p className="text-sm text-gray-400">{currentPlaylist?.description || 'Your custom track collection'}</p>
+        </div>
           <button
-            className="px-4 py-2 rounded-lg bg-[#D2045B] text-sm font-semibold text-white hover:bg-[#b80350] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2AFC9]"
+          className="rounded border border-[#D2045B] px-3 py-1.5 text-sm font-semibold text-[#F2AFC9] hover:bg-[#D2045B]/10"
             type="button"
             onClick={() => setIsSmartDialogOpen(true)}
           >
-            New smart playlist
+          Create Smart Playlist
           </button>
-          <CreateSmartPlaylistDialog
-            open={isSmartDialogOpen}
-            onClose={() => setIsSmartDialogOpen(false)}
-          />
         </div>
-      )}
 
-      <FollowedPlaylistsList className="mb-6" />
+      <FollowedPlaylistsList />
 
-      {loading ? (
-        <div className="rounded-lg border border-border-dark p-8 text-center text-on-muted flex items-center justify-center gap-3">
-          <Loader2 size={20} className="animate-spin" />
-          Loading playlist...
+      {playlistId && <CollaboratorsPanel isOwner={true} playlistId={playlistId} />}
+
+      {tracks.length === 0 ? (
+        <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-12 text-center">
+          <p className="text-gray-400">Your playlist is empty.</p>
         </div>
-      ) : error ? (
-        <div className="rounded-lg border border-red-400/50 bg-red-400/10 p-8 text-center text-red-400">
-          Failed to load playlist. Please try again.
-        </div>
-      ) : tracks.length === 0 ? (
-        <div className="rounded-lg border border-border-dark p-8 text-center text-on-muted">
-          Your playlist is empty.
-        </div>
-      ) : !data?.data?.length ? (
-        <p>Your playlists are empty.</p>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2">
-          {data.data.map((playlist) => (
-            <li key={playlist.id}>
-              <Link
-                className="block rounded-xl border border-border-dark p-5"
-                href={`/dashboard/playlist/${encodeURIComponent(playlist.id)}`}
+        <div className="space-y-2">
+          {tracks.map((track, index) => {
+            const currentPlayingTrack = playlist[currentIndex];
+            const isActive = currentPlayingTrack && currentPlayingTrack.id === track.id;
+
+            return (
+              <div
+                key={track.id}
+                draggable
+                className={`flex items-center justify-between rounded-lg p-3 transition-colors ${
+                  isActive ? 'bg-[#D2045B]/20 border border-[#D2045B]/40' : 'bg-gray-900/40 hover:bg-gray-800/60'
+                }`}
+                onDragOver={(e) => e.preventDefault()}
+                onDragStart={() => setDraggedTrackId(String(track.id))}
+                onDrop={() => handleDrop(track.id)}
               >
-                {playlist.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-      <nav aria-label="Playlist pages" className="flex gap-4">
-        <button disabled={page === 1} type="button" onClick={() => setPage(page - 1)}>
-          Previous
+                <div className="flex items-center gap-4">
+                  <button className="cursor-grab text-gray-500 hover:text-white" type="button">
+                    <GripVertical size={18} />
         </button>
-        <span>Page {page}</span>
         <button
-          disabled={!data || page >= (data.pagination?.totalPages ?? 1)}
+                    className="flex h-10 w-10 items-center justify-center rounded bg-gray-800 text-white hover:bg-[#D2045B]"
           type="button"
-          onClick={() => setPage(page + 1)}
+                    onClick={() => playTrack(track as any)}
         >
-          Next
+                    <Play size={16} />
         </button>
-      </nav>
+                  <div>
+                    <p className={`font-medium ${isActive ? 'text-[#F2AFC9]' : 'text-white'}`}>{track.title}</p>
+                    <p className="text-sm text-gray-400">{track.artist || 'Unknown Artist'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="text-gray-400 hover:text-red-400"
+                    type="button"
+                    onClick={() => handleRemoveTrack(track.id)}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <CreateSmartPlaylistDialog open={isSmartDialogOpen} onOpenChange={setIsSmartDialogOpen} />
     </div>
   );
 }

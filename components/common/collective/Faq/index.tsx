@@ -5,7 +5,7 @@ import { faqs } from './data';
 const Faq = () => {
   return (
     <>
-      <section className=" m-auto text-white py-10">
+      <section className=" m-auto text-white py-10" id="faq">
         <div className="w-4/5 mx-auto px-4">
           <h2 className="md:text-3xl text-2xl font-semibold mb-6">FAQs</h2>
           <Accordion.Root

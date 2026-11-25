@@ -1,94 +1,37 @@
 /**
- * Runtime configuration loaded from the server.
+ * Runtime configuration published to the browser (#815).
  *
- * Unlike build-time `NEXT_PUBLIC_*` variables, runtime config can be changed
- * without rebuilding (#815). The config is fetched once at app startup and
- * cached, so feature flags can be toggled server-side for instant effect.
+ * `NEXT_PUBLIC_*` values are inlined into the client bundle at build time, so
+ * changing one needs a rebuild. Settings listed here come from server-only
+ * variables instead. `app/api/runtime-config/route.ts` reads them on each
+ * request and serves them as a script that the root layout loads before the
+ * app hydrates, so the first render already sees them.
  *
- * Config falls back to environment variables for backward compatibility,
- * and to `defaultFlagValue()` if neither runtime config nor env vars exist.
+ * Nothing in this module runs on the server: it only reads `window`.
  */
+
+/** URL of the script that publishes the runtime config. */
+export const RUNTIME_CONFIG_SCRIPT_PATH = '/api/runtime-config';
+
+/** `window` property the published script assigns. */
+export const RUNTIME_CONFIG_GLOBAL = '__AUDIOBLOCKS_RUNTIME_CONFIG__';
 
 export interface RuntimeConfig {
-  featureFlags: Record<string, boolean | string>;
+  /** Raw flag values keyed by flag name. A missing key means "not overridden". */
+  featureFlags: Record<string, string>;
 }
 
-let cachedRuntimeConfig: RuntimeConfig | null = null;
-let configFetchPromise: Promise<RuntimeConfig | null> | null = null;
-
-/**
- * Fetches runtime configuration from the server.
- * Returns null if fetch fails or we're in an environment where fetch isn't available.
- */
-async function fetchRuntimeConfig(): Promise<RuntimeConfig | null> {
-  // Only fetch on client side
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  try {
-    const response = await fetch('/api/runtime-config', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      // Don't cache; we want fresh config
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      console.warn(`Failed to fetch runtime config: ${response.status} ${response.statusText}`);
-      return null;
-    }
-
-    const config = await response.json();
-    return config as RuntimeConfig;
-  } catch (error) {
-    console.warn('Failed to fetch runtime config:', error);
-    return null;
+declare global {
+  interface Window {
+    __AUDIOBLOCKS_RUNTIME_CONFIG__?: RuntimeConfig;
   }
 }
 
 /**
- * Get the current runtime config, fetching from the server if not yet cached.
- * Deduplicates concurrent fetch requests.
+ * Returns the runtime override for a feature flag, or `undefined` when the
+ * server did not set one, or when there is no `window` (prerendering).
  */
-export async function getRuntimeConfig(): Promise<RuntimeConfig | null> {
-  // If we've already cached it, return immediately
-  if (cachedRuntimeConfig !== null) {
-    return cachedRuntimeConfig;
-  }
-
-  // If a fetch is in progress, wait for it
-  if (configFetchPromise !== null) {
-    return configFetchPromise;
-  }
-
-  // Start the fetch and cache the promise to deduplicate
-  configFetchPromise = fetchRuntimeConfig().then((config) => {
-    if (config !== null) {
-      cachedRuntimeConfig = config;
-    }
-    return config;
-  });
-
-  return configFetchPromise;
-}
-
-/**
- * Get a feature flag value from runtime config (synchronously if already cached).
- * Returns undefined if not set in runtime config.
- */
-export function getRuntimeFeatureFlag(flagName: string): string | boolean | undefined {
-  if (cachedRuntimeConfig === null) {
-    return undefined;
-  }
-  return cachedRuntimeConfig.featureFlags[flagName];
-}
-
-/**
- * Invalidate the cached runtime config so it will be re-fetched on next access.
- * Useful for testing or when you know the config has changed.
- */
-export function invalidateRuntimeConfig(): void {
-  cachedRuntimeConfig = null;
-  configFetchPromise = null;
+export function readRuntimeFlagValue(flag: string): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return window.__AUDIOBLOCKS_RUNTIME_CONFIG__?.featureFlags?.[flag];
 }
