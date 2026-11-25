@@ -29,12 +29,26 @@
  *    - Provides stale cached API data when user experiences low connectivity or offline state.
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `static-assets-cache-${CACHE_VERSION}`;
 const API_CACHE_NAME = `api-cache-${CACHE_VERSION}`;
 
 /** Core static application shell resources pre-cached during Service Worker installation. */
 const STATIC_ASSETS = ['/', '/favicon.ico'];
+
+/** Allow-list of cacheable API pathname prefixes or routes */
+const CACHEABLE_API_PATHS = [
+  '/api/songs',
+  '/api/song',
+  '/api/artists',
+  '/api/artist',
+  '/api/releases',
+  '/api/release',
+  '/api/playlists',
+  '/api/playlist',
+  '/api/categories',
+  '/api/community'
+];
 
 /**
  * Service Worker Install Event Handler
@@ -71,6 +85,18 @@ self.addEventListener('activate', (event) => {
 });
 
 /**
+ * Service Worker Message Event Handler
+ * Handles client commands such as clearing the API cache on logout.
+ */
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CLEAR_API_CACHE') {
+    event.waitUntil(
+      caches.delete(API_CACHE_NAME)
+    );
+  }
+});
+
+/**
  * Service Worker Fetch Interceptor
  * Routes fetch events to appropriate caching strategies based on URL pattern matching.
  */
@@ -79,13 +105,23 @@ self.addEventListener('fetch', (event) => {
 
   // Strategy 1: Network-first for API requests (`/api/*`)
   if (url.pathname.startsWith('/api/') && event.request.method === 'GET') {
+    const hasAuthHeader = event.request.headers.has('Authorization');
+    const isAllowedPath = CACHEABLE_API_PATHS.some((path) => url.pathname.startsWith(path));
+
     event.respondWith(
       fetch(event.request)
         .then((response) => {
+          if (
+            response.ok &&
+            response.type === 'basic' &&
+            !hasAuthHeader &&
+            isAllowedPath
+          ) {
           const responseClone = response.clone();
           caches.open(API_CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
           });
+          }
           return response;
         })
         .catch(() => caches.match(event.request))

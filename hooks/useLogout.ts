@@ -46,6 +46,15 @@ export async function clearAuthSessionArtifacts(userId?: string | null): Promise
   } catch {
     // Non-fatal: even if this fails, the readable client cookies are removed
   }
+
+  // Clear service worker API cache so next user never sees previous user's cached data
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    try {
+      navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHE' });
+    } catch {
+      // Non-fatal
+    }
+  }
 }
 
 /**
