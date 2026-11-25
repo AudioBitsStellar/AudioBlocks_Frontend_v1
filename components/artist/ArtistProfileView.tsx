@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import ArtistReleases from '@/components/releases/ArtistReleases';
 import { usePlayback } from '@/context/PlaybackContext';
@@ -67,6 +68,12 @@ export function ArtistProfileView({ artist }: { artist: ArtistProfile }) {
               getInitials(name)
             )}
           </div>
+          <Link
+            className="absolute right-4 top-4 rounded-full bg-[#D2045B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b0034c]"
+            href="/dashboard/settings#gifts"
+          >
+            Gift a subscription
+          </Link>
           <div className="min-w-0 pb-2">
             <h1 className="text-2xl md:text-3xl font-bold break-words">{name}</h1>
             {artist.username && <p className="text-on-muted">@{artist.username}</p>}

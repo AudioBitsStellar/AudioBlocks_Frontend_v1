@@ -2,6 +2,7 @@
  * Stellar explorer and IPFS link helpers.
  *
  * Issue #547 — point explorer links to stellar.expert instead of Etherscan.
+ *
  * Soroban contract IDs are StrKey-encoded: a `C` prefix followed by 55
  * base32 characters. IPFS CIDs are base32/base58 alphanumerics. Both are
  * validated before they are placed in a URL so a malformed value from the
