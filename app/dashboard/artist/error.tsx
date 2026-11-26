@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { reportError } from '@/lib/reportError';
 
 export default function ArtistError({
   error,
@@ -12,7 +13,7 @@ export default function ArtistError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Artist error:', error);
+    reportError(error, { tags: { boundary: 'dashboard', section: 'artist' }, extra: { digest: error.digest } });
   }, [error]);
 
   return (

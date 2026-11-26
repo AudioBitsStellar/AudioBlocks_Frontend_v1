@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { reportError } from '@/lib/reportError';
 
 export default function DashboardError({
   error,
@@ -11,7 +12,7 @@ export default function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Dashboard error:', error);
+    reportError(error, { tags: { boundary: 'dashboard' }, extra: { digest: error.digest } });
   }, [error]);
 
   return (

@@ -38,7 +38,10 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'AudioBlocks — Stream, Earn & Collect Music NFTs',
+  title: {
+    default: 'AudioBlocks — Stream, Earn & Collect Music NFTs',
+    template: '%s · AudioBlocks',
+  },
   description:
     'AudioBlocks is a Web3 music platform where listeners stream ad-free music and earn rewards while artists upload tracks, sell NFTs, and get paid fairly.',
   manifest: '/manifest.json',

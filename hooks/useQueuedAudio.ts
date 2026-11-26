@@ -400,6 +400,7 @@ export function useQueuedAudio() {
       element.addEventListener('timeupdate', time);
       element.addEventListener('pause', paused);
       element.addEventListener('loadedmetadata', metadata);
+      element.addEventListener('durationchange', metadata);
       element.addEventListener('ended', ended);
       element.addEventListener('playing', playing);
       element.addEventListener('waiting', waiting);
@@ -408,6 +409,7 @@ export function useQueuedAudio() {
         element.removeEventListener('timeupdate', time);
         element.removeEventListener('pause', paused);
         element.removeEventListener('loadedmetadata', metadata);
+        element.removeEventListener('durationchange', metadata);
         element.removeEventListener('ended', ended);
         element.removeEventListener('playing', playing);
         element.removeEventListener('waiting', waiting);

@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DataErrorBoundary from '@/components/common/DataErrorBoundary';
+import * as reportErrorModule from '@/lib/reportError';
+
+vi.mock('@/lib/reportError', () => ({
+  reportError: vi.fn(),
+}));
 
 function Boom({ shouldThrow }: { shouldThrow: boolean }): React.ReactElement {
   if (shouldThrow) throw new Error('section blew up');
@@ -98,5 +103,22 @@ describe('DataErrorBoundary', () => {
     );
     expect(screen.getByText('Events failed to load')).toBeInTheDocument();
     expect(screen.getByText(/we couldn't load events/i)).toBeInTheDocument();
+  });
+
+  it('reports error to reportError helper with boundary tags', () => {
+    render(
+      <DataErrorBoundary name="Collections">
+        <Boom shouldThrow />
+      </DataErrorBoundary>
+    );
+    expect(reportErrorModule.reportError).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        tags: expect.objectContaining({
+          boundary: 'dashboard',
+          section: 'Collections',
+        }),
+      })
+    );
   });
 });

@@ -1,14 +1,7 @@
 'use client';
 
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-
-const formatTime = (time: number) => {
-  const minutes = Math.floor(time / 60);
-  const seconds = Math.floor(time % 60)
-    .toString()
-    .padStart(2, '0');
-  return `${minutes}:${seconds}`;
-};
+import { formatDuration } from '@/lib/utils';
 
 export interface ProgressBarProps {
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -41,21 +34,25 @@ export const ProgressBar = memo(function ProgressBar({
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [previewTime, setPreviewTime] = useState<number | null>(null);
 
+  const isDurationFinite = Number.isFinite(duration) && duration > 0;
+
   const paint = useCallback(
     (time: number) => {
       const range = rangeRef.current;
       if (range) {
         range.value = String(time);
-        const pct = duration ? (time / duration) * 100 : 0;
-        range.style.background = `linear-gradient(to right, #B6195B 0%, #B6195B ${pct}%, rgb(82,82,82) ${pct}%, rgb(82,82,82) 100%)`;
+        const pct = isDurationFinite ? (time / duration) * 100 : 0;
+        range.style.background = isDurationFinite
+          ? `linear-gradient(to right, #B6195B 0%, #B6195B ${pct}%, rgb(82,82,82) ${pct}%, rgb(82,82,82) 100%)`
+          : 'rgb(82,82,82)';
         range.setAttribute('aria-valuenow', String(Math.floor(time)));
-        range.setAttribute('aria-valuetext', `${formatTime(time)} of ${formatTime(duration)}`);
+        range.setAttribute('aria-valuetext', `${formatDuration(time)} of ${formatDuration(duration)}`);
       }
       if (currentTimeRef.current) {
-        currentTimeRef.current.textContent = formatTime(time);
+        currentTimeRef.current.textContent = formatDuration(time);
       }
     },
-    [duration]
+    [duration, isDurationFinite]
   );
 
   // Reset the scrubber to 0 whenever the track changes
@@ -84,6 +81,7 @@ export const ProgressBar = memo(function ProgressBar({
 
   const computePreviewTime = useCallback(
     (clientX: number) => {
+      if (!isDurationFinite) return null;
       const range = rangeRef.current;
       if (!range) return null;
       const rect = range.getBoundingClientRect();
@@ -91,10 +89,11 @@ export const ProgressBar = memo(function ProgressBar({
       const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       return ratio * duration;
     },
-    [duration]
+    [duration, isDurationFinite]
   );
 
   const startScrub = useCallback(() => {
+    if (!isDurationFinite) return;
     scrubbingRef.current = true;
     setIsScrubbing(true);
     const audio = audioRef.current;
@@ -102,7 +101,7 @@ export const ProgressBar = memo(function ProgressBar({
       savedVolumeRef.current = audio.volume;
       audio.volume = Math.min(audio.volume, 0.35);
     }
-  }, [audioRef]);
+  }, [audioRef, isDurationFinite]);
 
   const endScrub = useCallback(() => {
     scrubbingRef.current = false;
@@ -140,7 +139,7 @@ export const ProgressBar = memo(function ProgressBar({
     [audioRef, paint]
   );
 
-  const previewPct = previewTime !== null && duration > 0 ? (previewTime / duration) * 100 : 0;
+  const previewPct = previewTime !== null && isDurationFinite ? (previewTime / duration) * 100 : 0;
 
   return (
     <div className="flex items-center gap-2">
@@ -158,28 +157,29 @@ export const ProgressBar = memo(function ProgressBar({
         <input
           ref={rangeRef}
           aria-label="Track position"
-          aria-valuemax={duration}
+          aria-valuemax={isDurationFinite ? duration : 0}
           aria-valuemin={0}
-          className="w-full h-1 bg-gray-600 rounded appearance-none cursor-pointer accent-[#D2045B]"
+          className={`w-full h-1 bg-gray-600 rounded appearance-none ${isDurationFinite ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} accent-[#D2045B]`}
           defaultValue={0}
-          max={duration}
+          disabled={!isDurationFinite}
+          max={isDurationFinite ? duration : 0}
           min={0}
           role="slider"
           step={1}
           type="range"
           onChange={handleSeek}
         />
-        {previewTime !== null && (
+        {previewTime !== null && isDurationFinite && (
           <div
             className="pointer-events-none absolute -top-7 -translate-x-1/2 rounded bg-black px-1.5 py-0.5 text-[10px] text-white shadow"
             role="tooltip"
             style={{ left: `${previewPct}%` }}
           >
-            {formatTime(previewTime)}
+            {formatDuration(previewTime)}
           </div>
         )}
       </div>
-      <span className="text-xs text-white w-8 text-right">{formatTime(duration)}</span>
+      <span className="text-xs text-white w-8 text-right">{formatDuration(duration)}</span>
     </div>
   );
 });
