@@ -1,3 +1,5 @@
+> **Archived**: This document describes the AI quality-analysis pipeline that was moved out of the listener app repository.
+
 # NVIDIA API Integration Setup
 
 This document describes how the NVIDIA API is integrated into the
@@ -53,7 +55,7 @@ The inference service sits between this frontend and NVIDIA:
 | Timeout / retry policy | Inference service; the frontend renders the timeout error UI (`components/ai/QualityCheckTimeoutError.tsx`, #446) |
 | Cost accounting | `components/ai/CostEstimationBanner.tsx` constants (`COST_PER_TRACK_USD`, `FREE_TIER_TRACKS`) — tune these to actual NVIDIA pricing |
 
-Point `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_API_BASE_URL` at the backend
+Point `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_API_URL` at the backend
 that fronts the inference service (see `docs/ENVIRONMENT_VARIABLES.md`).
 
 ## Step 4 — Verify

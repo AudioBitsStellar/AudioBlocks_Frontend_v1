@@ -1,3 +1,5 @@
+> **Archived**: This document describes the AI quality-analysis pipeline that was moved out of the listener app repository.
+
 # AI Song Quality Filter Documentation
 
 AudioBlocks Frontend implements parts of the AI Song Quality Filter initiative (Mastra AI + NVIDIA): uploads are analysed for audio quality, originals and remasters are compared, artists can opt out, and the quality standards are explained publicly.

@@ -1,3 +1,5 @@
+> **Archived**: This document describes the AI quality-analysis pipeline that was moved out of the listener app repository.
+
 # NVIDIA API Key Rotation Runbook
 
 NVIDIA API keys (used by the AI song quality filter) are secrets held

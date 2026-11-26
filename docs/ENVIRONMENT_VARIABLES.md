@@ -32,8 +32,7 @@ EVM-oriented variables (above) and Stellar/Soroban ones side by side.
 
 | Variable | Type | Description | Example |
 |----------|------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | string | Backend API base URL used by `apiClient`, streaming and most `fetch` call sites. See [`docs/api-contract.md`](api-contract.md) for the exact `/api` suffix convention and known mismatches | `http://localhost:4000` |
-| `NEXT_PUBLIC_API_BASE_URL` | string | A second, separately-set backend base URL (see [API Configuration](#api-configuration) below) — not read by the same call sites as `NEXT_PUBLIC_API_URL`; keep both pointed at the same backend | `https://api.audioblocks.dev` |
+| `NEXT_PUBLIC_API_URL` | string | Backend API base URL used by `apiClient`, streaming and `fetch` call sites. See [`docs/api-contract.md`](api-contract.md) for the exact `/api` suffix convention | `http://localhost:4000` |
 | `NEXT_PUBLIC_SITE_URL` | string | This app's own public origin, used for metadata and embed codes (`app/layout.tsx`, `components/ui/EmbedCodeGenerator.tsx`) | `http://localhost:3000` |
 | `NEXT_PUBLIC_MEDIA_HOST` | string | Origin or bare host for the backend's own media storage (S3/CDN) allowed through `next/image` (#595) | `media.audioblocks.dev` |
 | `NEXT_PUBLIC_IPFS_GATEWAY` | string | Primary IPFS gateway for cover art / NFT artwork (e.g. a Pinata dedicated gateway); falls back to the public `https://ipfs.io` gateway when unset. See [`docs/IPFS_INTEGRATION.md`](IPFS_INTEGRATION.md) | `your-gateway.mypinata.cloud` |
@@ -42,7 +41,6 @@ EVM-oriented variables (above) and Stellar/Soroban ones side by side.
 
 | Variable | Type | Description | Example |
 |----------|------|-------------|---------|
-| `NEXT_PUBLIC_API_BASE_URL` | string | Backend API base URL | `https://api.audioblocks.dev` |
 | `NEXT_PUBLIC_API_TIMEOUT` | number | API request timeout in ms | `30000` |
 | `NEXT_PUBLIC_API_MOCKING` | string | `enabled`/`disabled` — serve API requests from the MSW mocks in `mocks/` instead of a backend (#603). See "Mocking the API (MSW)" in `CONTRIBUTING.md` | `disabled` |
 
@@ -186,7 +184,7 @@ NEXT_PUBLIC_CHAIN_ID=11155111
 NEXT_PUBLIC_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
 NEXT_PUBLIC_CONTRACT_ADDRESS=0x...
 NEXT_PUBLIC_USDC_ADDRESS=0x...
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your-env-id
 NEXT_PUBLIC_LOG_LEVEL=debug
 NEXT_PUBLIC_ENABLE_DEVTOOLS=true

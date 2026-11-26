@@ -32,7 +32,7 @@ production, and after any change to `Dockerfile`, `.env.example`, or
       `200 {"status":"ok"}` (same endpoint the Dockerfile `HEALTHCHECK`
       uses, #845).
 - [ ] **Backend reachable is the testnet backend, not production's.**
-      `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_API_BASE_URL` resolve to the
+      `NEXT_PUBLIC_API_URL` / `NEXT_PUBLIC_API_URL` resolve to the
       staging/testnet backend host, confirmed by inspecting a network
       request from the deployed app (not just the env var value — a stale
       cached build could still be serving an old inlined value).

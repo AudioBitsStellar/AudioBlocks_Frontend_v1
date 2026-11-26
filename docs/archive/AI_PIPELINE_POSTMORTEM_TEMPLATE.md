@@ -1,3 +1,5 @@
+> **Archived**: This document describes the AI quality-analysis pipeline that was moved out of the listener app repository.
+
 # AI Pipeline Incident Postmortem / Runbook Template
 
 Use this template for postmortems on AI pipeline incidents (song quality

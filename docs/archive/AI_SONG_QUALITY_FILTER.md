@@ -1,3 +1,5 @@
+> **Archived**: This document describes the AI quality-analysis pipeline that was moved out of the listener app repository.
+
 # AI Song Quality Filter (Mastra AI + NVIDIA)
 
 AudioBlocks screens uploaded songs for quality before they reach the public catalog. The filter is part of the **AI Song Quality Filter (Mastra AI + NVIDIA)** initiative and runs songs through an NVIDIA-hosted model that returns a normalized quality assessment.

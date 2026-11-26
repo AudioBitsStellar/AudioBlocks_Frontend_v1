@@ -150,6 +150,11 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
 
   const setPreference = useCallback(
     <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
+      if (key === 'colorScheme' && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('theme-preference', String(value));
+        } catch {}
+      }
       setPreferences({ ...preferences, [key]: value });
     },
     [preferences, setPreferences]
