@@ -28,6 +28,7 @@ jobs:
           cache: npm
       # Sentry 7's peer range excludes Next 15; use the committed lockfile's legacy peer resolution.
       - run: npm ci --legacy-peer-deps --ignore-scripts
+      - run: npm run format:check
       - run: npm run lint
 
   type-check:
