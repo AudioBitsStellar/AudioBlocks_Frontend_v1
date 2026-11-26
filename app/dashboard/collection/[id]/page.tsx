@@ -1,9 +1,8 @@
 'use client';
 
-import { use, useMemo } from 'react';
+import { use, useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useState } from 'react';
 import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ArtworkImage } from '@/components/ui/ArtworkImage';
@@ -25,6 +24,12 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
     if (isLoading) return undefined;
     return songs.find((s) => s.songCID === id || s.songId.toString() === id);
   }, [songs, id, isLoading]);
+
+  useEffect(() => {
+    if (song?.title) {
+      document.title = `${song.title} · AudioBlocks`;
+    }
+  }, [song?.title]);
 
   if (isLoading) {
     return (

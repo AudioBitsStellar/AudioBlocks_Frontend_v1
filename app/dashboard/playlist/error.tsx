@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { reportError } from '@/lib/reportError';
 
 export default function PlaylistError({
   error,
@@ -12,7 +13,7 @@ export default function PlaylistError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Playlist error:', error);
+    reportError(error, { tags: { boundary: 'dashboard', section: 'playlist' }, extra: { digest: error.digest } });
   }, [error]);
 
   return (

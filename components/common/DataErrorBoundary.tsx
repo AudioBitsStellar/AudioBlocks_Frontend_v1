@@ -1,8 +1,8 @@
 'use client';
 
 import { Component, ErrorInfo, Fragment, ReactNode } from 'react';
-import * as Sentry from '@sentry/nextjs';
 import ErrorState from '@/components/common/ErrorState';
+import { reportError } from '@/lib/reportError';
 
 /** An error that may carry the correlation id of the request that failed (#837). */
 type RequestTrackedError = Error & { requestId?: string };
@@ -46,18 +46,16 @@ export default class DataErrorBoundary extends Component<
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error(
-        `[DataErrorBoundary${this.props.name ? `: ${this.props.name}` : ''}]`,
-        error,
-        info.componentStack
-      );
-    }
     const requestId = error instanceof Error ? (error as RequestTrackedError).requestId : undefined;
-    Sentry.captureException(error, (scope) => {
-      if (requestId) scope.setTag('request_id', requestId);
-      if (this.props.name) scope.setTag('section', this.props.name);
-      return scope;
+    reportError(error, {
+      tags: {
+        boundary: 'dashboard',
+        ...(this.props.name ? { section: this.props.name } : {}),
+        ...(requestId ? { request_id: requestId } : {}),
+      },
+      extra: {
+        componentStack: info.componentStack,
+      },
     });
   }
 

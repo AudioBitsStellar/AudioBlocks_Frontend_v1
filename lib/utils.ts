@@ -36,3 +36,26 @@ export function formatCount(num: number): string {
   if (num >= 1_000) return `${(num / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
   return num.toString();
 }
+
+/**
+ * Formats a duration in seconds into a human-readable time string.
+ * Returns '--:--' for non-finite (NaN, Infinity) or negative values.
+ * Returns 'h:mm:ss' for durations >= 1 hour (3600 seconds), otherwise 'm:ss'.
+ *
+ * @param seconds - Duration in seconds.
+ * @returns Formatted time string (e.g. '0:59', '1:15:00', or '--:--').
+ */
+export function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return '--:--';
+  }
+  const totalSeconds = Math.floor(seconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
