@@ -130,7 +130,7 @@ These calls are behind feature flags (#637), so production never sends them whil
 | ------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------- |
 | `context/TransactionContext.tsx`      | `GET /api/transactions/:hash/status`, relative to the Next.js origin | none. The closest is `GET /api/wallet/history`                                   | missing on backend (issue to open, see below) |
 | `app/dashboard/transactions/page.tsx` | `GET {NEXT_PUBLIC_API_URL}/activity/onchain?page=&limit=`            | `GET /api/activity/onchain`                                                      | path mismatch                                 |
-| `hooks/useSorobanRelay.ts`            | `POST {NEXT_PUBLIC_API_BASE_URL}/soroban/relay`                      | `POST /api/marketplace/prepare-{listing,buy,auction,bid}` followed by `submit-*` | path mismatch                                 |
+| `hooks/useSorobanRelay.ts`            | `POST {NEXT_PUBLIC_API_URL}/soroban/relay`                      | `POST /api/marketplace/prepare-{listing,buy,auction,bid}` followed by `submit-*` | path mismatch                                 |
 
 ## Moderation
 

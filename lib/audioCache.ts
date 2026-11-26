@@ -1,12 +1,12 @@
-const MAX_CACHE_BYTES = 50 * 1024 * 1024; // 50MB
-const BYTES_PER_SAMPLE = 4; // Float32 per channel sample
+export const MAX_CACHE_BYTES = 50 * 1024 * 1024; // 50MB
+export const BYTES_PER_SAMPLE = 4; // Float32 per channel sample
 
-interface CacheEntry {
+export interface CacheEntry {
   buffer: AudioBuffer;
   size: number;
 }
 
-function estimateBufferSize(buffer: AudioBuffer): number {
+export function estimateBufferSize(buffer: AudioBuffer): number {
   return buffer.length * buffer.numberOfChannels * BYTES_PER_SAMPLE;
 }
 
@@ -14,10 +14,19 @@ function estimateBufferSize(buffer: AudioBuffer): number {
  * LRU cache for decoded AudioBuffers, capped at 50MB total. Insertion order
  * in the underlying Map doubles as recency order: `get` re-inserts the hit
  * key at the end, so the least-recently-used entry is always first.
+ *
+ * Oversized-entry behaviour:
+ * Buffers whose estimated size strictly exceeds `maxCacheBytes` are immediately
+ * evicted in `evictUntilWithinLimit`, so they are not retained in the cache.
  */
-class AudioBufferCache {
+export class AudioBufferCache {
   private cache = new Map<string, CacheEntry>();
   private totalBytes = 0;
+  private maxBytes: number;
+
+  constructor(maxBytes: number = MAX_CACHE_BYTES) {
+    this.maxBytes = maxBytes;
+  }
 
   get(key: string): AudioBuffer | undefined {
     const entry = this.cache.get(key);
@@ -44,7 +53,7 @@ class AudioBufferCache {
 
   private evictUntilWithinLimit(): void {
     for (const key of this.cache.keys()) {
-      if (this.totalBytes <= MAX_CACHE_BYTES) break;
+      if (this.totalBytes <= this.maxBytes) break;
       const entry = this.cache.get(key);
       if (!entry) continue;
       this.cache.delete(key);

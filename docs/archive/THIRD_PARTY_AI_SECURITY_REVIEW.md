@@ -1,3 +1,5 @@
+> **Archived**: This document describes the AI quality-analysis pipeline that was moved out of the listener app repository.
+
 # Security Review: Sending Audio Files to Third-Party AI APIs
 
 **Scope:** AI Song Quality Filter (Mastra AI + NVIDIA) initiative (#450, #451, #452, #458)

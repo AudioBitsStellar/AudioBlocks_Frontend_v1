@@ -44,7 +44,7 @@ relying on this for a real incident.
 3. Build and publish the image:
    ```bash
    docker build \
-     --build-arg NEXT_PUBLIC_API_BASE_URL=<...> \
+     --build-arg NEXT_PUBLIC_API_URL=<...> \
      --build-arg NEXT_PUBLIC_SITE_URL=<...> \
      # ... remaining NEXT_PUBLIC_* build args, see .env.example ...
      -t <registry>/audioblocks-frontend:<tag> .

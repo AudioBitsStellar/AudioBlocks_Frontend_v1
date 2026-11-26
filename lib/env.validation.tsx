@@ -103,16 +103,16 @@ export function validateEnv(): ValidationResult {
     });
   }
 
-  // Required: NEXT_PUBLIC_API_BASE_URL
-  if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  // Required: NEXT_PUBLIC_API_URL
+  if (!process.env.NEXT_PUBLIC_API_URL) {
     errors.push({
-      variable: 'NEXT_PUBLIC_API_BASE_URL',
+      variable: 'NEXT_PUBLIC_API_URL',
       message: 'Missing required environment variable',
-      solution: 'Set NEXT_PUBLIC_API_BASE_URL to your backend API endpoint',
+      solution: 'Set NEXT_PUBLIC_API_URL to your backend API endpoint',
     });
-  } else if (!isValidUrl(process.env.NEXT_PUBLIC_API_BASE_URL)) {
+  } else if (!isValidUrl(process.env.NEXT_PUBLIC_API_URL)) {
     errors.push({
-      variable: 'NEXT_PUBLIC_API_BASE_URL',
+      variable: 'NEXT_PUBLIC_API_URL',
       message: 'Invalid URL format',
       solution: 'Ensure URL starts with http:// or https://',
     });
@@ -152,7 +152,7 @@ export function getEnvConfig(): EnvConfig {
     rpcUrl: process.env.NEXT_PUBLIC_RPC_URL!,
     contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!,
     usdcAddress: process.env.NEXT_PUBLIC_USDC_ADDRESS!,
-    apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL!,
+    apiBaseUrl: process.env.NEXT_PUBLIC_API_URL!,
     apiTimeout: Number(process.env.NEXT_PUBLIC_API_TIMEOUT || 30000),
     dynamicEnvId: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID!,
     segmentWriteKey: process.env.NEXT_PUBLIC_SEGMENT_WRITE_KEY,
