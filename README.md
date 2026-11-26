@@ -469,7 +469,9 @@ then click **Sign in** in the navbar and follow the Dynamic Labs flow.
 | `npm run build`         | Production build with TypeScript checking                     |
 | `npm start`             | Serves the production build                                   |
 | `npm run lint`          | Runs ESLint across all files (includes jsx-a11y rules)        |
+| `npm run check`         | Runs format check, linter, typecheck, and unit tests (full CI) |
 | `npm test`              | Runs the Vitest test suite                                    |
+| `npm run format:check`  | Checks code formatting with Prettier                          |
 | `npm run test:coverage` | Runs unit tests with code coverage analysis                   |
 | `npm run audit`         | Scans project dependencies for vulnerabilities                |
 | `npm run audit:check`   | Scans dependencies and fails on high/critical vulnerabilities |
@@ -503,6 +505,10 @@ tests/
 
 ### Running Tests
 
+- **Run Full CI Checks**:
+  ```bash
+  npm run check
+  ```
 - **Run All Unit Tests**:
   ```bash
   npm test

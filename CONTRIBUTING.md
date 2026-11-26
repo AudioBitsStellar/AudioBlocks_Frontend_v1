@@ -110,7 +110,9 @@ Optional but recommended:
 ## Testing
 
 ```bash
-npm test              # format check + unit/component tests (Vitest)
+npm test              # unit/component tests (Vitest)
+npm run check         # full check (format:check + lint + type-check + test)
+npm run format:check  # check code formatting (Prettier)
 npm run test:watch    # unit tests in watch mode
 npm run test:coverage # unit tests with coverage report
 npm run test:e2e      # end-to-end tests (Playwright)
