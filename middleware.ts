@@ -74,6 +74,7 @@ function cspReportHeader(req: NextRequest): [string, string] | null {
 }
 
 function applySecurity(res: NextResponse, req: NextRequest, nonce?: string, csp?: string): NextResponse {
+  applyFramePolicy(res, req.nextUrl.pathname);
   if (nonce) {
     // Expose the nonce to Server Components / the Next runtime.
     res.headers.set('x-csp-nonce', nonce);

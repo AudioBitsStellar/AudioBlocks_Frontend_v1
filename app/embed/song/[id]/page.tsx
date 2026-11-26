@@ -1,48 +1,120 @@
-'use client';
-
-import { use } from 'react';
-import dynamic from 'next/dynamic';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
+import EmbedPlayer from './EmbedPlayer';
+import { getApiUrl, getStreamUrl } from '@/lib/apiUrl';
+import { mockSongsFixture } from '@/mocks/fixtures/songs';
 
-const Player = dynamic(() => import('@/components/common/Player'), { ssr: false });
+interface EmbedSong {
+  id: string;
+  title: string;
+  artist: string;
+  cover: string;
+  streamUrl: string;
+}
 
-export default function EmbedSongPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+async function fetchEmbedSong(id: string): Promise<EmbedSong | null> {
+  try {
+    const res = await fetch(getApiUrl(`embed/song/${encodeURIComponent(id)}`), {
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const data = json.data || json;
+      if (data && data.title) {
+        return {
+          id: data.id || id,
+          title: data.title,
+          artist: typeof data.artist === 'string' ? data.artist : data.artist?.name || 'Unknown Artist',
+          cover: typeof data.cover === 'string' ? data.cover : data.cover?.path || '/AFRO.jpg',
+          streamUrl: data.streamUrl || getStreamUrl(id),
+        };
+      }
+    }
+  } catch {
+    // Continue to fallback
+  }
 
-  if (!id) {
+  // Fallback to /api/song/:id
+  try {
+    const res = await fetch(getApiUrl(`song/${encodeURIComponent(id)}`), {
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const song = json.data || json;
+      if (song && song.title) {
+        return {
+          id: song.id,
+          title: song.title,
+          artist: song.artist?.name || 'Unknown Artist',
+          cover: song.cover?.path || '/AFRO.jpg',
+          streamUrl: getStreamUrl(song.id),
+        };
+      }
+    }
+  } catch {
+    // Continue to fixture check
+  }
+
+  // Fallback to mock fixture if available
+  const fixture = mockSongsFixture.find((s) => s.id === id);
+  if (fixture) {
+    return {
+      id: fixture.id,
+      title: fixture.title,
+      artist: fixture.artist?.name || 'Unknown Artist',
+      cover: fixture.cover.path || '/AFRO.jpg',
+      streamUrl: getStreamUrl(fixture.id),
+    };
+  }
+
+  return null;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const song = await fetchEmbedSong(id);
+
+  if (!song) {
+    return {
+      title: 'AudioBlocks - Embedded Player',
+      robots: 'noindex, nofollow',
+    };
+  }
+
+  return {
+    title: `${song.title} by ${song.artist} - AudioBlocks`,
+    description: `Listen to ${song.title} on AudioBlocks`,
+    robots: 'noindex, nofollow',
+  };
+}
+
+export default async function EmbedSongPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  if (!id) notFound();
+
+  const song = await fetchEmbedSong(id);
+  if (!song) {
     notFound();
   }
 
   return (
-    <div className="w-full h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-          <div className="relative w-full aspect-square bg-gray-700">
-            <Image
-              alt="Song artwork"
-              className="w-full h-full object-cover"
-              fill
-              src="/audio.jpg"
-            />
-          </div>
-
-          <div className="p-6 space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-white truncate">Song {id}</h2>
-              <p className="text-sm text-gray-400">Artist Name</p>
-            </div>
-
-            <div className="bg-gray-700 rounded-lg p-4">
-              <Player />
-            </div>
-
-            <div className="text-xs text-gray-500 text-center">
-              Powered by AudioBlocks
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="w-full h-screen bg-transparent flex items-center justify-center p-4">
+      <EmbedPlayer
+        id={song.id}
+        title={song.title}
+        artist={song.artist}
+        cover={song.cover}
+        streamUrl={song.streamUrl}
+      />
     </div>
   );
 }

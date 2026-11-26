@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export interface ExploreFilters {
+  q: string | null;
   genre: string | null;
   mood: string | null;
   durationMin: number | null;
@@ -15,6 +16,7 @@ export interface ExploreFilters {
 export type ExploreFilterDefaults = Partial<ExploreFilters>;
 
 const DEFAULT_FILTERS: ExploreFilters = {
+  q: null,
   genre: null,
   mood: null,
   durationMin: null,
@@ -34,6 +36,7 @@ function parseNumericParam(searchParams: URLSearchParams, key: string, fallback:
 
 function parseFilters(searchParams: URLSearchParams, defaults: ExploreFilters): ExploreFilters {
   return {
+    q: searchParams.get('q') ?? defaults.q,
     genre: searchParams.get('genre') ?? defaults.genre,
     mood: searchParams.get('mood') ?? defaults.mood,
     durationMin: parseNumericParam(searchParams, 'durationMin', defaults.durationMin),
@@ -44,9 +47,9 @@ function parseFilters(searchParams: URLSearchParams, defaults: ExploreFilters): 
 }
 
 /**
- * Manages explore-page filter state (genre, mood, duration/BPM range) with
- * bidirectional URL query param sync, so filtered views are shareable and
- * support the browser back button.
+ * Manages explore-page filter state (search query, genre, mood, duration/BPM range)
+ * with bidirectional URL query param sync, so filtered views are shareable and
+ * support the browser back button (Issue #684).
  */
 export function useExploreFilters(defaultFilters: ExploreFilterDefaults = {}) {
   const router = useRouter();
@@ -57,13 +60,13 @@ export function useExploreFilters(defaultFilters: ExploreFilterDefaults = {}) {
   const filters = useMemo(() => parseFilters(searchParams, defaults), [searchParams, defaults]);
 
   const updateFilters = useCallback(
-    (patch: Partial<ExploreFilters>) => {
+    (patch: Partial<ExploreFilters>, options?: { replace?: boolean }) => {
       const next = { ...filters, ...patch };
       const params = new URLSearchParams(searchParams.toString());
 
       for (const key of FILTER_KEYS) {
         const value = next[key];
-        if (value === null || value === undefined || value === defaults[key]) {
+        if (value === null || value === undefined || value === defaults[key] || value === '') {
           params.delete(key);
         } else {
           params.set(key, String(value));
@@ -71,7 +74,12 @@ export function useExploreFilters(defaultFilters: ExploreFilterDefaults = {}) {
       }
 
       const query = params.toString();
-      router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+      const targetUrl = query ? `${pathname}?${query}` : pathname;
+      if (options?.replace && typeof router.replace === 'function') {
+        router.replace(targetUrl, { scroll: false });
+      } else {
+        router.push(targetUrl, { scroll: false });
+      }
     },
     [filters, defaults, searchParams, pathname, router],
   );

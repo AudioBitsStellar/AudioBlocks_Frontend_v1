@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAnalyticsConsent } from '@/hooks/useAnalyticsConsent';
 import { setAnalyticsConsent } from '@/lib/analyticsConsent';
 
@@ -13,7 +14,11 @@ import { setAnalyticsConsent } from '@/lib/analyticsConsent';
  * reject. Changing the choice later happens in Settings → Privacy & data.
  */
 export default function AnalyticsConsentBanner() {
+  const pathname = usePathname();
   const consent = useAnalyticsConsent();
+
+  // Do not render inside third-party embeds (#686)
+  if (pathname?.startsWith('/embed')) return null;
 
   if (consent !== 'unset') return null;
 
