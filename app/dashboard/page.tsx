@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import Artists from '@/components/common/dashboard/Artists';
@@ -15,14 +15,39 @@ import { PullToRefreshIndicator } from '@/components/common/PullToRefreshIndicat
 import { ProfileCompletion } from '@/components/dashboard/ProfileCompletion';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { useExploreFilters } from '@/hooks/useExploreFilters';
 import { isFeatureEnabled } from '@/lib/featureFlags';
 
 const genreFilters = ['All', 'Pop', 'Contemporary', 'Rock', 'Afro', 'Jazz'];
 
-const ExplorePage = () => {
+function ExploreContent() {
   useScrollRestoration('dashboard');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeGenre, setActiveGenre] = useState('All');
+  const { filters, updateFilters } = useExploreFilters();
+  const activeGenre = filters.genre || 'All';
+  const [localSearch, setLocalSearch] = useState(filters.q || '');
+
+  // Keep local search in sync if URL query changes (e.g. back navigation)
+  useEffect(() => {
+    setLocalSearch(filters.q || '');
+  }, [filters.q]);
+
+  // Debounce search update to URL (300ms) with replace to avoid history spam (#684)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const trimmed = localSearch.trim();
+      const currentQ = filters.q || '';
+      if (trimmed !== currentQ) {
+        updateFilters({ q: trimmed || null }, { replace: true });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [localSearch, filters.q, updateFilters]);
+
+  const handleGenreChange = (genre: string) => {
+    updateFilters({ genre: genre === 'All' ? null : genre });
+  };
+
   const queryClient = useQueryClient();
   // #637: sections whose backend endpoints are not live yet.
   const eventsEnabled = isFeatureEnabled('events');
@@ -47,8 +72,8 @@ const ExplorePage = () => {
               className="ml-3 w-full bg-transparent outline-none text-sm text-gray-200 placeholder:text-on-muted"
               placeholder="Search collections, artists..."
               type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
             />
           </div>
 
@@ -57,12 +82,12 @@ const ExplorePage = () => {
               <button
                 key={genre}
                 aria-pressed={activeGenre === genre}
-                className={`px-4 py-1 font-medium cursor-pointer text-sm rounded-2xl border ${
+                className={`px-4 py-1 font-medium cursor-pointer text-sm rounded-2xl border transition ${
                   activeGenre === genre
                     ? 'bg-brand text-white border-brand'
-                    : 'bg-surface-input text-on-muted border-border-dark'
+                    : 'bg-surface-input text-on-muted border-border-dark hover:text-white'
                 }`}
-                onClick={() => setActiveGenre(genre)}
+                onClick={() => handleGenreChange(genre)}
               >
                 {genre}
               </button>
@@ -89,7 +114,7 @@ const ExplorePage = () => {
       </DataErrorBoundary>
 
       <DataErrorBoundary name="Collections">
-        <Collections activeGenre={activeGenre} searchQuery={searchQuery} />
+        <Collections activeGenre={activeGenre} searchQuery={localSearch} />
       </DataErrorBoundary>
 
       {eventsEnabled && (
@@ -99,7 +124,7 @@ const ExplorePage = () => {
       )}
 
       <DataErrorBoundary name="Artists">
-        <Artists activeGenre={activeGenre} searchQuery={searchQuery} />
+        <Artists activeGenre={activeGenre} searchQuery={localSearch} />
       </DataErrorBoundary>
 
       {merchEnabled && (
@@ -109,6 +134,12 @@ const ExplorePage = () => {
       )}
     </div>
   );
-};
+}
 
-export default ExplorePage;
+export default function ExplorePage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-on-muted">Loading explore...</div>}>
+      <ExploreContent />
+    </Suspense>
+  );
+}

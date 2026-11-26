@@ -3,16 +3,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useExploreFilters } from '@/hooks/useExploreFilters';
 
 const pushMock = vi.fn();
+const replaceMock = vi.fn();
 let currentSearch = '';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/explore',
-  useRouter: () => ({ push: pushMock }),
+  useRouter: () => ({ push: pushMock, replace: replaceMock }),
   useSearchParams: () => new URLSearchParams(currentSearch),
 }));
 
 beforeEach(() => {
   pushMock.mockClear();
+  replaceMock.mockClear();
   currentSearch = '';
 });
 
@@ -20,6 +22,7 @@ describe('useExploreFilters', () => {
   it('returns default filters when the URL has no params', () => {
     const { result } = renderHook(() => useExploreFilters());
     expect(result.current.filters).toEqual({
+      q: null,
       genre: null,
       mood: null,
       durationMin: null,
@@ -30,14 +33,15 @@ describe('useExploreFilters', () => {
     expect(result.current.activeFilterCount).toBe(0);
   });
 
-  it('parses filters from the URL query string', () => {
-    currentSearch = 'genre=afrobeats&bpmMin=90&bpmMax=140';
+  it('parses filters from the URL query string including q (#684)', () => {
+    currentSearch = 'q=sax&genre=jazz&bpmMin=90&bpmMax=140';
     const { result } = renderHook(() => useExploreFilters());
 
-    expect(result.current.filters.genre).toBe('afrobeats');
+    expect(result.current.filters.q).toBe('sax');
+    expect(result.current.filters.genre).toBe('jazz');
     expect(result.current.filters.bpmMin).toBe(90);
     expect(result.current.filters.bpmMax).toBe(140);
-    expect(result.current.activeFilterCount).toBe(3);
+    expect(result.current.activeFilterCount).toBe(4);
   });
 
   it('pushes updated query params when a filter changes', () => {
@@ -46,6 +50,14 @@ describe('useExploreFilters', () => {
     act(() => result.current.updateFilters({ genre: 'jazz' }));
 
     expect(pushMock).toHaveBeenCalledWith('/explore?genre=jazz', { scroll: false });
+  });
+
+  it('replaces query params without adding history entry when replace option is set (#684)', () => {
+    const { result } = renderHook(() => useExploreFilters());
+
+    act(() => result.current.updateFilters({ q: 'piano' }, { replace: true }));
+
+    expect(replaceMock).toHaveBeenCalledWith('/explore?q=piano', { scroll: false });
   });
 
   it('removes a param from the URL when reset to its default', () => {

@@ -27,4 +27,21 @@ export const songsHandlers = [
     if (!song) return errorResponse(404, 'Song not found', 'NOT_FOUND');
     return HttpResponse.json({ success: true, data: song });
   }),
+
+  // Embed song handler (GET /api/embed/song/:id) (#686)
+  http.get('*/api/embed/song/:id', ({ params }) => {
+    const song = mockSongsFixture.find((s) => s.id === params.id);
+    if (!song) return errorResponse(404, 'Song not found', 'NOT_FOUND');
+    return HttpResponse.json({
+      success: true,
+      data: {
+        id: song.id,
+        title: song.title,
+        artist: song.artist?.name || 'Unknown Artist',
+        cover: song.cover.path,
+        streamUrl: `/api/song/stream/${song.id}`,
+        duration: song.duration,
+      },
+    });
+  }),
 ];

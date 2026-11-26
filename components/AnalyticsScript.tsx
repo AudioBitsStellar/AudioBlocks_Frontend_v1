@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Script from 'next/script';
 import { useAnalyticsConsent } from '@/hooks/useAnalyticsConsent';
 import { isAnalyticsEnabled } from '@/lib/analytics';
@@ -13,9 +14,11 @@ const interactionEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll'] as 
  * initial page load. Rejecting or revoking consent unmounts the script.
  */
 export default function AnalyticsScript() {
+  const pathname = usePathname();
   const [hasInteracted, setHasInteracted] = useState(false);
   const consent = useAnalyticsConsent();
-  const analyticsEnabled = isAnalyticsEnabled() && consent === 'accepted';
+  const analyticsEnabled =
+    isAnalyticsEnabled() && consent === 'accepted' && !pathname?.startsWith('/embed');
 
   useEffect(() => {
     if (!analyticsEnabled) return;

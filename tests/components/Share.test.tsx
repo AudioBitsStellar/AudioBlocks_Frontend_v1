@@ -63,4 +63,40 @@ describe('ShareModal', () => {
     );
     expect(toastMocks.error).toHaveBeenCalledWith('Failed to copy link');
   });
+
+  it('renders the Embed tab and generates iframe snippet pointing to embed URL (#685)', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    render(
+      <ShareModal
+        artistName="Burna Boy"
+        link="https://audioblocks.com/song/track-123"
+        trackId="track-123"
+        trackTitle="City Boys"
+      />
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Share' }));
+
+    const dialog = screen.getByRole('dialog');
+    const embedTabButton = within(dialog).getByRole('button', { name: /Embed Player/i });
+    expect(embedTabButton).toBeInTheDocument();
+
+    await userEvent.click(embedTabButton);
+
+    const snippet = screen.getByTestId('embed-code-snippet');
+    expect(snippet).toBeInTheDocument();
+    expect(snippet.textContent).toContain('/embed/song/track-123');
+
+    const copyEmbedBtn = screen.getByRole('button', { name: /Copy embed code/i });
+    await userEvent.click(copyEmbedBtn);
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalled();
+      expect(toastMocks.success).toHaveBeenCalledWith('Embed code copied to clipboard');
+    });
+  });
 });
